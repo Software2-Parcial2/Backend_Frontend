@@ -35,6 +35,8 @@ public class SecurityConfig {
 				.authorizeHttpRequests(auth -> auth
 						.requestMatchers(HttpMethod.GET, "/actuator/health", "/actuator/health/**").permitAll()
 						.requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+						// Antes del controlador: sin esto la validacion del cuerpo (400) se evalua antes que @PreAuthorize (403).
+						.requestMatchers(HttpMethod.POST, "/api/pacientes").hasAnyRole("administrador", "recepcion", "medico")
 						.anyRequest().authenticated())
 				// Despues de autenticar y autorizar: solo se reservan claves de usuarios con acceso.
 				.addFilterAfter(new IdempotencyFilter(idempotencyStore, mapper, Duration.ofHours(ttlHours)), AuthorizationFilter.class)

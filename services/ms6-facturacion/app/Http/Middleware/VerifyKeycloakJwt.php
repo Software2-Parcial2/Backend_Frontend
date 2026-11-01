@@ -41,6 +41,7 @@ class VerifyKeycloakJwt
         $request->attributes->set('jwt', $claims);
         $request->attributes->set('user_id', $claims->sub ?? null);
         $request->attributes->set('roles', $claims->realm_access->roles ?? []);
+        $request->attributes->set('paciente_id', $claims->paciente_id ?? null);
 
         return $next($request);
     }

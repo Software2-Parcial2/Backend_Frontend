@@ -6,10 +6,13 @@
   "description": "Scripts de desarrollo: tablas DynamoDB, topologia RabbitMQ, poller del outbox",
   "scripts": {
     "dynamodb:init": "node dynamodb-init.mjs",
-    "rabbitmq:declare": "node rabbitmq-declare.mjs"
+    "rabbitmq:declare": "node rabbitmq-declare.mjs",
+    "dlq:replay": "node dlq-replay.mjs",
+    "test": "node --test \"test/*.test.mjs\""
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.1161.0",
+    "@aws-sdk/lib-dynamodb": "^3.1161.0",
     "amqplib": "^2.2.0"
   }
 }

@@ -11,11 +11,26 @@
   "ssoSessionIdleTimeout": 1800,
   "roles": {
     "realm": [
-      { "name": "administrador", "description": "Rol administrador" },
-      { "name": "medico", "description": "Rol medico" },
-      { "name": "recepcion", "description": "Rol recepcion" },
-      { "name": "caja", "description": "Rol caja" },
-      { "name": "paciente", "description": "Rol paciente" }
+      {
+        "name": "administrador",
+        "description": "Rol administrador"
+      },
+      {
+        "name": "medico",
+        "description": "Rol medico"
+      },
+      {
+        "name": "recepcion",
+        "description": "Rol recepcion"
+      },
+      {
+        "name": "caja",
+        "description": "Rol caja"
+      },
+      {
+        "name": "paciente",
+        "description": "Rol paciente"
+      }
     ]
   },
   "clients": [
@@ -30,14 +45,43 @@
       "directAccessGrantsEnabled": true,
       "serviceAccountsEnabled": false,
       "fullScopeAllowed": true,
-      "redirectUris": ["http://localhost:5173/*"],
-      "webOrigins": ["http://localhost:5173"],
+      "redirectUris": [
+        "http://localhost:5173/*"
+      ],
+      "webOrigins": [
+        "http://localhost:5173"
+      ],
       "attributes": {
         "pkce.code.challenge.method": "S256",
         "post.logout.redirect.uris": "+"
       },
-      "defaultClientScopes": ["web-origins", "acr", "profile", "roles", "email"],
-      "optionalClientScopes": ["address", "phone", "offline_access"]
+      "defaultClientScopes": [
+        "web-origins",
+        "acr",
+        "profile",
+        "roles",
+        "email"
+      ],
+      "optionalClientScopes": [
+        "address",
+        "phone",
+        "offline_access"
+      ],
+      "protocolMappers": [
+        {
+          "name": "paciente_id",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "config": {
+            "user.attribute": "paciente_id",
+            "claim.name": "paciente_id",
+            "jsonType.label": "String",
+            "access.token.claim": "true",
+            "id.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        }
+      ]
     },
     {
       "clientId": "sigec-pwa",
@@ -50,14 +94,43 @@
       "directAccessGrantsEnabled": true,
       "serviceAccountsEnabled": false,
       "fullScopeAllowed": true,
-      "redirectUris": ["http://localhost:5174/*"],
-      "webOrigins": ["http://localhost:5174"],
+      "redirectUris": [
+        "http://localhost:5174/*"
+      ],
+      "webOrigins": [
+        "http://localhost:5174"
+      ],
       "attributes": {
         "pkce.code.challenge.method": "S256",
         "post.logout.redirect.uris": "+"
       },
-      "defaultClientScopes": ["web-origins", "acr", "profile", "roles", "email"],
-      "optionalClientScopes": ["address", "phone", "offline_access"]
+      "defaultClientScopes": [
+        "web-origins",
+        "acr",
+        "profile",
+        "roles",
+        "email"
+      ],
+      "optionalClientScopes": [
+        "address",
+        "phone",
+        "offline_access"
+      ],
+      "protocolMappers": [
+        {
+          "name": "paciente_id",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "config": {
+            "user.attribute": "paciente_id",
+            "claim.name": "paciente_id",
+            "jsonType.label": "String",
+            "access.token.claim": "true",
+            "id.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        }
+      ]
     },
     {
       "clientId": "sigec-mobile",
@@ -70,14 +143,44 @@
       "directAccessGrantsEnabled": true,
       "serviceAccountsEnabled": false,
       "fullScopeAllowed": true,
-      "redirectUris": ["sigec://callback", "sigec://*"],
-      "webOrigins": ["+"],
+      "redirectUris": [
+        "sigec://callback",
+        "sigec://*"
+      ],
+      "webOrigins": [
+        "+"
+      ],
       "attributes": {
         "pkce.code.challenge.method": "S256",
         "post.logout.redirect.uris": "+"
       },
-      "defaultClientScopes": ["web-origins", "acr", "profile", "roles", "email"],
-      "optionalClientScopes": ["address", "phone", "offline_access"]
+      "defaultClientScopes": [
+        "web-origins",
+        "acr",
+        "profile",
+        "roles",
+        "email"
+      ],
+      "optionalClientScopes": [
+        "address",
+        "phone",
+        "offline_access"
+      ],
+      "protocolMappers": [
+        {
+          "name": "paciente_id",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "config": {
+            "user.attribute": "paciente_id",
+            "claim.name": "paciente_id",
+            "jsonType.label": "String",
+            "access.token.claim": "true",
+            "id.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        }
+      ]
     }
   ],
   "users": [
@@ -88,8 +191,16 @@
       "lastName": "Prueba",
       "enabled": true,
       "emailVerified": true,
-      "credentials": [{ "type": "password", "value": "Sigec123!", "temporary": false }],
-      "realmRoles": ["administrador"]
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Sigec123!",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "administrador"
+      ]
     },
     {
       "username": "medico",
@@ -98,8 +209,16 @@
       "lastName": "Prueba",
       "enabled": true,
       "emailVerified": true,
-      "credentials": [{ "type": "password", "value": "Sigec123!", "temporary": false }],
-      "realmRoles": ["medico"]
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Sigec123!",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "medico"
+      ]
     },
     {
       "username": "recepcion",
@@ -108,8 +227,16 @@
       "lastName": "Prueba",
       "enabled": true,
       "emailVerified": true,
-      "credentials": [{ "type": "password", "value": "Sigec123!", "temporary": false }],
-      "realmRoles": ["recepcion"]
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Sigec123!",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "recepcion"
+      ]
     },
     {
       "username": "caja",
@@ -118,8 +245,16 @@
       "lastName": "Prueba",
       "enabled": true,
       "emailVerified": true,
-      "credentials": [{ "type": "password", "value": "Sigec123!", "temporary": false }],
-      "realmRoles": ["caja"]
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Sigec123!",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "caja"
+      ]
     },
     {
       "username": "paciente",
@@ -128,8 +263,33 @@
       "lastName": "Prueba",
       "enabled": true,
       "emailVerified": true,
-      "credentials": [{ "type": "password", "value": "Sigec123!", "temporary": false }],
-      "realmRoles": ["paciente"]
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Sigec123!",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "paciente"
+      ],
+      "attributes": {
+        "paciente_id": [
+          "a0000000-0000-4000-8000-000000000001"
+        ]
+      }
     }
-  ]
+  ],
+  "components": {
+    "org.keycloak.userprofile.UserProfileProvider": [
+      {
+        "providerId": "declarative-user-profile",
+        "config": {
+          "kc.user.profile.config": [
+            "{\"attributes\": [{\"name\": \"username\", \"displayName\": \"${username}\", \"validations\": {\"length\": {\"min\": 3, \"max\": 255}}, \"permissions\": {\"view\": [\"admin\", \"user\"], \"edit\": [\"admin\", \"user\"]}}, {\"name\": \"email\", \"displayName\": \"${email}\", \"validations\": {\"email\": {}}, \"permissions\": {\"view\": [\"admin\", \"user\"], \"edit\": [\"admin\", \"user\"]}}, {\"name\": \"firstName\", \"displayName\": \"${firstName}\", \"permissions\": {\"view\": [\"admin\", \"user\"], \"edit\": [\"admin\", \"user\"]}}, {\"name\": \"lastName\", \"displayName\": \"${lastName}\", \"permissions\": {\"view\": [\"admin\", \"user\"], \"edit\": [\"admin\", \"user\"]}}, {\"name\": \"paciente_id\", \"displayName\": \"Paciente vinculado\", \"validations\": {\"pattern\": {\"pattern\": \"^[0-9a-fA-F-]{36}$\", \"error-message\": \"UUID\"}}, \"permissions\": {\"view\": [\"admin\"], \"edit\": [\"admin\"]}}]}"
+          ]
+        }
+      }
+    ]
+  }
 }

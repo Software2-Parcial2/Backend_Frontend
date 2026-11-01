@@ -7,15 +7,22 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
-    ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" }
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "gen": "node scripts/gen-contracts.mjs",
     "build": "node scripts/gen-contracts.mjs && tsc -p tsconfig.build.json",
     "test": "vitest run"
   },
   "dependencies": {
+    "ajv": "^8.20.0",
+    "ajv-formats": "^3.0.1",
     "amqplib": "^2.2.0"
   },
   "peerDependencies": {

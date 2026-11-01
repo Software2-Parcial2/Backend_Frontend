@@ -19,3 +19,4 @@ export type { QueueSpec, RetryTier } from './topology.js';
 export { MessagingModule, rabbitUrlFromEnv } from './messaging.module.js';
 export { buildOutboxItem } from './outbox.js';
 export type { OutboxPutItem } from './outbox.js';
+export { hasSchema, validateMessage } from './schema-validator.js';

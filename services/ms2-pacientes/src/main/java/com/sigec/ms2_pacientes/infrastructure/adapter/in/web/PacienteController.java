@@ -42,15 +42,18 @@ public class PacienteController {
 				.body(mapper.toResponse(paciente));
 	}
 
-	// TODO: el rol paciente solo podra leer su propio registro (comparar claim sub con el paciente).
 	@GetMapping
 	@PreAuthorize("hasAnyRole('administrador','recepcion','medico')")
 	public List<PacienteResponse> listar() {
 		return consultarPaciente.listar().stream().map(mapper::toResponse).toList();
 	}
 
+	/**
+	 * El personal (administrador, recepcion, medico) ve cualquier paciente. El rol paciente solo el suyo: el id de la ruta
+	 * debe coincidir con el claim `paciente_id` del token (vinculacion de Keycloak). Si no, 403.
+	 */
 	@GetMapping("/{id}")
-	@PreAuthorize("hasAnyRole('administrador','recepcion','medico')")
+	@PreAuthorize("hasAnyRole('administrador','recepcion','medico') or (hasRole('paciente') and #id.toString() == authentication.token.claims['paciente_id'])")
 	public PacienteResponse porId(@PathVariable UUID id) {
 		return mapper.toResponse(consultarPaciente.porId(id));
 	}

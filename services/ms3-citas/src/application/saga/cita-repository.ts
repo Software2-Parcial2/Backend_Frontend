@@ -1,5 +1,26 @@
 import type { CitaAggregate, HorarioOp, OutboxMessage } from '../../domain/cita.js';
 
+export interface FiltroCitas {
+  /** Citas de un paciente (indice por paciente). */
+  pacienteId?: string;
+  /** Citas de un medico, opcionalmente en un rango de fechaHora (epoch ms; indice por medico/fecha). */
+  medicoId?: string;
+  desde?: number;
+  hasta?: number;
+}
+
+export interface PaginaCitas {
+  items: CitaAggregate[];
+  /** Cursor para la siguiente pagina; null si no hay mas. */
+  siguiente: string | null;
+}
+
+export class CursorInvalidoError extends Error {
+  constructor() {
+    super('cursor invalido');
+  }
+}
+
 /** Cambio atomico: agregado (cita + saga) + operaciones sobre el horario + mensajes del outbox. */
 export interface CitaChange {
   aggregate: CitaAggregate;
@@ -22,5 +43,6 @@ export interface CitaRepository {
   sagasVencidas(now: number, limit?: number): Promise<string[]>;
   /** Citas confirmadas con la notificacion pendiente cuyo proximo intento ya llego. */
   notificacionesPendientes(now: number, limit?: number): Promise<string[]>;
-  listar(limit?: number): Promise<CitaAggregate[]>;
+  /** Busca por indice (nunca Scan), mas recientes primero, con paginacion por cursor opaco. */
+  buscar(filtro: FiltroCitas, limite: number, cursor?: string): Promise<PaginaCitas>;
 }

@@ -104,6 +104,9 @@ describe('AuthModule', () => {
       .set('Authorization', `Bearer ${token}`)
       .expect(200);
     expect(res.body).toEqual({ sub: 'u1', username: 'recepcion', roles: ['recepcion'] });
+    const conPaciente = await sign({ realm_access: { roles: ['paciente'] }, paciente_id: 'a0000000-0000-4000-8000-000000000001' });
+    const r2 = await request(app.getHttpServer()).get('/protegida').set('Authorization', `Bearer ${conPaciente}`).expect(200);
+    expect(r2.body.pacienteId).toBe('a0000000-0000-4000-8000-000000000001');
   });
 
   it('@Roles: 403 sin el rol y 200 con el rol', async () => {

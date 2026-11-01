@@ -121,6 +121,29 @@ describe.skipIf(!available)('RabbitMQ (integracion)', () => {
     expect(calls).toBe(0);
   });
 
+  it('un mensaje que viola el schema de su tipo va a la DLQ con el motivo', async () => {
+    const spec = newSpec();
+    let calls = 0;
+    const consumer = new RabbitConsumer(connection, { spec, tiers: TIERS, handler: async () => void calls++ });
+    consumers.push(consumer);
+    await consumer.start();
+    const malo = createEnvelope({ type: 'facturacion.cobro.anular', correlationId: randomUUID(), payload: { citaId: 'no-uuid' } });
+    // Directo a la cola de prueba (exchange por defecto): jamas por sigec.saga, o llegaria a las colas reales de MS6.
+    await publisher.publishRaw('', spec.name, Buffer.from(JSON.stringify(malo)));
+    await waitFor(async () => (await depth(`${spec.name}.dlq`)) === 1);
+    expect(calls).toBe(0);
+    const c = await amqp.connect(url);
+    const ch = await c.createChannel();
+    const m = await ch.get(`${spec.name}.dlq`, { noAck: true });
+    await c.close();
+    expect(String(m && m.properties.headers?.['x-last-error'])).toMatch(/citaId.*uuid/);
+  });
+
+  it('el publicador rechaza un mensaje que viola el contrato antes de enviarlo', async () => {
+    const malo = createEnvelope({ type: 'facturacion.cobro.anular', correlationId: randomUUID(), payload: { citaId: 'no-uuid', motivo: 'x' } });
+    await expect(publisher.publish(EXCHANGE_SAGA, malo)).rejects.toThrow(/citaId/);
+  });
+
   it('el publicador rechaza un sobre invalido antes de enviarlo', async () => {
     await expect(publisher.publish(EXCHANGE_SAGA, { id: 'x' } as never)).rejects.toThrow(/Sobre invalido/);
   });

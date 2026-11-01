@@ -53,8 +53,8 @@ class MemoryRepo implements CitaRepository {
   async notificacionesPendientes(now: number) {
     return [...this.citas.values()].filter((c) => c.notificacion.estado === 'PENDIENTE' && (c.notificacion.proximoIntento ?? Infinity) <= now).map((c) => c.citaId);
   }
-  async listar() {
-    return [...this.citas.values()];
+  async buscar() {
+    return { items: [...this.citas.values()], siguiente: null };
   }
 }
 

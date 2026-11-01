@@ -122,6 +122,13 @@ Formato `tipo(ámbito): descripción en imperativo`, en minúsculas y sin punto 
 `scripts/dev-services.sh` levanta/para servicios por puerto (`start|stop|status [gateway ms2 ms3 ms4 ms5 ms6 ms7 ms8]`, `poller-start|poller-stop`,
 `workers-start|workers-stop` para el relay y el consumidor de MS6). Logs en `/tmp/sigec-logs`. `scripts/e2e-saga.sh` arranca y detiene lo que necesita.
 
+- **Reprocesar una DLQ:** `make dlq-replay QUEUE=ms6.saga.comandos [LIMIT=10]` mueve mensajes de `<cola>.dlq` a `<cola>` conservando el id del sobre.
+- **Rol paciente:** el token lleva el claim `paciente_id` (mapper en el realm). Un paciente solo ve/pide sus citas (MS3), su registro (MS2) y sus facturas (MS6);
+  el acceso ajeno responde 404 (citas) o 403. Los servicios Nest lo leen en `AuthUser.pacienteId`.
+- **Listados:** nunca `Scan`; consultas por indice (`gsi2` paciente, `gsi3` medico/fecha, `gsi4` general) con `limite` y `cursor` opaco (validado contra la particion).
+- **Validacion de mensajes:** en Nest cada mensaje se valida con Ajv contra `contracts/events/<tipo>.schema.json` al publicar y al consumir.
+  Nunca publiques pruebas de mensajes invalidos por `sigec.saga`/`sigec.eventos`: llegan a las colas reales (usa el exchange por defecto hacia una cola de prueba).
+
 ## Trampas conocidas
 
 - **Paquetes compartidos de pnpm** (`injectWorkspacePackages`): los servicios usan una copia. `pnpm build`/`test` de un servicio la resincronizan,

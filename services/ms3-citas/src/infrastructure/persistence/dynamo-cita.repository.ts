@@ -2,12 +2,11 @@ import { TransactionCanceledException } from '@aws-sdk/client-dynamodb';
 import {
   GetCommand,
   QueryCommand,
-  ScanCommand,
   TransactWriteCommand,
   type DynamoDBDocumentClient,
 } from '@aws-sdk/lib-dynamodb';
 import { buildOutboxItem, createEnvelope } from '@sigec/messaging-nest';
-import type { CitaChange, CitaRepository } from '../../application/saga/cita-repository.js';
+import { CursorInvalidoError, type CitaChange, type CitaRepository, type FiltroCitas, type PaginaCitas } from '../../application/saga/cita-repository.js';
 import {
   ConcurrentUpdateError,
   HorarioNoDisponibleError,
@@ -151,19 +150,68 @@ export class DynamoCitaRepository implements CitaRepository {
     return (res.Items ?? []).map((i) => String(i.pk).replace('CITA#', ''));
   }
 
-  async listar(limit = 100): Promise<CitaAggregate[]> {
+  /**
+   * Consulta por indice: paciente (gsi2), medico+fecha (gsi3) o todas (gsi4), mas recientes primero.
+   * El cursor es la LastEvaluatedKey codificada; se valida que pertenezca a la particion consultada para que un cursor
+   * manipulado no permita leer las citas de otro paciente o medico.
+   */
+  async buscar(filtro: FiltroCitas, limite: number, cursor?: string): Promise<PaginaCitas> {
+    let index: 'gsi2' | 'gsi3' | 'gsi4';
+    let partition: string;
+    let range: { lo: number; hi: number } | undefined;
+    let forward = false;
+    if (filtro.pacienteId) {
+      [index, partition] = ['gsi2', `PACIENTE#${filtro.pacienteId}`];
+    } else if (filtro.medicoId) {
+      [index, partition] = ['gsi3', `MEDICO#${filtro.medicoId}`];
+      if (filtro.desde !== undefined || filtro.hasta !== undefined) range = { lo: filtro.desde ?? 0, hi: filtro.hasta ?? Number.MAX_SAFE_INTEGER };
+      forward = true; // agenda del medico: por fecha de la cita ascendente
+    } else {
+      [index, partition] = ['gsi4', 'CITA'];
+    }
+    const exclusiveStartKey = cursor ? decodeCursor(cursor, index, partition) : undefined;
     const res = await this.doc.send(
-      new ScanCommand({ TableName: this.tables.citas, FilterExpression: 'sk = :sk', ExpressionAttributeValues: { ':sk': 'CITA' } }),
+      new QueryCommand({
+        TableName: this.tables.citas,
+        IndexName: index,
+        KeyConditionExpression: range ? `${index}pk = :p AND ${index}sk BETWEEN :lo AND :hi` : `${index}pk = :p`,
+        ExpressionAttributeValues: { ':p': partition, ...(range ? { ':lo': range.lo, ':hi': range.hi } : {}) },
+        ScanIndexForward: forward,
+        Limit: limite,
+        ExclusiveStartKey: exclusiveStartKey,
+      }),
     );
-    return (res.Items ?? [])
-      .map(toAggregate)
-      .sort((a, b) => b.createdAt - a.createdAt)
-      .slice(0, limit);
+    return {
+      items: (res.Items ?? []).map(toAggregate),
+      siguiente: res.LastEvaluatedKey ? Buffer.from(JSON.stringify(res.LastEvaluatedKey)).toString('base64url') : null,
+    };
+  }
+}
+
+function decodeCursor(cursor: string, index: string, partition: string): Record<string, unknown> {
+  try {
+    const key = JSON.parse(Buffer.from(cursor, 'base64url').toString('utf8')) as Record<string, unknown>;
+    if (key[`${index}pk`] !== partition || typeof key.pk !== 'string' || !key.pk.startsWith('CITA#')) throw new Error();
+    return key;
+  } catch {
+    throw new CursorInvalidoError();
   }
 }
 
 /** Indice disperso: solo las SAGAs en curso y las notificaciones pendientes tienen gsi1pk. */
-function indexKeys(a: CitaAggregate): { gsi1pk?: string; gsi1sk?: number } {
+function indexKeys(a: CitaAggregate): Record<string, string | number> {
+  const comunes = {
+    gsi2pk: `PACIENTE#${a.input.pacienteId}`,
+    gsi2sk: a.createdAt,
+    gsi3pk: `MEDICO#${a.input.medicoId}`,
+    gsi3sk: Date.parse(a.input.fechaHora),
+    gsi4pk: 'CITA',
+    gsi4sk: a.createdAt,
+  };
+  return { ...comunes, ...sparse(a) };
+}
+
+function sparse(a: CitaAggregate): { gsi1pk?: string; gsi1sk?: number } {
   if (a.saga.estado === 'EN_CURSO' && a.saga.deadline !== null) return { gsi1pk: 'SAGA#ACTIVA', gsi1sk: a.saga.deadline };
   if (a.notificacion.estado === 'PENDIENTE' && a.notificacion.proximoIntento !== undefined)
     return { gsi1pk: 'NOTIF#PENDIENTE', gsi1sk: a.notificacion.proximoIntento };
@@ -171,6 +219,6 @@ function indexKeys(a: CitaAggregate): { gsi1pk?: string; gsi1sk?: number } {
 }
 
 function toAggregate(item: Record<string, unknown>): CitaAggregate {
-  const { pk: _pk, sk: _sk, gsi1pk: _g1, gsi1sk: _g2, ...rest } = item;
+  const rest = Object.fromEntries(Object.entries(item).filter(([k]) => k !== 'pk' && k !== 'sk' && !k.startsWith('gsi')));
   return rest as unknown as CitaAggregate;
 }

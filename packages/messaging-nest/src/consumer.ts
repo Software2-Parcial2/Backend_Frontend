@@ -1,6 +1,7 @@
 import type { ConfirmChannel, ConsumeMessage } from 'amqplib';
 import type { RabbitConnection } from './connection.js';
-import { type Envelope, InvalidEnvelopeError, validateEnvelope } from './envelope.js';
+import { type Envelope, InvalidEnvelopeError } from './envelope.js';
+import { validateMessage } from './schema-validator.js';
 import { RabbitPublisher } from './publisher.js';
 import { declareConsumerQueue, EXCHANGE_DLX, EXCHANGE_RETRY, type QueueSpec, type RetryTier, TOPOLOGY } from './topology.js';
 
@@ -110,7 +111,7 @@ export class RabbitConsumer {
     const retries = Number(msg.properties.headers?.['x-retries'] ?? 0);
     let envelope: Envelope;
     try {
-      envelope = validateEnvelope(JSON.parse(msg.content.toString('utf8')));
+      envelope = validateMessage(JSON.parse(msg.content.toString('utf8')));
     } catch (e) {
       const reason = e instanceof InvalidEnvelopeError ? e.message : 'no es JSON valido';
       this.log(`mensaje invalido -> DLQ (${reason})`);

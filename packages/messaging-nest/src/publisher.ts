@@ -1,6 +1,7 @@
 import type { Options } from 'amqplib';
 import type { RabbitConnection } from './connection.js';
-import { type Envelope, validateEnvelope } from './envelope.js';
+import type { Envelope } from './envelope.js';
+import { validateMessage } from './schema-validator.js';
 import { declareExchanges } from './topology.js';
 
 /**
@@ -13,7 +14,7 @@ export class RabbitPublisher {
   constructor(private readonly connection: RabbitConnection) {}
 
   async publish(exchange: string, envelope: Envelope, headers: Record<string, unknown> = {}): Promise<void> {
-    validateEnvelope(envelope);
+    validateMessage(envelope); // un productor nunca emite un mensaje que viole el contrato
     await this.publishRaw(exchange, envelope.type, Buffer.from(JSON.stringify(envelope)), {
       messageId: envelope.id,
       type: envelope.type,

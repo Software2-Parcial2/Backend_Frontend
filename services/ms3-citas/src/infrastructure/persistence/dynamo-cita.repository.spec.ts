@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { CreateTableCommand, DeleteTableCommand, DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, QueryCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
 import { createEnvelope } from '@sigec/messaging-nest';
+import { CursorInvalidoError } from '../../application/saga/cita-repository.js';
 import {
   ConcurrentUpdateError,
   HorarioNoDisponibleError,
@@ -28,23 +29,23 @@ const available = await (async () => {
         AttributeDefinitions: [
           { AttributeName: 'pk', AttributeType: 'S' },
           { AttributeName: 'sk', AttributeType: 'S' },
-          { AttributeName: 'gsi1pk', AttributeType: 'S' },
-          { AttributeName: 'gsi1sk', AttributeType: 'N' },
+          ...['gsi1', 'gsi2', 'gsi3', 'gsi4'].flatMap((n) => [
+            { AttributeName: `${n}pk`, AttributeType: 'S' as const },
+            { AttributeName: `${n}sk`, AttributeType: 'N' as const },
+          ]),
         ],
         KeySchema: [
           { AttributeName: 'pk', KeyType: 'HASH' },
           { AttributeName: 'sk', KeyType: 'RANGE' },
         ],
-        GlobalSecondaryIndexes: [
-          {
-            IndexName: 'gsi1',
-            KeySchema: [
-              { AttributeName: 'gsi1pk', KeyType: 'HASH' },
-              { AttributeName: 'gsi1sk', KeyType: 'RANGE' },
-            ],
-            Projection: { ProjectionType: 'KEYS_ONLY' },
-          },
-        ],
+        GlobalSecondaryIndexes: ['gsi1', 'gsi2', 'gsi3', 'gsi4'].map((n) => ({
+          IndexName: n,
+          KeySchema: [
+            { AttributeName: `${n}pk`, KeyType: 'HASH' as const },
+            { AttributeName: `${n}sk`, KeyType: 'RANGE' as const },
+          ],
+          Projection: { ProjectionType: 'ALL' as const },
+        })),
         BillingMode: 'PAY_PER_REQUEST',
       }),
     );
@@ -193,5 +194,61 @@ describe.skipIf(!available)('DynamoCitaRepository (DynamoDB Local)', () => {
     expect(createEnvelope({ type: 'a.b', correlationId: randomUUID(), payload: {} })).toBeDefined();
     expect(env).toMatchObject({ version: 1, causationId: null });
     expect(a).toBeDefined();
+  });
+
+  describe('buscar (por indice, con cursor)', () => {
+    const crearPara = async (pacienteId: string, medicoId: string, h: number) => {
+      const t = iniciar({ pacienteId, medicoId, especialidad: 'general', fechaHora: fecha(h) }, deps(now));
+      await repo.aplicar({ aggregate: t.aggregate, expectedVersion: null, horarioOps: t.horarioOps, messages: [] });
+      now += 1; // createdAt distinto para ordenar
+      return t.aggregate.citaId;
+    };
+
+    it('por paciente devuelve solo las suyas, mas recientes primero, y pagina con cursor sin repetir', async () => {
+      const paciente = randomUUID();
+      const otro = randomUUID();
+      const ids = [];
+      for (let i = 0; i < 5; i++) ids.push(await crearPara(paciente, medico(), 10 + i));
+      await crearPara(otro, medico(), 30);
+
+      const p1 = await repo.buscar({ pacienteId: paciente }, 2);
+      expect(p1.items.map((c) => c.citaId)).toEqual([ids[4], ids[3]]);
+      expect(p1.siguiente).not.toBeNull();
+      const p2 = await repo.buscar({ pacienteId: paciente }, 2, p1.siguiente!);
+      expect(p2.items.map((c) => c.citaId)).toEqual([ids[2], ids[1]]);
+      const p3 = await repo.buscar({ pacienteId: paciente }, 2, p2.siguiente!);
+      expect(p3.items.map((c) => c.citaId)).toEqual([ids[0]]);
+      expect(p3.siguiente).toBeNull();
+      expect(p1.items.every((c) => c.input.pacienteId === paciente)).toBe(true);
+    });
+
+    it('por medico devuelve la agenda en orden de fecha y respeta el rango', async () => {
+      const m = medico();
+      const a = await crearPara(randomUUID(), m, 50);
+      const b = await crearPara(randomUUID(), m, 52);
+      const c = await crearPara(randomUUID(), m, 54);
+      const todas = await repo.buscar({ medicoId: m }, 10);
+      expect(todas.items.map((x) => x.citaId)).toEqual([a, b, c]);
+      const rango = await repo.buscar({ medicoId: m, desde: Date.parse(fecha(51)), hasta: Date.parse(fecha(53)) }, 10);
+      expect(rango.items.map((x) => x.citaId)).toEqual([b]);
+    });
+
+    it('sin filtro usa el indice general', async () => {
+      const id = await crearPara(randomUUID(), medico(), 60);
+      const pagina = await repo.buscar({}, 100);
+      expect(pagina.items.map((c) => c.citaId)).toContain(id);
+    });
+
+    it('un cursor manipulado hacia otra particion se rechaza (no se leen citas ajenas)', async () => {
+      const ana = randomUUID();
+      const luis = randomUUID();
+      for (let i = 0; i < 3; i++) await crearPara(ana, medico(), 70 + i);
+      await crearPara(luis, medico(), 80);
+      const pagina = await repo.buscar({ pacienteId: ana }, 1);
+      const key = JSON.parse(Buffer.from(pagina.siguiente!, 'base64url').toString());
+      const manipulado = Buffer.from(JSON.stringify({ ...key, gsi2pk: `PACIENTE#${luis}` })).toString('base64url');
+      await expect(repo.buscar({ pacienteId: ana }, 1, manipulado)).rejects.toBeInstanceOf(CursorInvalidoError);
+      await expect(repo.buscar({ pacienteId: ana }, 1, 'basura')).rejects.toBeInstanceOf(CursorInvalidoError);
+    });
   });
 });

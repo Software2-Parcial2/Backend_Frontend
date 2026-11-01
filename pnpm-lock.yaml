@@ -257,6 +257,12 @@ importers:
 
   packages/messaging-nest:
     dependencies:
+      ajv:
+        specifier: ^8.20.0
+        version: 8.20.0
+      ajv-formats:
+        specifier: ^3.0.1
+        version: 3.0.1(ajv@8.20.0)
       amqplib:
         specifier: ^2.2.0
         version: 2.2.0
@@ -293,6 +299,9 @@ importers:
       '@aws-sdk/client-dynamodb':
         specifier: ^3.1161.0
         version: 3.1161.0
+      '@aws-sdk/lib-dynamodb':
+        specifier: ^3.1161.0
+        version: 3.1161.0(@aws-sdk/client-dynamodb@3.1161.0)
       amqplib:
         specifier: ^2.2.0
         version: 2.2.0
@@ -6230,7 +6239,7 @@ snapshots:
   '@angular-devkit/core@22.2.3(chokidar@5.0.0)':
     dependencies:
       ajv: 8.20.0
-      ajv-formats: 3.0.1
+      ajv-formats: 3.0.1(ajv@8.20.0)
       jsonc-parser: 3.3.1
       picomatch: 4.0.7
       rxjs: 7.8.2
@@ -6241,7 +6250,7 @@ snapshots:
   '@angular-devkit/core@22.2.4(chokidar@5.0.0)':
     dependencies:
       ajv: 8.20.0
-      ajv-formats: 3.0.1
+      ajv-formats: 3.0.1(ajv@8.20.0)
       jsonc-parser: 3.3.1
       picomatch: 4.0.7
       rxjs: 7.8.2
@@ -7604,7 +7613,7 @@ snapshots:
     dependencies:
       '@hono/node-server': 2.1.5(hono@4.13.14)
       ajv: 8.20.0
-      ajv-formats: 3.0.1
+      ajv-formats: 3.0.1(ajv@8.20.0)
       content-type: 1.0.5
       cors: 2.8.6
       cross-spawn: 7.0.6
@@ -8469,6 +8478,8 @@ snapshots:
   '@sigec/messaging-nest@file:packages/messaging-nest(@nestjs/common@12.3.2(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@7.2.0))(reflect-metadata@0.2.2)':
     dependencies:
       '@nestjs/common': 12.3.2(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@7.2.0)
+      ajv: 8.20.0
+      ajv-formats: 3.0.1(ajv@8.20.0)
       amqplib: 2.2.0
       reflect-metadata: 0.2.2
 
@@ -9027,8 +9038,8 @@ snapshots:
     dependencies:
       ajv: 8.20.0
 
-  ajv-formats@3.0.1:
-    dependencies:
+  ajv-formats@3.0.1(ajv@8.20.0):
+    optionalDependencies:
       ajv: 8.20.0
 
   ajv-keywords@5.1.0(ajv@8.20.0):

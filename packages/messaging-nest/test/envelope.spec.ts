@@ -48,3 +48,36 @@ describe('buildOutboxItem', () => {
     expect(() => buildOutboxItem('outbox', { id: 'x' } as never)).toThrow(InvalidEnvelopeError);
   });
 });
+
+import { hasSchema, validateMessage } from '../src/index.js';
+
+describe('validateMessage (Ajv + contracts/events)', () => {
+  const uuid = () => randomUUID();
+  const cmd = (payload: Record<string, unknown>, type = 'facturacion.cobro-provisional.solicitar') => createEnvelope({ type, correlationId: uuid(), payload });
+  const ok = { citaId: uuid(), pacienteId: uuid(), medicoId: uuid(), especialidad: 'general', fechaHora: '2026-12-01T10:00:00.000Z' };
+
+  it('conoce los 12 tipos del contrato', () => {
+    for (const t of ['facturacion.cobro-provisional.solicitar', 'facturacion.cobro.anular', 'facturacion.cobro.confirmar', 'notificaciones.cita-confirmada.enviar', 'notificaciones.cita-cancelada.enviar', 'facturacion.cobro-provisional.registrado', 'facturacion.cobro-provisional.rechazado', 'facturacion.cobro.anulado', 'notificaciones.cita-confirmada.enviada', 'notificaciones.cita-confirmada.fallida', 'paciente.creado', 'factura.creada'])
+      expect(hasSchema(t), t).toBe(true);
+    expect(hasSchema('no.existe.este')).toBe(false);
+  });
+
+  it('acepta un payload valido y los tipos sin schema (solo estructura)', () => {
+    expect(validateMessage(cmd(ok)).type).toBe('facturacion.cobro-provisional.solicitar');
+    expect(validateMessage(cmd({ x: 1 }, 'cita.reservada')).type).toBe('cita.reservada');
+  });
+
+  it.each([
+    ['falta un campo requerido', { ...ok, especialidad: undefined }, /especialidad/],
+    ['uuid invalido', { ...ok, citaId: 'no-uuid' }, /citaId.*uuid/],
+    ['fecha invalida', { ...ok, fechaHora: 'ayer' }, /fechaHora.*date-time/],
+    ['propiedad no permitida', { ...ok, extra: 1 }, /additional properties/],
+  ])('rechaza con el motivo: %s', (_n, payload, motivo) => {
+    expect(() => validateMessage(cmd(payload as Record<string, unknown>))).toThrow(InvalidEnvelopeError);
+    expect(() => validateMessage(cmd(payload as Record<string, unknown>))).toThrow(motivo);
+  });
+
+  it('cobro.anulado acepta facturaId opcional', () => {
+    expect(() => validateMessage(cmd({ citaId: uuid() }, 'facturacion.cobro.anulado'))).not.toThrow();
+  });
+});

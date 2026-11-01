@@ -11,9 +11,20 @@ use Illuminate\Support\Str;
 
 class FacturaController extends Controller
 {
-    public function index(): JsonResponse
+    /** El personal (caja, administrador, recepcion) ve todas; un paciente solo las suyas (claim paciente_id). */
+    public function index(Request $request): JsonResponse
     {
-        return response()->json(Factura::query()->orderByDesc('created_at')->limit(100)->get());
+        $query = Factura::query()->orderByDesc('created_at')->limit(100);
+        $esPersonal = array_intersect(['caja', 'administrador', 'recepcion'], (array) $request->attributes->get('roles', [])) !== [];
+        if (! $esPersonal) {
+            $pacienteId = $request->attributes->get('paciente_id');
+            if (! $pacienteId) {
+                return response()->json(['message' => 'El usuario no esta vinculado a un paciente'], 403);
+            }
+            $query->where('paciente_id', $pacienteId);
+        }
+
+        return response()->json($query->get());
     }
 
     /** Crea una factura PENDIENTE y escribe el evento en el outbox en la misma transaccion. */

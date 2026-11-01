@@ -1,4 +1,5 @@
-import { type Envelope, validateEnvelope } from './envelope.js';
+import type { Envelope } from './envelope.js';
+import { validateMessage } from './schema-validator.js';
 import { EXCHANGE_EVENTOS } from './topology.js';
 
 /** Elemento `Put` listo para incluir en un TransactWriteItems (lib-dynamodb `TransactWriteCommand`). */
@@ -22,7 +23,7 @@ export interface OutboxPutItem {
  * publica el sobre en RabbitMQ al menos una vez. `pk` = id del sobre => los consumidores deduplican por id.
  */
 export function buildOutboxItem(tableName: string, envelope: Envelope, exchange: string = EXCHANGE_EVENTOS): OutboxPutItem {
-  validateEnvelope(envelope);
+  validateMessage(envelope);
   return {
     Put: {
       TableName: tableName,

@@ -40,7 +40,7 @@ const key = (pk, sk) => ({
 const tables = [
   // --- MS3 (citas / orquestador de la SAGA) ---
   // gsi1 (disperso): SAGAs en curso por plazo y notificaciones pendientes por proximo intento.
-  { name: 'citas', ...key('pk', 'sk'), gsi1: true },
+  { name: 'citas', ...key('pk', 'sk'), gsis: true },
   { name: 'idempotency_keys', ...key('pk'), ttl: 'expiresAt' },
   { name: 'outbox', ...key('pk'), stream: true },
   { name: 'processed_messages', ...key('pk'), ttl: 'expiresAt' },
@@ -51,18 +51,29 @@ const tables = [
   { name: 'ms8_processed_messages', ...key('pk'), ttl: 'expiresAt' },
 ];
 
-const GSI1 = {
-  IndexName: 'gsi1',
-  KeySchema: [
-    { AttributeName: 'gsi1pk', KeyType: 'HASH' },
-    { AttributeName: 'gsi1sk', KeyType: 'RANGE' },
+/**
+ * Indices de la tabla `citas` (todos se alimentan desde el item CITA#<id>/CITA):
+ *  gsi1  SAGA#ACTIVA / NOTIF#PENDIENTE por plazo (disperso)        gsi1sk = epoch ms
+ *  gsi2  PACIENTE#<id>  por fecha de creacion                      gsi2sk = epoch ms
+ *  gsi3  MEDICO#<id>    por fecha/hora de la cita                  gsi3sk = epoch ms
+ *  gsi4  CITA (todas)   por fecha de creacion (listado general)    gsi4sk = epoch ms
+ */
+const GSIS = ['gsi1', 'gsi2', 'gsi3', 'gsi4'].map((n) => ({
+  name: n,
+  attrs: [
+    { AttributeName: `${n}pk`, AttributeType: 'S' },
+    { AttributeName: `${n}sk`, AttributeType: 'N' },
   ],
-  Projection: { ProjectionType: 'KEYS_ONLY' },
-};
-const GSI1_ATTRS = [
-  { AttributeName: 'gsi1pk', AttributeType: 'S' },
-  { AttributeName: 'gsi1sk', AttributeType: 'N' },
-];
+  def: {
+    IndexName: n,
+    KeySchema: [
+      { AttributeName: `${n}pk`, KeyType: 'HASH' },
+      { AttributeName: `${n}sk`, KeyType: 'RANGE' },
+    ],
+    Projection: { ProjectionType: n === 'gsi1' ? 'KEYS_ONLY' : 'ALL' },
+  },
+}));
+const ALL_GSI_ATTRS = GSIS.flatMap((g) => g.attrs);
 
 async function describe(name) {
   try {
@@ -80,9 +91,9 @@ for (const t of tables) {
     await client.send(
       new CreateTableCommand({
         TableName: t.name,
-        AttributeDefinitions: t.gsi1 ? [...t.AttributeDefinitions, ...GSI1_ATTRS] : t.AttributeDefinitions,
+        AttributeDefinitions: t.gsis ? [...t.AttributeDefinitions, ...ALL_GSI_ATTRS] : t.AttributeDefinitions,
         KeySchema: t.KeySchema,
-        ...(t.gsi1 ? { GlobalSecondaryIndexes: [GSI1] } : {}),
+        ...(t.gsis ? { GlobalSecondaryIndexes: GSIS.map((g) => g.def) } : {}),
         BillingMode: 'PAY_PER_REQUEST',
         ...(t.stream ? { StreamSpecification: { StreamEnabled: true, StreamViewType: 'NEW_IMAGE' } } : {}),
       }),
@@ -97,15 +108,24 @@ for (const t of tables) {
     );
     action = 'stream activado';
   }
-  if (t.gsi1 && table && !(table.GlobalSecondaryIndexes ?? []).some((g) => g.IndexName === 'gsi1')) {
-    await client.send(
-      new UpdateTableCommand({
-        TableName: t.name,
-        AttributeDefinitions: [...t.AttributeDefinitions, ...GSI1_ATTRS],
-        GlobalSecondaryIndexUpdates: [{ Create: GSI1 }],
-      }),
-    );
-    action = 'indice gsi1 creado';
+  if (t.gsis && table) {
+    for (const g of GSIS) {
+      if ((table.GlobalSecondaryIndexes ?? []).some((x) => x.IndexName === g.name)) continue;
+      await client.send(
+        new UpdateTableCommand({
+          TableName: t.name,
+          AttributeDefinitions: [...t.AttributeDefinitions, ...g.attrs],
+          GlobalSecondaryIndexUpdates: [{ Create: g.def }],
+        }),
+      );
+      action += ` indice ${g.name} creado;`;
+      // DynamoDB solo permite crear un indice a la vez: se espera a que quede ACTIVE.
+      for (let i = 0; i < 60; i++) {
+        const d = await describe(t.name);
+        if (d?.TableStatus === 'ACTIVE' && (d.GlobalSecondaryIndexes ?? []).every((x) => x.IndexStatus === 'ACTIVE')) break;
+        await new Promise((r) => setTimeout(r, 500));
+      }
+    }
   }
   if (t.ttl) {
     const ttl = (await client.send(new DescribeTimeToLiveCommand({ TableName: t.name }))).TimeToLiveDescription;
@@ -120,4 +140,41 @@ for (const t of tables) {
     }
   }
   console.log(`${t.name.padEnd(24)} ${action}`);
+}
+
+// Relleno de los indices gsi2..gsi4 en citas creadas antes de que existieran (idempotente).
+{
+  const { DynamoDBDocumentClient, ScanCommand, UpdateCommand } = await import('@aws-sdk/lib-dynamodb');
+  const doc = DynamoDBDocumentClient.from(client);
+  let key;
+  let n = 0;
+  do {
+    const page = await doc.send(
+      new ScanCommand({
+        TableName: 'citas',
+        FilterExpression: 'sk = :sk AND attribute_not_exists(gsi4pk)',
+        ExpressionAttributeValues: { ':sk': 'CITA' },
+        ExclusiveStartKey: key,
+      }),
+    );
+    for (const c of page.Items ?? []) {
+      await doc.send(
+        new UpdateCommand({
+          TableName: 'citas',
+          Key: { pk: c.pk, sk: c.sk },
+          UpdateExpression: 'SET gsi2pk = :a, gsi2sk = :b, gsi3pk = :c, gsi3sk = :d, gsi4pk = :e, gsi4sk = :b',
+          ExpressionAttributeValues: {
+            ':a': `PACIENTE#${c.input.pacienteId}`,
+            ':b': c.createdAt,
+            ':c': `MEDICO#${c.input.medicoId}`,
+            ':d': Date.parse(c.input.fechaHora),
+            ':e': 'CITA',
+          },
+        }),
+      );
+      n++;
+    }
+    key = page.LastEvaluatedKey;
+  } while (key);
+  if (n > 0) console.log(`citas                    ${n} citas antiguas indexadas`);
 }

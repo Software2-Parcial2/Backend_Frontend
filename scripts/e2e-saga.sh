@@ -7,10 +7,11 @@
 #   (e) la reserva vence (TTL corto): el horario se puede volver a reservar; la cita que lo perdio queda ANULADA
 #   (f) MS6 caido durante un paso: reintentos, compensacion (CANCELADA, horario LIBRE) y cobro anulado al volver
 #   (g) fallo de notificacion: la cita NO se anula (CONFIRMADA con notificacion PENDIENTE)
+#   (h) rol paciente: solo ve/pide sus citas y facturas; listados por indice con cursor
 #
 # Requisitos: docker compose up -d, make dynamodb-init, make rabbitmq-declare, pnpm install y las migraciones de MS6.
 # Arranca y detiene gateway, ms3, ms8, el poller del outbox y los procesos de MS6 (scripts/dev-services.sh).
-# Duracion aproximada: 3-4 minutos.
+# Duracion aproximada:  4-5 minutos.
 set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
@@ -66,7 +67,7 @@ eventos() { cita_json "$1" | python3 -c 'import sys,json;print(",".join(p["event
 restart_ms3() { "$DEV" stop ms3 >/dev/null 2>&1; sleep 2; env "$@" "$DEV" start ms3 >/dev/null 2>&1; }
 
 cleanup() {
-  "$DEV" stop gateway ms3 ms8 >/dev/null 2>&1
+  "$DEV" stop gateway ms3 ms8 ms6 >/dev/null 2>&1
   "$DEV" workers-stop >/dev/null 2>&1
   "$DEV" poller-stop >/dev/null 2>&1
 }
@@ -75,7 +76,7 @@ trap cleanup EXIT
 section "Preparacion"
 cleanup
 export NOTIF_FAIL_PACIENTES="$NOTIF_FALLA"
-"$DEV" start gateway ms8 | sed 's/^/  /'
+"$DEV" start gateway ms8 ms6 | sed 's/^/  /'
 restart_ms3 SAGA_STEP_TIMEOUT_MS=30000 SAGA_RESERVA_TTL_SEGUNDOS=600
 "$DEV" poller-start | sed 's/^/  /'
 "$DEV" workers-start | sed 's/^/  /'
@@ -103,7 +104,7 @@ section "(b) El mismo horario no se puede reservar dos veces"
 check "segunda reserva del horario (a) -> 409" 409 "$(f "$(post_cita "$TR" "$(uuid)" "$(body "$(uuid)" "$M" general "$H")")" 1)"
 M2=$(nuevo_medico); H2=$(fecha 6)
 ( post_cita "$TR" "$(uuid)" "$(body "$(uuid)" "$M2" general "$H2")" >/tmp/e2e.par.1 ) &
-( post_cita "$TP" "$(uuid)" "$(body "$(uuid)" "$M2" general "$H2")" >/tmp/e2e.par.2 ) &
+( post_cita "$TR" "$(uuid)" "$(body "$(uuid)" "$M2" general "$H2")" >/tmp/e2e.par.2 ) &
 wait
 check "dos peticiones simultaneas: una 202 y otra 409" "202,409" "$(cat /tmp/e2e.par.1 /tmp/e2e.par.2 | cut -d'|' -f1 | sort | paste -sd,)"
 rm -f /tmp/e2e.par.*
@@ -184,6 +185,40 @@ check "al volver MS6 no queda ningun cobro vigente de Z" ok "$(for _ in $(seq 1 
 check "...y el cobro figura ANULADO" ANULADA "$(facturas_cita "$Z")"
 check "MS3 confirma la anulacion del cobro" CONFIRMADA "$(for _ in $(seq 1 30); do v=$(cita_field "$Z" saga.anulacionCobro); [ "$v" = CONFIRMADA ] && break; sleep 1; done; echo "$v")"
 check "el horario sigue LIBRE" LIBRE "$(horario "$M6" "$H6")"
+
+# ---------------------------------------------------------------------------------------------------
+section "(h) Rol paciente: solo ve y pide sus propias citas (claim paciente_id); listados por indice con cursor"
+restart_ms3 SAGA_STEP_TIMEOUT_MS=30000 SAGA_RESERVA_TTL_SEGUNDOS=600
+"$DEV" workers-start >/dev/null 2>&1
+MIO="a0000000-0000-4000-8000-000000000001"   # paciente_id del usuario `paciente` en el realm
+MH=$(nuevo_medico)
+get_as() { curl -s -o /tmp/e2e.get -w '%{http_code}' "$GW$2" -H "Authorization: Bearer $1"; }
+R=$(post_cita "$TP" "$(uuid)" "$(body "$MIO" "$MH" general "$(fecha 40)")"); P1=$(f "$R" 3)
+check "paciente pide cita para si mismo -> 202" 202 "$(f "$R" 1)"
+check "paciente pide cita para OTRO paciente -> 403" 403 "$(f "$(post_cita "$TP" "$(uuid)" "$(body "$(uuid)" "$MH" general "$(fecha 41)")")" 1)"
+R=$(post_cita "$TP" "$(uuid)" "$(body "$MIO" "$MH" general "$(fecha 42)")"); P2=$(f "$R" 3)
+wait_cita "$P1" estado CONFIRMADA 60; wait_cita "$P2" estado CONFIRMADA 60
+check "paciente ve su cita (200)" 200 "$(get_as "$TP" /api/citas/$P1)"
+check "paciente ve la cita de otro (a) -> 404, no 403" 404 "$(get_as "$TP" /api/citas/$A)"
+check "recepcion si ve la cita del paciente (200)" 200 "$(get_as "$TR" /api/citas/$P1)"
+get_as "$TP" "/api/citas?limite=50" >/dev/null
+check "el listado del paciente solo contiene SUS citas" "ok" "$(python3 -c "import json;d=json.load(open('/tmp/e2e.get'));print('ok' if d['items'] and all(i['pacienteId']=='$MIO' for i in d['items']) else 'no')")"
+check "paciente no puede listar con pacienteId ajeno -> 403" 403 "$(get_as "$TP" "/api/citas?pacienteId=$(uuid)")"
+check "paciente no puede pedir la agenda de un medico -> 403" 403 "$(get_as "$TP" "/api/citas?medicoId=$MH")"
+# paginacion por cursor
+get_as "$TP" "/api/citas?limite=1" >/dev/null
+C1=$(python3 -c "import json;d=json.load(open('/tmp/e2e.get'));print(d['items'][0]['citaId'], d['siguiente'] or '')")
+ID1=${C1%% *}; CUR=${C1#* }
+check "con limite=1 hay cursor para la siguiente pagina" ok "$([ -n "$CUR" ] && echo ok || echo no)"
+get_as "$TP" "/api/citas?limite=1&cursor=$CUR" >/dev/null
+ID2=$(python3 -c "import json;d=json.load(open('/tmp/e2e.get'));print(d['items'][0]['citaId'] if d['items'] else '')")
+check "la segunda pagina trae otra cita distinta" ok "$([ -n "$ID2" ] && [ "$ID2" != "$ID1" ] && echo ok || echo no)"
+check "un cursor manipulado -> 400" 400 "$(get_as "$TP" "/api/citas?cursor=eyJwayI6IkNJVEEjeCJ9")"
+check "agenda del medico (indice medico/fecha) la ve recepcion" ok "$(get_as "$TR" "/api/citas?medicoId=$MH" >/dev/null; python3 -c "import json;d=json.load(open('/tmp/e2e.get'));print('ok' if len(d['items'])>=2 and all(i['medicoId']=='$MH' for i in d['items']) else 'no')")"
+# facturas (MS6): el paciente solo ve las suyas
+check "paciente lista facturas (200)" 200 "$(get_as "$TP" /api/facturacion/facturas)"
+check "...y todas son suyas" ok "$(python3 -c "import json;d=json.load(open('/tmp/e2e.get'));print('ok' if d and all(i['paciente_id']=='$MIO' for i in d) else 'no')")"
+check "caja ve facturas de varios pacientes" ok "$(get_as "$TC" /api/facturacion/facturas >/dev/null; python3 -c "import json;d=json.load(open('/tmp/e2e.get'));print('ok' if len({i['paciente_id'] for i in d})>1 else 'no')")"
 
 printf '\n== Resultado: %d comprobaciones correctas, %d fallidas\n' "$pass" "$fail"
 [ "$fail" -eq 0 ] && echo "TODO OK" || { echo "HAY FALLOS (logs en ${SIGEC_LOGS:-/tmp/sigec-logs})"; exit 1; }

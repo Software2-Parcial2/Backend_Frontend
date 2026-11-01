@@ -7,7 +7,7 @@ import {
   type OutboxMessage,
   type SagaCommand,
 } from '../../domain/cita.js';
-import type { CitaRepository } from './cita-repository.js';
+import type { CitaRepository, FiltroCitas, PaginaCitas } from './cita-repository.js';
 import { aplicar, iniciar, type MachineDeps, type SagaEvent, type Transition } from './saga-machine.js';
 import type { SagaPolicy } from './saga-policy.js';
 
@@ -119,7 +119,7 @@ export class CitaSagaService {
     return this.d.repo.cargar(citaId);
   }
 
-  listar(): Promise<CitaAggregate[]> {
-    return this.d.repo.listar();
+  buscar(filtro: FiltroCitas, limite = 20, cursor?: string): Promise<PaginaCitas> {
+    return this.d.repo.buscar(filtro, Math.min(Math.max(limite, 1), 100), cursor);
   }
 }

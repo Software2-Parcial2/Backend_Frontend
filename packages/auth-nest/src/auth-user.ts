@@ -5,6 +5,8 @@ export interface AuthUser {
   email?: string;
   /** Roles de realm (claim realm_access.roles): administrador, medico, recepcion, caja, paciente. */
   roles: string[];
+  /** Paciente vinculado al usuario (claim `paciente_id`); solo lo tiene el rol paciente. */
+  pacienteId?: string;
 }
 
 export interface AuthOptions {

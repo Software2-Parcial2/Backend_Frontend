@@ -56,6 +56,7 @@ export class JwtAuthGuard implements CanActivate {
         username: payload['preferred_username'] as string | undefined,
         email: payload['email'] as string | undefined,
         roles: realmAccess?.roles ?? [],
+        pacienteId: payload['paciente_id'] as string | undefined,
       };
       return true;
     } catch {
