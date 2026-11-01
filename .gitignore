@@ -11,3 +11,4 @@ build/
 ml/data/
 *.keras
 *.joblib
+*.tsbuildinfo

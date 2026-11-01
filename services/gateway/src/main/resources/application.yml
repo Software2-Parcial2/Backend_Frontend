@@ -1,0 +1,54 @@
+spring:
+  application:
+    name: gateway
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER:http://localhost:8080/realms/sigec}
+  cloud:
+    gateway:
+      server:
+        webmvc:
+          routes:
+            - id: ms2-pacientes
+              uri: ${MS2_URL:http://localhost:8082}
+              predicates:
+                - Path=/api/pacientes/**
+            - id: ms4-historias
+              uri: ${MS4_URL:http://localhost:8084}
+              predicates:
+                - Path=/api/historias/**
+            - id: ms3-citas
+              uri: ${MS3_URL:http://localhost:3003}
+              predicates:
+                - Path=/api/citas/**
+            - id: ms5-imagenes
+              uri: ${MS5_URL:http://localhost:3005}
+              predicates:
+                - Path=/api/imagenes/**
+            - id: ms7-inteligencia
+              uri: ${MS7_URL:http://localhost:3007}
+              predicates:
+                - Path=/api/inteligencia/**,/graphql
+            - id: ms8-notificaciones
+              uri: ${MS8_URL:http://localhost:3008}
+              predicates:
+                - Path=/api/notificaciones/**
+            - id: ms6-facturacion
+              uri: ${MS6_URL:http://localhost:8006}
+              predicates:
+                - Path=/api/facturacion/**
+
+server:
+  port: 8090
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+sigec:
+  cors:
+    allowed-origins: ${CORS_ORIGINS:http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:4201}

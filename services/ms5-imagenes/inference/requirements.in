@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+pydantic-settings
+python-multipart
+tensorflow
+pillow
+numpy
+opencv-python-headless
+aio-pika
+boto3
+httpx
