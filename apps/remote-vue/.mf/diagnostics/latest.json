@@ -1,10 +1,10 @@
 {
   "latestErrorEvent": {
     "code": "TYPE-001",
-    "message": "Failed to generate type declaration. Execute the below cmd to reproduce and fix the error. #TYPE-001\nargs: {\"cmd\":\"/home/alan/.local/share/mise/installs/node/24.22.2/bin/node /home/alan/Projects/Software2/Parcial2/sigec/node_modules/.pnpm/typescript@6.0.3/node_modules/typescript/bin/tsc --project /home/alan/Projects/Software2/Parcial2/sigec/apps/remote-vue/node_modules/.federation/tsconfig.e6ecee63e8fdd08cb3312522bc84d18f.json\"}\nView the docs to see how to solve: https://module-federation.io/guide/troubleshooting/type#type-001",
+    "message": "Failed to generate type declaration. Execute the below cmd to reproduce and fix the error. #TYPE-001\nargs: {\"cmd\":\"/home/alan/.local/share/mise/installs/node/24.22.2/bin/node /home/alan/Projects/Software2/Parcial2/sigec/node_modules/.pnpm/typescript@6.0.3/node_modules/typescript/bin/tsc --project /home/alan/Projects/Software2/Parcial2/sigec/apps/remote-vue/node_modules/.federation/tsconfig.7b512d0fff0d06202f559e0bd45cc58b.json\"}\nView the docs to see how to solve: https://module-federation.io/guide/troubleshooting/type#type-001",
     "args": {
-      "cmd": "/home/alan/.local/share/mise/installs/node/24.22.2/bin/node /home/alan/Projects/Software2/Parcial2/sigec/node_modules/.pnpm/typescript@6.0.3/node_modules/typescript/bin/tsc --project /home/alan/Projects/Software2/Parcial2/sigec/apps/remote-vue/node_modules/.federation/tsconfig.e6ecee63e8fdd08cb3312522bc84d18f.json"
+      "cmd": "/home/alan/.local/share/mise/installs/node/24.22.2/bin/node /home/alan/Projects/Software2/Parcial2/sigec/node_modules/.pnpm/typescript@6.0.3/node_modules/typescript/bin/tsc --project /home/alan/Projects/Software2/Parcial2/sigec/apps/remote-vue/node_modules/.federation/tsconfig.7b512d0fff0d06202f559e0bd45cc58b.json"
     },
-    "timestamp": 1793560526129
+    "timestamp": 1793560561544
   }
 }

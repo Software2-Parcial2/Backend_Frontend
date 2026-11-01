@@ -58,7 +58,7 @@ export function RemoteContainer({ remote, title }: Props) {
         setStatus('ready');
       } catch (e) {
         console.error(
-          `[shell] no se pudo montar ${remote}: ${e instanceof Error ? `${e.message} | causa: ${String(e.cause)}` : String(e)}`,
+          `[shell] no se pudo montar ${remote}: ${e instanceof Error ? e.message : String(e)}`,
         );
         if (!cancelled) {
           setError(e instanceof Error ? e.message : String(e));
