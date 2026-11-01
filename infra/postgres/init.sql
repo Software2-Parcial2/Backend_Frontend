@@ -1,6 +1,7 @@
 CREATE DATABASE ms2_pacientes;
 CREATE DATABASE ms4_historias;
 CREATE DATABASE ms6_facturacion;
+CREATE DATABASE ms6_facturacion_test; -- pruebas de MS6 (Pest)
 CREATE DATABASE ms7_inteligencia;
 CREATE DATABASE keycloak;
 CREATE DATABASE n8n;

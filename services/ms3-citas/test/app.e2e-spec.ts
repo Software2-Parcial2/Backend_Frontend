@@ -22,6 +22,9 @@ describe('ms3-citas (e2e)', () => {
   it('GET /api/citas sin token da 401', () =>
     request(app.getHttpServer()).get('/api/citas').expect(401));
 
+  it('POST /api/citas sin token da 401 (la autenticacion va antes que la idempotencia)', () =>
+    request(app.getHttpServer()).post('/api/citas').set('Idempotency-Key', '6f1d4c3e-7a55-4a6f-9d3e-0c1f8a2b4d11').send({}).expect(401));
+
   it('GET /api/citas con token invalido da 401', () =>
     request(app.getHttpServer()).get('/api/citas').set('Authorization', 'Bearer abc').expect(401));
 });

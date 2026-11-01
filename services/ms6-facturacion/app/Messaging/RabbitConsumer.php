@@ -20,6 +20,7 @@ final class RabbitConsumer
      * @param  Closure(string $id): bool|null  $tryBegin  devuelve false si el mensaje ya se proceso (dedupe)
      * @param  Closure(string $id): void|null  $release  libera el id tras un fallo para permitir el reintento
      * @param  array|null  $bindings  enlaces de la cola; null = los de topology.json
+     * @param  Closure(string $id): void|null  $complete  marca el id como COMPLETADO tras ejecutar el handler
      */
     public function __construct(
         private readonly string $queue,
@@ -32,6 +33,7 @@ final class RabbitConsumer
         private readonly ?int $maxRetries = null,
         private readonly ?Closure $log = null,
         private readonly ?array $bindings = null,
+        private readonly ?Closure $complete = null,
     ) {}
 
     public function stop(): void
@@ -87,6 +89,9 @@ final class RabbitConsumer
             }
             $began = $this->tryBegin !== null;
             ($this->handler)($envelope, $retries);
+            if ($this->complete) {
+                ($this->complete)($envelope['id']);
+            }
             $msg->ack();
         } catch (Throwable $e) {
             if ($began && $this->release) {

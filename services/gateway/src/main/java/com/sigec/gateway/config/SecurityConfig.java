@@ -37,6 +37,8 @@ public class SecurityConfig {
 		config.setAllowedOrigins(allowedOrigins);
 		config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
 		config.setAllowedHeaders(List.of("Authorization", "Content-Type", "Idempotency-Key"));
+		// El navegador solo deja leer estas cabeceras de respuesta si se exponen (contracts/idempotency.md).
+		config.setExposedHeaders(List.of("Idempotent-Replay", "Retry-After", "Location"));
 		config.setMaxAge(3600L);
 		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
 		source.registerCorsConfiguration("/**", config);

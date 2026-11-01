@@ -15,6 +15,8 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'keycloak.jwt' => \App\Http\Middleware\VerifyKeycloakJwt::class,
+            'role' => \App\Http\Middleware\RequireRole::class,
+            'idempotent' => \App\Http\Middleware\Idempotency::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

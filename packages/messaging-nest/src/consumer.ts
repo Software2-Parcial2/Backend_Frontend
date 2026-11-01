@@ -17,7 +17,10 @@ export type MessageHandler = (envelope: Envelope, ctx: HandlerContext) => Promis
  * tryBegin devuelve false si el mensaje ya se proceso; release permite reintentar tras un fallo.
  */
 export interface MessageDeduplicator {
+  /** true = ejecutar; false = ya procesado (se descarta con ack). Puede lanzar si otro consumidor lo tiene en curso. */
   tryBegin(messageId: string): Promise<boolean>;
+  /** Marca el mensaje como COMPLETADO (se llama tras ejecutar el handler con exito). */
+  complete?(messageId: string): Promise<void>;
   release(messageId: string): Promise<void>;
 }
 
@@ -116,16 +119,22 @@ export class RabbitConsumer {
     }
 
     const dedupe = this.options.deduplicator;
+    let began = false;
     try {
-      if (dedupe && !(await dedupe.tryBegin(envelope.id))) {
-        this.log(`mensaje ${envelope.id} duplicado, se ignora`);
-        ch.ack(msg);
-        return;
+      if (dedupe) {
+        if (!(await dedupe.tryBegin(envelope.id))) {
+          this.log(`mensaje ${envelope.id} duplicado, se ignora`);
+          ch.ack(msg);
+          return;
+        }
+        began = true;
       }
       await this.options.handler(envelope, { retries, rawMessage: msg });
+      await dedupe?.complete?.(envelope.id);
       ch.ack(msg);
     } catch (e) {
-      await dedupe?.release(envelope.id).catch(() => undefined);
+      // Solo se libera si ESTE consumidor tomo el id (si tryBegin lanzo porque otro lo tiene, no se toca).
+      if (began) await dedupe?.release(envelope.id).catch(() => undefined);
       const reason = (e as Error).message ?? String(e);
       try {
         if (retries >= this.maxRetries) {

@@ -1,0 +1,13 @@
+export { requestHash, canonicalJson } from './hash.js';
+export { IdempotencyService } from './idempotency.service.js';
+export type { IdempotencyDecision, IdempotencyOptions } from './idempotency.service.js';
+export { InMemoryIdempotencyStore } from './memory.store.js';
+export { DynamoIdempotencyStore } from './dynamo.store.js';
+export { DynamoMessageDeduplicator, MessageInProgressError } from './dedupe.js';
+export type { MessageDeduplicator } from './dedupe.js';
+export { createDocClient } from './dynamo.js';
+export { Idempotent, IdempotencyInterceptor, IDEMPOTENCY_SERVICE } from './idempotency.interceptor.js';
+export { IdempotencyModule } from './idempotency.module.js';
+export type { IdempotencyModuleOptions } from './idempotency.module.js';
+export { IDEMPOTENCY_TTL_MS } from './types.js';
+export type { IdempotencyRecord, IdempotencyStatus, IdempotencyStore, ReserveResult, StoredResponse } from './types.js';
