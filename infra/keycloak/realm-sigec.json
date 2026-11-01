@@ -1,0 +1,135 @@
+{
+  "realm": "sigec",
+  "enabled": true,
+  "displayName": "SIGEC",
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "accessTokenLifespan": 900,
+  "ssoSessionIdleTimeout": 1800,
+  "roles": {
+    "realm": [
+      { "name": "administrador", "description": "Rol administrador" },
+      { "name": "medico", "description": "Rol medico" },
+      { "name": "recepcion", "description": "Rol recepcion" },
+      { "name": "caja", "description": "Rol caja" },
+      { "name": "paciente", "description": "Rol paciente" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "sigec-shell",
+      "name": "SIGEC Shell",
+      "enabled": true,
+      "publicClient": true,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "fullScopeAllowed": true,
+      "redirectUris": ["http://localhost:5173/*"],
+      "webOrigins": ["http://localhost:5173"],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "+"
+      },
+      "defaultClientScopes": ["web-origins", "acr", "profile", "roles", "email"],
+      "optionalClientScopes": ["address", "phone", "offline_access"]
+    },
+    {
+      "clientId": "sigec-pwa",
+      "name": "SIGEC PWA Paciente",
+      "enabled": true,
+      "publicClient": true,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "fullScopeAllowed": true,
+      "redirectUris": ["http://localhost:5174/*"],
+      "webOrigins": ["http://localhost:5174"],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "+"
+      },
+      "defaultClientScopes": ["web-origins", "acr", "profile", "roles", "email"],
+      "optionalClientScopes": ["address", "phone", "offline_access"]
+    },
+    {
+      "clientId": "sigec-mobile",
+      "name": "SIGEC Movil",
+      "enabled": true,
+      "publicClient": true,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "fullScopeAllowed": true,
+      "redirectUris": ["sigec://callback", "sigec://*"],
+      "webOrigins": ["+"],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "+"
+      },
+      "defaultClientScopes": ["web-origins", "acr", "profile", "roles", "email"],
+      "optionalClientScopes": ["address", "phone", "offline_access"]
+    }
+  ],
+  "users": [
+    {
+      "username": "administrador",
+      "email": "administrador@sigec.test",
+      "firstName": "Administrador",
+      "lastName": "Prueba",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "Sigec123!", "temporary": false }],
+      "realmRoles": ["administrador"]
+    },
+    {
+      "username": "medico",
+      "email": "medico@sigec.test",
+      "firstName": "Medico",
+      "lastName": "Prueba",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "Sigec123!", "temporary": false }],
+      "realmRoles": ["medico"]
+    },
+    {
+      "username": "recepcion",
+      "email": "recepcion@sigec.test",
+      "firstName": "Recepcion",
+      "lastName": "Prueba",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "Sigec123!", "temporary": false }],
+      "realmRoles": ["recepcion"]
+    },
+    {
+      "username": "caja",
+      "email": "caja@sigec.test",
+      "firstName": "Caja",
+      "lastName": "Prueba",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "Sigec123!", "temporary": false }],
+      "realmRoles": ["caja"]
+    },
+    {
+      "username": "paciente",
+      "email": "paciente@sigec.test",
+      "firstName": "Paciente",
+      "lastName": "Prueba",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "Sigec123!", "temporary": false }],
+      "realmRoles": ["paciente"]
+    }
+  ]
+}
