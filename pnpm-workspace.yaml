@@ -1,0 +1,14 @@
+packages:
+  - "apps/shell"
+  - "apps/remote-vue"
+  - "apps/pwa-paciente"
+  - "packages/*"
+  - "services/ms3-citas"
+  - "services/ms5-imagenes/api"
+  - "services/ms7-inteligencia/api"
+  - "services/ms8-notificaciones"
+allowBuilds:
+  '@apollo/protobufjs': true
+  '@google/genai': true
+  '@scarf/scarf': true
+  protobufjs: true
