@@ -154,4 +154,18 @@ describe('RabbitMQ (integracion)', function () {
         ))->run(idleTimeout: 2);
         expect($ejecuciones)->toBe(1);
     });
+
+    it('no deja consumidores huerfanos tras periodos de inactividad', function () {
+        $consumo = function () {
+            (new RabbitConsumer($this->queue, fn () => null, $this->topology, $this->publisher, tiers: $this->tiers, log: fn () => null, bindings: $this->bindings))->run(idleTimeout: 1);
+        };
+        $consumo();
+        $consumo();
+        $consumo();
+        $conn = RabbitConnection::open();
+        $ch = $conn->channel();
+        [, , $consumidores] = $ch->queue_declare($this->queue, true);
+        $conn->close();
+        expect($consumidores)->toBe(0); // todas las conexiones se cerraron al terminar
+    });
 });

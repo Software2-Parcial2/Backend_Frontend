@@ -100,6 +100,8 @@ export type HorarioOp =
 /** Mensaje que la SAGA envia por RabbitMQ (se escribe en el outbox, en la misma transaccion). */
 export interface SagaCommand {
   type: string;
+  /** Por defecto sigec.saga; los eventos de dominio van a sigec.eventos. */
+  exchange?: string;
   payload: Record<string, unknown>;
 }
 

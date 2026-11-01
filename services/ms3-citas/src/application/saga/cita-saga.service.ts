@@ -40,7 +40,7 @@ export class CitaSagaService {
   private toMessages(commands: SagaCommand[], agg: CitaAggregate, causationId: string | null): OutboxMessage[] {
     return commands.map((c) => ({
       id: this.d.newId(),
-      exchange: EXCHANGE_SAGA,
+      exchange: c.exchange ?? EXCHANGE_SAGA,
       type: c.type,
       correlationId: agg.saga.sagaId,
       causationId,

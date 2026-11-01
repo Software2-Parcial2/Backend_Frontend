@@ -41,10 +41,11 @@ final class RabbitConsumer
         $this->stop = true;
     }
 
-    /** Bucle de consumo. $idleTimeout (s) lo termina si no llegan mensajes (0 = indefinido). */
+    /** Bucle de consumo. $idleTimeout (s) lo termina si no llegan mensajes (0 = indefinido; para pruebas). */
     public function run(int $idleTimeout = 0, int $prefetch = 10): void
     {
         while (! $this->stop) {
+            $conn = null;
             try {
                 $conn = RabbitConnection::open();
                 $ch = $conn->channel();
@@ -52,17 +53,26 @@ final class RabbitConsumer
                 $ch->basic_qos(0, $prefetch, false);
                 $ch->basic_consume($this->queue, '', false, false, false, false, fn (AMQPMessage $m) => $this->onMessage($m));
                 while ($ch->is_consuming() && ! $this->stop) {
-                    $ch->wait(null, false, $idleTimeout ?: 5);
+                    try {
+                        $ch->wait(null, false, $idleTimeout ?: 5);
+                    } catch (\PhpAmqpLib\Exception\AMQPTimeoutException) {
+                        // Inactividad: NO se reconecta (hacerlo dejaba consumidores huerfanos con mensajes sin ack).
+                        if ($idleTimeout > 0) {
+                            return;
+                        }
+                    }
                 }
             } catch (UnknownQueueException $e) {
                 throw $e; // error de configuracion: no tiene sentido reintentar
-            } catch (\PhpAmqpLib\Exception\AMQPTimeoutException) {
-                if ($idleTimeout > 0) {
-                    return;
-                }
             } catch (Throwable $e) {
                 $this->say('conexion perdida: '.$e->getMessage().'; reintentando en 2 s');
                 sleep(2);
+            } finally {
+                // Siempre se cierra la conexion: al salir, tras un error o al parar el proceso.
+                try {
+                    $conn?->close();
+                } catch (Throwable) {
+                }
             }
         }
     }

@@ -90,10 +90,26 @@ services:
       DB_POSTGRESDB_PASSWORD: ${POSTGRES_PASSWORD}
       N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
       GENERIC_TIMEZONE: America/La_Paz
+      TZ: America/La_Paz
+      # Los workflows leen sus secretos de las variables de entorno ($env.X): nada se guarda en la base de n8n ni en el repo.
+      N8N_BLOCK_ENV_ACCESS_IN_NODE: "false"
+      N8N_WEBHOOK_SECRET: ${N8N_WEBHOOK_SECRET:-}
+      MS8_INTERNAL_SECRET: ${MS8_INTERNAL_SECRET:-}
+      MS8_URL: ${MS8_URL_FROM_N8N:-http://host.docker.internal:3008}
+      MAILTRAP_API_TOKEN: ${MAILTRAP_API_TOKEN:-}
+      MAILTRAP_INBOX_ID: ${MAILTRAP_INBOX_ID:-}
+      MAILTRAP_API_URL: ${MAILTRAP_API_URL:-https://sandbox.api.mailtrap.io}
+      MAIL_FROM: ${MAIL_FROM:-no-reply@sigec.test}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_ALERT_CHAT_ID: ${TELEGRAM_ALERT_CHAT_ID:-}
+      TELEGRAM_API_URL: ${TELEGRAM_API_URL:-https://api.telegram.org}
     ports:
       - "5678:5678"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"   # n8n (contenedor) -> MS8 (en el host)
     volumes:
       - n8n_data:/home/node/.n8n
+      - ./infra/n8n/workflows:/workflows:ro,z
     depends_on:
       postgres:
         condition: service_healthy

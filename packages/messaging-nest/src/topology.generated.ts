@@ -96,6 +96,19 @@ export const TOPOLOGY = {
           ]
         }
       ]
+    },
+    {
+      "name": "ms8.eventos",
+      "owner": "MS8",
+      "bindings": [
+        {
+          "exchange": "sigec.eventos",
+          "routingKeys": [
+            "cita.confirmada",
+            "paciente.creado"
+          ]
+        }
+      ]
     }
   ]
 } as const;

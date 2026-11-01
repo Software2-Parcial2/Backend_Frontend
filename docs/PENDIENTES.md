@@ -61,3 +61,25 @@ Hecho: claim `paciente_id` (realm + MS2/MS3/MS6), listados de citas por indices 
 - La validacion Ajv solo existe en Nest. MS6 (PHP) y Spring validan el sobre pero no el payload por schema.
 - Un backlog de mensajes venenosos retrasa el consumidor de MS6 (~1 s por fallo, por el log de la excepcion); no lo bloquea. Hay que revisar las DLQ.
 - `dlq-replay` mueve mensajes a la cola original por el exchange por defecto; no filtra por tipo ni por id.
+
+## Bloque J - Notificaciones con n8n
+
+Hecho y verificado: `make n8n-import`, 4 workflows (25 comprobaciones en un n8n real), MS8 con adaptador n8n/reintentos/FALLIDA/alertas/vinculacion/recordatorios
+y `scripts/e2e-notificaciones.sh` (29). **Lo que NO se pudo verificar en este entorno (sin credenciales en `.env`):**
+
+- **Mailtrap real:** el workflow usa `POST {MAILTRAP_API_URL}/api/send/{inbox_id}` con `Authorization: Bearer`. Se probo contra un servidor simulado con ese contrato, no
+  contra la API real; la Parte 2 de `e2e-notificaciones.sh` (correo visible en la bandeja y verificado por la API de Mailtrap) queda **omitida** hasta tener `MAILTRAP_*`.
+  La URL/cabecera de busqueda de mensajes de esa verificacion tampoco esta probada.
+- **Telegram real:** `scripts/test-telegram.sh` sale con "OMITIDA" sin `TELEGRAM_BOT_TOKEN`. El sondeo `getUpdates`, el `sendMessage` y la vinculacion `/start <codigo>` solo se probaron con el simulado.
+  No uses un webhook de Telegram para el mismo bot (compite con `getUpdates`).
+
+**Limitaciones y decisiones**
+- El contacto del paciente (email) se toma del evento `paciente.creado` (se amplio con `email`). **No hay `paciente.actualizado`**: un cambio de email en MS2 no llega a MS8. Pacientes creados antes de este
+  cambio no tienen contacto en MS8 (sus notificaciones fallan con "sin canal de contacto" hasta recibirlo).
+- Los recordatorios se alimentan del evento `cita.confirmada` (nuevo): las citas confirmadas **antes** de este bloque no se recuerdan. Una cita no se "des-confirma", asi que no hay cancelacion de recordatorios.
+- El recordatorio se envia una vez por cita; si falla, lo reintenta el barrido de PENDIENTES (no el workflow horario).
+- n8n usa `n8nio/n8n:latest` (sin fijar version) y avisa de que Postgres 16 "recibe soporte de compatibilidad". Conviene fijar version y subir a Postgres 17 mas adelante.
+- Activar workflows importados requiere reiniciar n8n (`make n8n-import` lo hace). Cualquier edicion en la interfaz debe volver al repo con `make n8n-export`.
+- El monitor de DLQ de MS8 alerta por crecimiento de cualquier `*.dlq`; no distingue gravedad ni agrupa alertas repetidas.
+- La vinculacion de Telegram no verifica que el `chatId` sea de una persona (cualquiera con un codigo valido se vincula); el codigo es de un solo uso y dura 10 min.
+- Se corrigio un fallo real del consumidor de Laravel (consumidores huerfanos al reconectar por inactividad) que dejaba mensajes sin atender.

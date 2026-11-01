@@ -1,0 +1,250 @@
+{
+  "id": "sigecRecordatori",
+  "name": "SIGEC - recordatorio-cita",
+  "active": true,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 1
+            }
+          ]
+        }
+      },
+      "id": "54c3a52b-0a16-48f3-9863-99bea2f0f782",
+      "name": "Cada hora",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "recordatorio-ejecutar",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "828fd174-a261-48f7-867a-b46c34347bab",
+      "name": "Webhook recordatorio-ejecutar",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        300
+      ],
+      "webhookId": "eca2c4f5-a799-475d-a00a-5136df194731"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "9fc0c221-96f1-4f95-9a6a-ee2def47db51",
+              "leftValue": "={{ $json.headers['x-sigec-secret'] }}",
+              "rightValue": "={{ $env.N8N_WEBHOOK_SECRET }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "7a4115af-b17f-45a8-bf9f-7696739b1907",
+      "name": "Secreto valido",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ ($env.MS8_URL || 'http://host.docker.internal:3008') + '/internal/recordatorios/pendientes?horas=24' }}",
+        "options": {
+          "timeout": 15000
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Sigec-Secret",
+              "value": "={{ $env.MS8_INTERNAL_SECRET }}"
+            }
+          ]
+        }
+      },
+      "id": "12bf3fda-a9ab-4375-80d7-d3fe646e0863",
+      "name": "MS8 citas de las proximas 24 h sin recordatorio",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const citas = $input.first().json.citas || [];\nreturn citas.map((c) => ({ json: c }));"
+      },
+      "id": "100ed789-9116-4368-84fd-bd356d159f7e",
+      "name": "Una salida por cita",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ ($env.MS8_URL || 'http://host.docker.internal:3008') + '/internal/recordatorios/' + $json.citaId + '/enviar' }}",
+        "options": {
+          "timeout": 60000
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Sigec-Secret",
+              "value": "={{ $env.MS8_INTERNAL_SECRET }}"
+            }
+          ]
+        }
+      },
+      "id": "55a27bcc-57ca-4374-addc-7dfdb33f0be9",
+      "name": "MS8 enviar recordatorio",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        960,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ ok: true, mensaje: \"recordatorios en curso\" }) }}",
+        "options": {
+          "responseCode": 202
+        }
+      },
+      "id": "e91fc7b1-41c1-47c8-a254-3a439335b752",
+      "name": "Responder 202",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        480,
+        380
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ ok: false, error: \"no autorizado\" }) }}",
+        "options": {
+          "responseCode": 401
+        }
+      },
+      "id": "3740b5b7-9d06-44f0-916e-a48f5b4489a9",
+      "name": "Responder 401",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        480,
+        500
+      ]
+    }
+  ],
+  "connections": {
+    "Cada hora": {
+      "main": [
+        [
+          {
+            "node": "MS8 citas de las proximas 24 h sin recordatorio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook recordatorio-ejecutar": {
+      "main": [
+        [
+          {
+            "node": "Secreto valido",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Secreto valido": {
+      "main": [
+        [
+          {
+            "node": "MS8 citas de las proximas 24 h sin recordatorio",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Responder 202",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder 401",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MS8 citas de las proximas 24 h sin recordatorio": {
+      "main": [
+        [
+          {
+            "node": "Una salida por cita",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Una salida por cita": {
+      "main": [
+        [
+          {
+            "node": "MS8 enviar recordatorio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "tags": []
+}

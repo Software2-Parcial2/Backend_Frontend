@@ -1,0 +1,157 @@
+{
+  "id": "sigecTelegramVin",
+  "name": "SIGEC - telegram-vinculacion",
+  "active": true,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "seconds",
+              "secondsInterval": 5
+            }
+          ]
+        }
+      },
+      "id": "53632c07-79b8-4dee-9580-3a877c681978",
+      "name": "Cada 5 segundos",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Sondea el bot (getUpdates) y deja pasar solo los mensajes \"/start <codigo>\". Sin token del bot, no hace nada.\nconst token = $env.TELEGRAM_BOT_TOKEN;\nif (!token) return [];\nconst base = $env.TELEGRAM_API_URL || 'https://api.telegram.org';\nconst estado = $getWorkflowStaticData('global');\nconst resp = await this.helpers.httpRequest({\n  method: 'GET', url: `${base}/bot${token}/getUpdates`, json: true,\n  qs: { offset: estado.offset || 0, timeout: 0, allowed_updates: JSON.stringify(['message']) },\n});\nconst out = [];\nfor (const u of resp.result || []) {\n  estado.offset = u.update_id + 1;\n  const texto = (u.message && u.message.text) || '';\n  const m = texto.match(/^\\/start(?:@\\w+)?\\s+([A-Za-z0-9]{4,32})\\s*$/);\n  if (m) out.push({ json: { codigo: m[1], chatId: String(u.message.chat.id) } });\n}\nreturn out;"
+      },
+      "id": "34dcb6e0-b2df-4f2f-b73e-7954f9963eb4",
+      "name": "Leer mensajes del bot",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ ($env.MS8_URL || 'http://host.docker.internal:3008') + '/internal/telegram/vincular' }}",
+        "options": {
+          "timeout": 15000
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Sigec-Secret",
+              "value": "={{ $env.MS8_INTERNAL_SECRET }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ codigo: $json.codigo, chatId: $json.chatId }) }}"
+      },
+      "id": "c982c52d-63a1-4702-a557-f9d5e78ee81b",
+      "name": "MS8 vincular chat",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        200
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ ($env.TELEGRAM_API_URL || 'https://api.telegram.org') + '/bot' + $env.TELEGRAM_BOT_TOKEN + '/sendMessage' }}",
+        "options": {
+          "timeout": 15000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ chat_id: $('Leer mensajes del bot').item.json.chatId, text: 'Cuenta vinculada. Recibiras avisos de tus citas de SIGEC por este chat.' }) }}"
+      },
+      "id": "e92be674-43c0-459a-ab3b-0425242a6f2e",
+      "name": "Responder vinculado",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        720,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ ($env.TELEGRAM_API_URL || 'https://api.telegram.org') + '/bot' + $env.TELEGRAM_BOT_TOKEN + '/sendMessage' }}",
+        "options": {
+          "timeout": 15000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ chat_id: $('Leer mensajes del bot').item.json.chatId, text: 'El codigo no es valido o ya expiro. Genera uno nuevo en SIGEC.' }) }}"
+      },
+      "id": "75b8dfe3-fa98-42bd-a2d2-600522c79312",
+      "name": "Responder codigo invalido",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        720,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Cada 5 segundos": {
+      "main": [
+        [
+          {
+            "node": "Leer mensajes del bot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer mensajes del bot": {
+      "main": [
+        [
+          {
+            "node": "MS8 vincular chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MS8 vincular chat": {
+      "main": [
+        [
+          {
+            "node": "Responder vinculado",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder codigo invalido",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "tags": []
+}

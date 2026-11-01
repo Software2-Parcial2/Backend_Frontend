@@ -76,6 +76,8 @@ trap cleanup EXIT
 section "Preparacion"
 cleanup
 export NOTIF_FAIL_PACIENTES="$NOTIF_FALLA"
+# MS8 con el adaptador simulado (esta prueba no depende de n8n) y reintentos cortos; ver scripts/e2e-notificaciones.sh para n8n.
+export NOTIF_SENDER=simulated NOTIF_MAX_INTENTOS=3 NOTIF_BACKOFF_BASE_MS=500
 "$DEV" start gateway ms8 ms6 | sed 's/^/  /'
 restart_ms3 SAGA_STEP_TIMEOUT_MS=30000 SAGA_RESERVA_TTL_SEGUNDOS=600
 "$DEV" poller-start | sed 's/^/  /'

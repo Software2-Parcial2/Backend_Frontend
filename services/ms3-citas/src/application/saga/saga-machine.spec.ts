@@ -57,15 +57,16 @@ describe('SAGA de citas - maquina de estados', () => {
       expect(fin.aggregate.estado).toBe('CONFIRMADA');
       expect(fin.aggregate.saga).toMatchObject({ estado: 'COMPLETADA', paso: 'FIN', deadline: null });
       expect(fin.aggregate.notificacion.estado).toBe('ENVIADA');
-      expect(fin.commands).toEqual([]); // por defecto el cobro queda PROVISIONAL
+      expect(cmds(fin)).toEqual(['cita.confirmada']); // por defecto el cobro queda PROVISIONAL (sin cobro.confirmar)
+      expect(fin.commands[0].exchange).toBe('sigec.eventos');
     });
 
     it('con la politica confirmarCobro envia facturacion.cobro.confirmar al final', () => {
       const a = start({ confirmarCobro: true }).aggregate;
       const cobro = step(a, { type: 'COBRO_REGISTRADO', facturaId: 'f-1', monto: 100 }, T0, { confirmarCobro: true });
       const fin = step(cobro.aggregate, { type: 'NOTIFICACION_ENVIADA' }, T0, { confirmarCobro: true });
-      expect(cmds(fin)).toEqual([CMD.cobroConfirmar]);
-      expect(fin.commands[0].payload).toEqual({ citaId: a.citaId, facturaId: 'f-1' });
+      expect(cmds(fin)).toEqual(['cita.confirmada', CMD.cobroConfirmar]);
+      expect(fin.commands[1].payload).toEqual({ citaId: a.citaId, facturaId: 'f-1' });
     });
   });
 
@@ -139,6 +140,7 @@ describe('SAGA de citas - maquina de estados', () => {
       expect(t.aggregate.notificacion.proximoIntento).toBe(T0 + DEFAULT_POLICY.notificacionReintentoMs);
       expect(t.horarioOps).toEqual([]);
       expect(cmds(t)).not.toContain(CMD.cobroAnular);
+      expect(cmds(t)).toEqual(['cita.confirmada']); // la cita SI queda confirmada
     });
 
     it('si la notificacion no responde se reintenta y al agotarse la cita sigue confirmada', () => {
@@ -148,7 +150,7 @@ describe('SAGA de citas - maquina de estados', () => {
       const t = step(agg, { type: 'TIMEOUT' }, agg.saga.deadline!);
       expect(t.aggregate.estado).toBe('CONFIRMADA');
       expect(t.aggregate.notificacion.estado).toBe('PENDIENTE');
-      expect(cmds(t)).toEqual([]);
+      expect(cmds(t)).toEqual(["cita.confirmada"]);
     });
 
     it('reintento aparte: envia de nuevo, cuenta intentos y se detiene en el maximo', () => {

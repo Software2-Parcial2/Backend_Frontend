@@ -10,10 +10,11 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LOGS="${SIGEC_LOGS:-/tmp/sigec-logs}"
 mkdir -p "$LOGS"
 
-set -a
-# shellcheck disable=SC1091
-source "$ROOT/.env"
-set +a
+# Variables del .env; las que ya estan en el entorno (p. ej. NOTIF_SENDER=simulated en una prueba) NO se pisan.
+while IFS='=' read -r k v; do
+  [[ "$k" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] || continue
+  [ -z "${!k+x}" ] && export "$k=$v"
+done <"$ROOT/.env"
 
 # servicio|puerto|directorio|comando|ruta-de-salud
 SERVICES=(

@@ -238,7 +238,14 @@ export function aplicar(agg: CitaAggregate, event: SagaEvent, d: MachineDeps): T
 
 /** Cierra la SAGA con la cita CONFIRMADA. */
 function confirmar(agg: CitaAggregate, d: MachineDeps, notificacion: 'ENVIADA' | 'PENDIENTE', evento: string, detalle?: string): Transition {
-  const commands: SagaCommand[] = [];
+  // Evento de dominio: lo consume MS8 (recordatorios). Va por sigec.eventos, en la misma transaccion que la confirmacion.
+  const commands: SagaCommand[] = [
+    {
+      type: 'cita.confirmada',
+      exchange: 'sigec.eventos',
+      payload: { citaId: agg.citaId, pacienteId: agg.input.pacienteId, medicoId: agg.input.medicoId, fechaHora: agg.input.fechaHora },
+    },
+  ];
   if (d.policy.confirmarCobro && agg.facturaId) {
     commands.push({ type: CMD.cobroConfirmar, payload: { citaId: agg.citaId, facturaId: agg.facturaId } });
   }

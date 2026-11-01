@@ -36,7 +36,8 @@ y con **publisher confirms**. Los consumidores usan **ack manual**.
 | `facturacion.cobro.anulado` | respuesta | MS6 → MS3 | `sigec.saga` | citaId, facturaId? |
 | `notificaciones.cita-confirmada.enviada` | respuesta | MS8 → MS3 | `sigec.saga` | citaId, notificacionId, canal |
 | `notificaciones.cita-confirmada.fallida` | respuesta | MS8 → MS3 | `sigec.saga` | citaId, motivo |
-| `paciente.creado` | evento de dominio | MS2 → varios | `sigec.eventos` | pacienteId, nombre, documento |
+| `paciente.creado` | evento de dominio | MS2 → varios | `sigec.eventos` | pacienteId, nombre, documento, email? |
+| `cita.confirmada` | evento de dominio | MS3 → varios | `sigec.eventos` | citaId, pacienteId, medicoId, fechaHora |
 | `factura.creada` | evento de dominio | MS6 → varios | `sigec.eventos` | facturaId, citaId, pacienteId, monto, estado |
 
 Las respuestas conservan el `correlationId` del comando y ponen su `id` en el `causationId`.
@@ -80,6 +81,7 @@ la copia se publica en `sigec.dlx` → `<q>.dlq`. Un mensaje que no es JSON vali
 | `ms8.saga.comandos` | MS8 | los dos comandos `notificaciones.*` |
 | `ms3.saga.respuestas` | MS3 | las cinco respuestas |
 | `ms4.eventos.pacientes` | MS4 | `paciente.creado` |
+| `ms8.eventos` | MS8 | `cita.confirmada`, `paciente.creado` (contacto del paciente y recordatorios) |
 
 Cada servicio declara sus colas al arrancar (idempotente; si los argumentos difieren RabbitMQ responde `406
 PRECONDITION_FAILED`, lo que sirve de comprobacion de consistencia). `make rabbitmq-declare` declara **toda** la

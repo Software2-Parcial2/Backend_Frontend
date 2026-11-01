@@ -117,7 +117,11 @@ Formato `tipo(ámbito): descripción en imperativo`, en minúsculas y sin punto 
 | Lambda del outbox | `(cd services/ms3-citas/lambda-outbox && set -a && source ../../../.env && set +a && npm test)` |
 | Idempotencia por el gateway (curl) | `scripts/dev-services.sh start gateway ms2 ms3 ms6 && scripts/test-idempotencia.sh` |
 | Relay del outbox con RabbitMQ apagado/encendido | `scripts/dev-services.sh start gateway ms2 ms6 && scripts/test-outbox.sh` |
-| **SAGA de extremo a extremo** (51 comprobaciones, ~4 min) | `docker compose up -d && make dynamodb-init && make rabbitmq-declare && make e2e-saga` |
+| **SAGA de extremo a extremo** (66 comprobaciones, ~5 min) | `docker compose up -d && make dynamodb-init && make rabbitmq-declare && make e2e-saga` |
+
+| Workflows de n8n contra proveedores simulados (25) | `make n8n-import && scripts/test-n8n-workflows.sh` |
+| Notificaciones E2E con MS8 + n8n reales (29; Mailtrap real solo con credenciales) | `make n8n-import && scripts/e2e-notificaciones.sh` |
+| Telegram real (token del `.env`) | `scripts/test-telegram.sh [chat_id]` |
 
 `scripts/dev-services.sh` levanta/para servicios por puerto (`start|stop|status [gateway ms2 ms3 ms4 ms5 ms6 ms7 ms8]`, `poller-start|poller-stop`,
 `workers-start|workers-stop` para el relay y el consumidor de MS6). Logs en `/tmp/sigec-logs`. `scripts/e2e-saga.sh` arranca y detiene lo que necesita.
@@ -129,7 +133,20 @@ Formato `tipo(ámbito): descripción en imperativo`, en minúsculas y sin punto 
 - **Validacion de mensajes:** en Nest cada mensaje se valida con Ajv contra `contracts/events/<tipo>.schema.json` al publicar y al consumir.
   Nunca publiques pruebas de mensajes invalidos por `sigec.saga`/`sigec.eventos`: llegan a las colas reales (usa el exchange por defecto hacia una cola de prueba).
 
+## Notificaciones (MS8 + n8n)
+
+- MS8 decide a quien/que/cuando; n8n solo transporta (correo por Mailtrap, mensajes por Telegram). Un fallo de notificacion **nunca anula una cita**:
+  queda `PENDIENTE`, se reintenta con backoff y, tras `NOTIF_MAX_INTENTOS`, pasa a `FALLIDA` con alerta interna. Ver `docs/notificaciones.md`.
+- Los workflows (`infra/n8n/workflows/*.json`) **no contienen secretos**: leen `$env.X`. Importar/actualizar: `make n8n-import`.
+- Secretos compartidos en `.env` (nunca en el repo): `N8N_WEBHOOK_SECRET` (MS8 -> n8n) y `MS8_INTERNAL_SECRET` (n8n -> `/internal/**` de MS8). Placeholders en `.env.example`.
+- `NOTIF_SENDER=simulated` es solo un doble de pruebas; `scripts/e2e-saga.sh` lo usa para no depender de n8n.
+- Las plantillas (en `plantillas.ts`) no llevan datos clinicos; Telegram, aun menos contenido que el correo.
+
 ## Trampas conocidas
+
+- **Consumidor de Laravel:** no reconectar en cada espera inactiva (dejaba consumidores huerfanos con mensajes sin ack). Ya corregido y con prueba.
+- **Offset del bot de Telegram:** n8n lo guarda entre ejecuciones; en pruebas los `update_id` deben crecer siempre (usa la hora).
+- **`scripts/dev-services.sh`** respeta las variables ya exportadas (no las pisa con el `.env`).
 
 - **Paquetes compartidos de pnpm** (`injectWorkspacePackages`): los servicios usan una copia. `pnpm build`/`test` de un servicio la resincronizan,
   pero si **anades un archivo nuevo** a un paquete hay que ejecutar `pnpm install --force --offline` en la raiz.

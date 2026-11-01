@@ -40,12 +40,13 @@ const key = (pk, sk) => ({
 const tables = [
   // --- MS3 (citas / orquestador de la SAGA) ---
   // gsi1 (disperso): SAGAs en curso por plazo y notificaciones pendientes por proximo intento.
-  { name: 'citas', ...key('pk', 'sk'), gsis: true },
+  { name: 'citas', ...key('pk', 'sk'), gsis: ['gsi1', 'gsi2', 'gsi3', 'gsi4'] },
   { name: 'idempotency_keys', ...key('pk'), ttl: 'expiresAt' },
   { name: 'outbox', ...key('pk'), stream: true },
   { name: 'processed_messages', ...key('pk'), ttl: 'expiresAt' },
   // --- MS8 (notificaciones) ---
-  { name: 'notificaciones', ...key('pk', 'sk') },
+  // gsi1: notificaciones PENDIENTES por proximo intento; gsi2: recordatorios pendientes por fecha de la cita. TTL: codigos de vinculo.
+  { name: 'notificaciones', ...key('pk', 'sk'), gsis: ['gsi1', 'gsi2'], ttl: 'expiresAt' },
   { name: 'ms8_idempotency_keys', ...key('pk'), ttl: 'expiresAt' },
   { name: 'ms8_outbox', ...key('pk'), stream: true },
   { name: 'ms8_processed_messages', ...key('pk'), ttl: 'expiresAt' },
@@ -91,9 +92,9 @@ for (const t of tables) {
     await client.send(
       new CreateTableCommand({
         TableName: t.name,
-        AttributeDefinitions: t.gsis ? [...t.AttributeDefinitions, ...ALL_GSI_ATTRS] : t.AttributeDefinitions,
+        AttributeDefinitions: t.gsis ? [...t.AttributeDefinitions, ...GSIS.filter((g) => t.gsis.includes(g.name)).flatMap((g) => g.attrs)] : t.AttributeDefinitions,
         KeySchema: t.KeySchema,
-        ...(t.gsis ? { GlobalSecondaryIndexes: GSIS.map((g) => g.def) } : {}),
+        ...(t.gsis ? { GlobalSecondaryIndexes: GSIS.filter((g) => t.gsis.includes(g.name)).map((g) => g.def) } : {}),
         BillingMode: 'PAY_PER_REQUEST',
         ...(t.stream ? { StreamSpecification: { StreamEnabled: true, StreamViewType: 'NEW_IMAGE' } } : {}),
       }),
@@ -109,7 +110,7 @@ for (const t of tables) {
     action = 'stream activado';
   }
   if (t.gsis && table) {
-    for (const g of GSIS) {
+    for (const g of GSIS.filter((x) => t.gsis.includes(x.name))) {
       if ((table.GlobalSecondaryIndexes ?? []).some((x) => x.IndexName === g.name)) continue;
       await client.send(
         new UpdateTableCommand({

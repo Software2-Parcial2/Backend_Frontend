@@ -5,11 +5,11 @@ import java.util.UUID;
 
 import com.sigec.ms2_pacientes.domain.model.Paciente;
 
-public record PacienteCreado(UUID pacienteId, String nombre, String documento, Instant occurredAt)
+public record PacienteCreado(UUID pacienteId, String nombre, String documento, String email, Instant occurredAt)
 		implements DomainEvent {
 
 	public static PacienteCreado de(Paciente paciente) {
-		return new PacienteCreado(paciente.id(), paciente.nombre(), paciente.documento(), Instant.now());
+		return new PacienteCreado(paciente.id(), paciente.nombre(), paciente.documento(), paciente.email(), Instant.now());
 	}
 
 	@Override

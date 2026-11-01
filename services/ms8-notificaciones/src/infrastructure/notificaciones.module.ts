@@ -2,80 +2,152 @@ import { randomUUID } from 'node:crypto';
 import { Inject, Injectable, Logger, Module, type OnApplicationBootstrap, type OnApplicationShutdown } from '@nestjs/common';
 import { createDocClient, DynamoMessageDeduplicator } from '@sigec/idempotency-nest';
 import { MessagingModule, queueSpec, RabbitConnection, RabbitConsumer } from '@sigec/messaging-nest';
-import { EnviarNotificacionUseCase, type NotificacionRepository } from '../application/enviar-notificacion.use-case.js';
-import type { NotificacionTipo } from '../domain/notificacion.js';
+import { NotificacionesService } from '../application/notificaciones.service.js';
+import type { AlertaPort, NotificationSender } from '../application/ports.js';
+import { InternalController } from './http/internal.controller.js';
+import { InternalSecretGuard } from './http/internal-secret.guard.js';
 import { NotificacionesController } from './http/notificaciones.controller.js';
-import { NOTIFICACION_REPOSITORY } from './notificaciones.tokens.js';
+import { DlqMonitor } from './messaging/dlq-monitor.js';
+import { LogAlerta, N8nAlerta, N8nSender, type N8nOptions } from './messaging/n8n-sender.js';
 import { SimulatedSender } from './messaging/simulated-sender.js';
-import { DynamoNotificacionRepository } from './persistence/dynamo-notificacion.repository.js';
+import { DynamoContactoRepository, DynamoNotificacionRepository, DynamoRecordatorioRepository } from './persistence/dynamo-notificaciones.repositories.js';
 
-const QUEUE = 'ms8.saga.comandos';
+const QUEUE_COMANDOS = 'ms8.saga.comandos';
+const QUEUE_EVENTOS = 'ms8.eventos';
 
-const TIPOS: Record<string, NotificacionTipo> = {
-  'notificaciones.cita-confirmada.enviar': 'CITA_CONFIRMADA',
-  'notificaciones.cita-cancelada.enviar': 'CITA_CANCELADA',
-};
+function n8nOptions(): N8nOptions {
+  return {
+    baseUrl: process.env.N8N_BASE_URL ?? 'http://localhost:5678',
+    secret: process.env.N8N_WEBHOOK_SECRET ?? '',
+    timeoutMs: Number(process.env.N8N_TIMEOUT_MS ?? 8000),
+    reintentos: Number(process.env.N8N_REINTENTOS ?? 1),
+  };
+}
 
-/** Consumidor de ms8.saga.comandos. Solo arranca fuera de pruebas (NODE_ENV=test) y si SAGA_WORKERS no es "off". */
+/** Consumidores, barrido de reintentos y monitor de DLQ. No arrancan en pruebas (NODE_ENV=test) ni con SAGA_WORKERS=off. */
 @Injectable()
 class NotificacionesWorkers implements OnApplicationBootstrap, OnApplicationShutdown {
   private readonly log = new Logger('Notificaciones');
-  private consumer?: RabbitConsumer;
+  private consumers: RabbitConsumer[] = [];
+  private timer?: NodeJS.Timeout;
+  private busy = false;
+  private monitor?: DlqMonitor;
 
   constructor(
-    private readonly useCase: EnviarNotificacionUseCase,
+    private readonly service: NotificacionesService,
     @Inject(RabbitConnection) private readonly connection: RabbitConnection,
+    @Inject('ALERTAS') private readonly alertas: AlertaPort,
   ) {}
 
   onApplicationBootstrap() {
     if (process.env.NODE_ENV === 'test' || process.env.SAGA_WORKERS === 'off') return;
-    this.consumer = new RabbitConsumer(this.connection, {
-      spec: queueSpec(QUEUE),
-      onLog: (m) => this.log.log(m),
-      deduplicator: new DynamoMessageDeduplicator(createDocClient(), process.env.PROCESSED_TABLE ?? 'ms8_processed_messages'),
-      handler: async (env) => {
-        const tipo = TIPOS[env.type];
-        if (!tipo) {
-          this.log.warn(`comando ${env.type} desconocido; se ignora`);
-          return;
-        }
-        const n = await this.useCase.ejecutar({
-          mensajeId: env.id,
-          correlationId: env.correlationId,
-          citaId: String(env.payload.citaId),
-          pacienteId: String(env.payload.pacienteId),
-          tipo,
-        });
-        this.log.log(`${env.type} cita=${n.citaId.slice(0, 8)} -> ${n.estado}`);
-      },
-    });
-    this.consumer.start().catch((e: Error) => this.log.warn(`consumidor: ${e.message}`));
+    const dedupe = () => new DynamoMessageDeduplicator(createDocClient(), process.env.PROCESSED_TABLE ?? 'ms8_processed_messages');
+    const onLog = (m: string) => this.log.log(m);
+
+    this.consumers.push(
+      new RabbitConsumer(this.connection, {
+        spec: queueSpec(QUEUE_COMANDOS),
+        onLog,
+        deduplicator: dedupe(),
+        handler: async (env) => {
+          const p = env.payload;
+          const tipo = env.type === 'notificaciones.cita-confirmada.enviar' ? 'CITA_CONFIRMADA' : env.type === 'notificaciones.cita-cancelada.enviar' ? 'CITA_CANCELADA' : null;
+          if (!tipo) return void this.log.warn(`comando ${env.type} desconocido; se ignora`);
+          const n = await this.service.recibirComando({
+            mensajeId: env.id,
+            correlationId: env.correlationId,
+            citaId: String(p.citaId),
+            pacienteId: String(p.pacienteId),
+            tipo,
+            fechaHora: p.fechaHora ? String(p.fechaHora) : undefined,
+            motivo: p.motivo ? String(p.motivo) : undefined,
+          });
+          this.log.log(`${env.type} cita=${n.citaId.slice(0, 8)} -> ${n.estado} (intentos ${n.intentos})`);
+        },
+      }),
+      new RabbitConsumer(this.connection, {
+        spec: queueSpec(QUEUE_EVENTOS),
+        onLog,
+        deduplicator: dedupe(),
+        handler: async (env) => {
+          const p = env.payload;
+          if (env.type === 'cita.confirmada') {
+            await this.service.registrarCitaConfirmada({ citaId: String(p.citaId), pacienteId: String(p.pacienteId), fechaHora: String(p.fechaHora) });
+          } else if (env.type === 'paciente.creado') {
+            await this.service.registrarContacto({ pacienteId: String(p.pacienteId), nombre: p.nombre ? String(p.nombre) : undefined, email: (p.email as string | null | undefined) ?? null });
+          }
+        },
+      }),
+    );
+    for (const c of this.consumers) c.start().catch((e: Error) => this.log.warn(`consumidor: ${e.message}`));
+
+    this.timer = setInterval(() => void this.barrer(), Number(process.env.NOTIF_SWEEP_MS ?? 2000));
+    this.monitor = new DlqMonitor(this.connection, this.alertas);
+    this.monitor.start(Number(process.env.DLQ_MONITOR_MS ?? 60_000));
+    this.log.log('MS8: consumidores, barrido de reintentos y monitor de DLQ iniciados');
+  }
+
+  private async barrer() {
+    if (this.busy) return;
+    this.busy = true;
+    try {
+      const n = await this.service.reintentarPendientes();
+      if (n > 0) this.log.log(`reintentos de notificacion procesados: ${n}`);
+    } catch (e) {
+      this.log.warn(`barrido: ${(e as Error).message}`);
+    } finally {
+      this.busy = false;
+    }
   }
 
   async onApplicationShutdown() {
-    await this.consumer?.stop();
+    if (this.timer) clearInterval(this.timer);
+    this.monitor?.stop();
+    await Promise.all(this.consumers.map((c) => c.stop()));
   }
 }
 
 @Module({
   imports: [MessagingModule.forRoot()],
-  controllers: [NotificacionesController],
+  controllers: [NotificacionesController, InternalController],
   providers: [
+    InternalSecretGuard,
     {
-      provide: NOTIFICACION_REPOSITORY,
-      useFactory: (): NotificacionRepository =>
-        new DynamoNotificacionRepository(createDocClient(), {
-          notificaciones: process.env.NOTIFICACIONES_TABLE ?? 'notificaciones',
-          outbox: process.env.OUTBOX_TABLE ?? 'ms8_outbox',
-        }),
+      provide: 'SENDER',
+      useFactory: (): NotificationSender => {
+        const log = new Logger('Notificaciones');
+        // n8n es el canal real; `simulated` queda solo como doble de pruebas / e2e de la SAGA.
+        return (process.env.NOTIF_SENDER ?? 'n8n') === 'simulated' ? new SimulatedSender(process.env, (m) => log.log(m)) : new N8nSender(n8nOptions());
+      },
     },
     {
-      provide: EnviarNotificacionUseCase,
-      useFactory: (repo: NotificacionRepository) => {
-        const log = new Logger('Notificaciones');
-        return new EnviarNotificacionUseCase(new SimulatedSender(process.env, (m) => log.log(m)), repo, randomUUID);
+      provide: 'ALERTAS',
+      useFactory: (): AlertaPort => {
+        const log = new Logger('Alertas');
+        return (process.env.NOTIF_SENDER ?? 'n8n') === 'simulated' ? new LogAlerta((m) => log.warn(m)) : new N8nAlerta(n8nOptions(), (m) => log.warn(m));
       },
-      inject: [NOTIFICACION_REPOSITORY],
+    },
+    {
+      provide: NotificacionesService,
+      useFactory: (sender: NotificationSender, alertas: AlertaPort) => {
+        const doc = createDocClient();
+        const tablas = { notificaciones: process.env.NOTIFICACIONES_TABLE ?? 'notificaciones', outbox: process.env.OUTBOX_TABLE ?? 'ms8_outbox' };
+        const log = new Logger('Notificaciones');
+        return new NotificacionesService({
+          sender,
+          alertas,
+          notificaciones: new DynamoNotificacionRepository(doc, tablas),
+          contactos: new DynamoContactoRepository(doc, tablas),
+          recordatorios: new DynamoRecordatorioRepository(doc, tablas),
+          newId: randomUUID,
+          log: (m) => log.warn(m),
+          config: {
+            maxIntentos: Number(process.env.NOTIF_MAX_INTENTOS ?? 5),
+            backoffBaseMs: Number(process.env.NOTIF_BACKOFF_BASE_MS ?? 30_000),
+          },
+        });
+      },
+      inject: ['SENDER', 'ALERTAS'],
     },
     NotificacionesWorkers,
   ],

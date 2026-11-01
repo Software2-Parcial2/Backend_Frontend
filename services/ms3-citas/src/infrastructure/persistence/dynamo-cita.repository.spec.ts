@@ -69,8 +69,12 @@ const medico = () => randomUUID();
 const fecha = (h = 2) => new Date(T0 + h * 3600_000).toISOString();
 const input = (medicoId: string, fechaHora = fecha()) => ({ pacienteId: randomUUID(), medicoId, especialidad: 'general', fechaHora });
 const deps = (now: number) => ({ now, policy, random: () => 0, newId: () => randomUUID() });
+/** Mensajes validos segun el contrato (el outbox valida con Ajv). */
+const PAYLOADS: Record<string, (a: CitaAggregate) => Record<string, unknown>> = {
+  'facturacion.cobro-provisional.solicitar': (a) => ({ citaId: a.citaId, pacienteId: a.input.pacienteId, medicoId: a.input.medicoId, especialidad: a.input.especialidad, fechaHora: a.input.fechaHora }),
+};
 const msgs = (agg: CitaAggregate, types: string[]): OutboxMessage[] =>
-  types.map((type) => ({ id: randomUUID(), exchange: 'sigec.saga', type, correlationId: agg.saga.sagaId, causationId: null, payload: { citaId: agg.citaId } }));
+  types.map((type) => ({ id: randomUUID(), exchange: 'sigec.saga', type, correlationId: agg.saga.sagaId, causationId: null, payload: PAYLOADS[type]?.(agg) ?? { citaId: agg.citaId, motivo: 'x' } }));
 
 describe.skipIf(!available)('DynamoCitaRepository (DynamoDB Local)', () => {
   let now = T0;
@@ -106,7 +110,7 @@ describe.skipIf(!available)('DynamoCitaRepository (DynamoDB Local)', () => {
     const before = await outboxCount();
     const t = iniciar(input(m), deps(now));
     await expect(
-      repo.aplicar({ aggregate: t.aggregate, expectedVersion: null, horarioOps: t.horarioOps, messages: msgs(t.aggregate, ['x.y']) }),
+      repo.aplicar({ aggregate: t.aggregate, expectedVersion: null, horarioOps: t.horarioOps, messages: msgs(t.aggregate, ['facturacion.cobro-provisional.solicitar']) }),
     ).rejects.toBeInstanceOf(HorarioNoDisponibleError);
     expect(await repo.cargar(t.aggregate.citaId)).toBeNull();
     expect(await outboxCount()).toBe(before);

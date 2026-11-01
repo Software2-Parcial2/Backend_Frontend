@@ -2,6 +2,52 @@
 export const SCHEMAS: readonly Record<string, unknown>[] = [
   {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://sigec.local/contracts/events/cita.confirmada.schema.json",
+    "title": "cita.confirmada",
+    "description": "Evento de dominio MS3 -> varios (exchange sigec.eventos). Lo consume MS8 para los recordatorios.",
+    "allOf": [
+      {
+        "$ref": "envelope.schema.json"
+      },
+      {
+        "properties": {
+          "type": {
+            "const": "cita.confirmada"
+          },
+          "payload": {
+            "type": "object",
+            "required": [
+              "citaId",
+              "pacienteId",
+              "medicoId",
+              "fechaHora"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "citaId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "pacienteId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "medicoId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "fechaHora": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
     "$id": "https://sigec.local/contracts/events/envelope.schema.json",
     "title": "Sobre de mensaje SIGEC",
     "type": "object",
@@ -542,6 +588,12 @@ export const SCHEMAS: readonly Record<string, unknown>[] = [
               },
               "documento": {
                 "type": "string"
+              },
+              "email": {
+                "type": [
+                  "string",
+                  "null"
+                ]
               }
             }
           }

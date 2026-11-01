@@ -30,6 +30,12 @@
             },
             "documento": {
               "type": "string"
+            },
+            "email": {
+              "type": [
+                "string",
+                "null"
+              ]
             }
           }
         }
