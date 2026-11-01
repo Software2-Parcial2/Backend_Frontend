@@ -68,6 +68,14 @@
         ],
         "pre-package-uninstall": [
             "Illuminate\\Foundation\\ComposerScripts::prePackageUninstall"
+        ],
+        "relay": [
+            "Composer\\Config::disableProcessTimeout",
+            "@php artisan outbox:relay"
+        ],
+        "workers": [
+            "Composer\\Config::disableProcessTimeout",
+            "@php artisan outbox:relay & @php artisan queue:work rabbitmq --tries=3; wait"
         ]
     },
     "extra": {

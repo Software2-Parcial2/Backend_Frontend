@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sigec.local/contracts/events/factura.creada.schema.json",
+  "title": "factura.creada",
+  "description": "Evento de dominio MS6 -> varios (exchange sigec.eventos, routing key = type).",
+  "allOf": [
+    {
+      "$ref": "envelope.schema.json"
+    },
+    {
+      "properties": {
+        "type": {
+          "const": "factura.creada"
+        },
+        "payload": {
+          "type": "object",
+          "required": [
+            "facturaId",
+            "citaId",
+            "pacienteId",
+            "monto",
+            "estado"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "facturaId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "citaId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "pacienteId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "monto": {
+              "type": "number",
+              "minimum": 0
+            },
+            "estado": {
+              "enum": [
+                "PENDIENTE",
+                "PROVISIONAL",
+                "CONFIRMADA",
+                "ANULADA"
+              ]
+            }
+          }
+        }
+      }
+    }
+  ]
+}

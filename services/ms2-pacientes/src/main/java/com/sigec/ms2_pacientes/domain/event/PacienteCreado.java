@@ -24,6 +24,6 @@ public record PacienteCreado(UUID pacienteId, String nombre, String documento, I
 
 	@Override
 	public String eventType() {
-		return "PacienteCreado";
+		return "paciente.creado";
 	}
 }

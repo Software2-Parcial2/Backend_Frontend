@@ -1,18 +1,24 @@
 {
   "name": "lambda-outbox",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Publica los eventos del outbox de DynamoDB (Streams) en RabbitMQ. Handler de AWS Lambda + poller para DynamoDB Local.",
+  "main": "dist/handler.cjs",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "esbuild src/handler.ts --bundle --platform=node --target=node22 --format=cjs --outfile=dist/handler.cjs && esbuild src/poller.ts --bundle --platform=node --target=node22 --format=cjs --outfile=dist/poller.cjs",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "node --experimental-transform-types --test \"test/*.test.ts\"",
+    "poll": "node dist/poller.cjs"
   },
   "keywords": [],
-  "type": "commonjs",
+  "type": "module",
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.1161.0",
+    "@aws-sdk/client-dynamodb-streams": "^3.1161.0",
+    "@aws-sdk/util-dynamodb": "^3.996.9",
     "amqplib": "^2.2.0"
   },
   "devDependencies": {
+    "@aws-sdk/lib-dynamodb": "^3.1161.0",
     "@types/amqplib": "^0.10.8",
     "@types/aws-lambda": "^8.10.164",
     "@types/node": "^26.6.6",

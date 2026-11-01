@@ -70,10 +70,23 @@ cmd_status() {
   done
 }
 
+# Poller local del outbox de DynamoDB (MS3/MS8). En AWS lo reemplaza la Lambda; ver docs/outbox.md.
+POLLER_JS="$ROOT/services/ms3-citas/lambda-outbox/dist/poller.cjs"
+POLLER_PID="/tmp/sigec-outbox-poller.pid"
+cmd_poller_start() {
+  [ -f "$POLLER_JS" ] || (cd "$ROOT/services/ms3-citas/lambda-outbox" && npm run build >/dev/null 2>&1)
+  if [ -f "$POLLER_PID" ] && kill -0 "$(cat "$POLLER_PID")" 2>/dev/null; then echo "poller ya en marcha"; return; fi
+  nohup node "$POLLER_JS" >"$LOGS/outbox-poller.log" 2>&1 &
+  echo $! >"$POLLER_PID"; echo "outbox-poller iniciado (pid $(cat "$POLLER_PID")), log $LOGS/outbox-poller.log"
+}
+cmd_poller_stop() { [ -f "$POLLER_PID" ] && kill "$(cat "$POLLER_PID")" 2>/dev/null && echo "outbox-poller parado"; rm -f "$POLLER_PID"; }
+
 action="${1:-status}"; shift || true
 case "$action" in
   start) cmd_start "$@" ;;
   stop) cmd_stop "$@" ;;
   status) cmd_status ;;
-  *) echo "uso: $0 start|stop|status [servicios...]"; exit 1 ;;
+  poller-start) cmd_poller_start ;;
+  poller-stop) cmd_poller_stop ;;
+  *) echo "uso: $0 start|stop|status|poller-start|poller-stop [servicios...]"; exit 1 ;;
 esac

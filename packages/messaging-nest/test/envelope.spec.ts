@@ -31,3 +31,20 @@ describe('validateEnvelope', () => {
     expect(() => validateEnvelope(sinPayload)).toThrow(/falta payload/);
   });
 });
+
+import { buildOutboxItem } from '../src/index.js';
+
+describe('buildOutboxItem', () => {
+  it('construye un Put condicional con pk = id del sobre', () => {
+    const e = valid();
+    const { Put } = buildOutboxItem('outbox', e);
+    expect(Put.TableName).toBe('outbox');
+    expect(Put.Item).toMatchObject({ pk: e.id, exchange: 'sigec.eventos', routingKey: e.type });
+    expect(JSON.parse(Put.Item.envelope)).toEqual(e);
+    expect(Put.ConditionExpression).toBe('attribute_not_exists(pk)');
+  });
+
+  it('rechaza un sobre invalido', () => {
+    expect(() => buildOutboxItem('outbox', { id: 'x' } as never)).toThrow(InvalidEnvelopeError);
+  });
+});

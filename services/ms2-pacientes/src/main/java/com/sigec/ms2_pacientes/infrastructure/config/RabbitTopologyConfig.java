@@ -13,12 +13,14 @@ import org.springframework.amqp.core.QueueBuilder;
 import org.springframework.amqp.core.TopicExchange;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
  * Topologia de RabbitMQ segun contracts/events/topology.json. RabbitAdmin la declara al conectar (idempotente).
  * Si los argumentos difieren de lo ya declarado, RabbitMQ responde 406 PRECONDITION_FAILED.
  */
 @Configuration
+@EnableScheduling
 public class RabbitTopologyConfig {
 
 	public static final String EXCHANGE_SAGA = "sigec.saga";

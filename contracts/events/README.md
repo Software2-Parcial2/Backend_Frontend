@@ -37,8 +37,16 @@ y con **publisher confirms**. Los consumidores usan **ack manual**.
 | `notificaciones.cita-confirmada.enviada` | respuesta | MS8 → MS3 | `sigec.saga` | citaId, notificacionId, canal |
 | `notificaciones.cita-confirmada.fallida` | respuesta | MS8 → MS3 | `sigec.saga` | citaId, motivo |
 | `paciente.creado` | evento de dominio | MS2 → varios | `sigec.eventos` | pacienteId, nombre, documento |
+| `factura.creada` | evento de dominio | MS6 → varios | `sigec.eventos` | facturaId, citaId, pacienteId, monto, estado |
 
 Las respuestas conservan el `correlationId` del comando y ponen su `id` en el `causationId`.
+
+## Eventos de dominio y outbox
+
+Los eventos de dominio (`paciente.creado`, `factura.creada`) se escriben en la tabla `outbox` en la **misma transaccion** que el cambio
+de negocio. Un relay los publica en `sigec.eventos` **al menos una vez**: el `id` del sobre es el id de la fila del outbox, de modo que
+una reentrega lleva el mismo `id` y el consumidor la descarta (dedupe por `id`). El `occurredAt` del sobre es el `created_at` de la fila
+y `correlationId` es el id del agregado.
 
 ## Topologia
 
