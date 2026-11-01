@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'keycloak' => [
+        'issuer' => env('KEYCLOAK_ISSUER', 'http://localhost:8080/realms/sigec'),
+        'jwks_url' => env('KEYCLOAK_JWKS_URL'),
+    ],
+
 ];
