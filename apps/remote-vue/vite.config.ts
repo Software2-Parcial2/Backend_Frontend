@@ -10,6 +10,7 @@ export default defineConfig({
       name: 'remoteVue',
       filename: 'remoteEntry.js',
       manifest: true,
+      dts: false, // el shell carga el remoto sin tipos de Module Federation
       exposes: {
         './mount': './src/mount.ts',
       },
