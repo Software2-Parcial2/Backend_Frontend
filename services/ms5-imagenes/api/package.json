@@ -1,5 +1,5 @@
 {
-  "name": "api",
+  "name": "ms5-api",
   "version": "0.0.1",
   "description": "",
   "author": "",
@@ -18,7 +18,15 @@
     "test:watch": "vitest",
     "test:cov": "vitest run --coverage",
     "test:debug": "vitest --inspect-brk --no-file-parallelism",
-    "test:e2e": "vitest run --config ./vitest.config.e2e.ts"
+    "test:e2e": "vitest run --config ./vitest.config.e2e.ts",
+    "build:deps": "pnpm --filter @sigec/auth-nest build && pnpm install --offline --silent",
+    "prebuild": "pnpm build:deps",
+    "prestart": "pnpm build:deps",
+    "prestart:dev": "pnpm build:deps",
+    "prestart:debug": "pnpm build:deps",
+    "pretest": "pnpm build:deps",
+    "pretest:e2e": "pnpm build:deps",
+    "pretest:cov": "pnpm build:deps"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1161.0",
@@ -30,6 +38,7 @@
     "@nestjs/platform-express": "^12.0.1",
     "@nestjs/swagger": "^12.0.5",
     "@nestjs/terminus": "^12.1.0",
+    "@sigec/auth-nest": "workspace:*",
     "amqplib": "^2.2.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",

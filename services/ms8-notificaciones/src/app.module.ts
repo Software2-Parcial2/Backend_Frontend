@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller.js';
-import { AppService } from './app.service.js';
+import { TerminusModule } from '@nestjs/terminus';
+import { AuthModule } from '@sigec/auth-nest';
+import { HealthController } from './infrastructure/http/health.controller.js';
+import { NotificacionesModule } from './infrastructure/notificaciones.module.js';
 
 @Module({
-  imports: [],
-  controllers: [AppController],
-  providers: [AppService],
+  imports: [TerminusModule, AuthModule.forRoot(), NotificacionesModule],
+  controllers: [HealthController],
 })
 export class AppModule {}

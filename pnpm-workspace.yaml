@@ -12,3 +12,4 @@ allowBuilds:
   '@google/genai': true
   '@scarf/scarf': true
   protobufjs: true
+injectWorkspacePackages: true

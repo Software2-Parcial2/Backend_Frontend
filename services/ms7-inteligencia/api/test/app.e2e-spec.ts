@@ -1,29 +1,27 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
+import { Test } from '@nestjs/testing';
 import request from 'supertest';
-import { App } from 'supertest/types.js';
 import { AppModule } from './../src/app.module.js';
 
-describe('AppController (e2e)', () => {
-  let app: INestApplication<App>;
+describe('ms7-api (e2e)', () => {
+  let app: INestApplication;
 
-  beforeEach(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
-
-    app = moduleFixture.createNestApplication();
+  beforeAll(async () => {
+    const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
+    app = moduleRef.createNestApplication();
     await app.init();
   });
 
-  it('/ (GET)', () => {
-    return request(app.getHttpServer())
-      .get('/')
-      .expect(200)
-      .expect('Hello World!');
-  });
-
-  afterEach(async () => {
+  afterAll(async () => {
     await app.close();
   });
+
+  it('GET /health es publico', () =>
+    request(app.getHttpServer()).get('/health').expect(200));
+
+  it('GET /api/inteligencia sin token da 401', () =>
+    request(app.getHttpServer()).get('/api/inteligencia').expect(401));
+
+  it('GET /api/inteligencia con token invalido da 401', () =>
+    request(app.getHttpServer()).get('/api/inteligencia').set('Authorization', 'Bearer abc').expect(401));
 });
