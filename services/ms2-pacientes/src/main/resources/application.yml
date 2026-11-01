@@ -1,0 +1,39 @@
+spring:
+  application:
+    name: ms2-pacientes
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/ms2_pacientes}
+    username: ${DB_USER:${POSTGRES_USER:sigec}}
+    password: ${DB_PASSWORD:${POSTGRES_PASSWORD:cambia_esto}}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:sigec}
+    password: ${RABBITMQ_PASSWORD:cambia_esto}
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER:http://localhost:8080/realms/sigec}
+
+server:
+  port: ${PORT:8082}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html

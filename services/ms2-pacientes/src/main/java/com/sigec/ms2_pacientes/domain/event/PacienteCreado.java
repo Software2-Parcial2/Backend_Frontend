@@ -1,0 +1,29 @@
+package com.sigec.ms2_pacientes.domain.event;
+
+import java.time.Instant;
+import java.util.UUID;
+
+import com.sigec.ms2_pacientes.domain.model.Paciente;
+
+public record PacienteCreado(UUID pacienteId, String nombre, String documento, Instant occurredAt)
+		implements DomainEvent {
+
+	public static PacienteCreado de(Paciente paciente) {
+		return new PacienteCreado(paciente.id(), paciente.nombre(), paciente.documento(), Instant.now());
+	}
+
+	@Override
+	public String aggregateType() {
+		return "Paciente";
+	}
+
+	@Override
+	public UUID aggregateId() {
+		return pacienteId;
+	}
+
+	@Override
+	public String eventType() {
+		return "PacienteCreado";
+	}
+}
