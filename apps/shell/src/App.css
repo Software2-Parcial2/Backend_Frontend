@@ -1,0 +1,7 @@
+body { margin: 0; font-family: system-ui, sans-serif; }
+.topbar { display: flex; align-items: center; gap: 1.5rem; padding: 0.75rem 1rem; background: #0b3d5c; color: #fff; }
+.topbar nav { display: flex; gap: 1rem; flex: 1; }
+.topbar a { color: #cfe8f7; text-decoration: none; }
+.topbar a.active { color: #fff; font-weight: 600; text-decoration: underline; }
+.session { display: flex; align-items: center; gap: 0.75rem; }
+main { padding: 1rem; }

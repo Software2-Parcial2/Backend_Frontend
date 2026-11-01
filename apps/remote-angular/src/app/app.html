@@ -1,1 +1,8 @@
-<h1>Hello, {{ title() }}</h1>
+<section class="remote-angular">
+  <h1>Clínica (Angular)</h1>
+  @if (ctx(); as c) {
+    <p>Usuario: <strong>{{ username() }}</strong> · Roles: <strong>{{ roles() }}</strong></p>
+  } @else {
+    <p>Modo independiente: sin sesión del shell.</p>
+  }
+</section>

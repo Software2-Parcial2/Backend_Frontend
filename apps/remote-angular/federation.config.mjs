@@ -4,10 +4,10 @@ import {
 } from '@angular-architects/native-federation/config';
 
 export default withNativeFederation({
-  name: 'remote-angular',
+  name: 'remoteAngular',
 
   exposes: {
-    './Component': './src/app/app.ts',
+    './mount': './src/mount.ts',
   },
 
   //shareScope: autoShareScope({level: 'minor'}),

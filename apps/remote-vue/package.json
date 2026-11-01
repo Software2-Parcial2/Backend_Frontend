@@ -9,6 +9,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@module-federation/vite": "^1.23.7",
+    "@sigec/mfe-contract": "workspace:*",
     "vue": "^3.5.44"
   },
   "devDependencies": {
