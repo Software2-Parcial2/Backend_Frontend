@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sigec.local/contracts/events/facturacion.cobro.anular.schema.json",
+  "title": "facturacion.cobro.anular",
+  "description": "Comando MS3 -> MS6 (exchange sigec.saga, routing key = type).",
+  "allOf": [
+    {
+      "$ref": "envelope.schema.json"
+    },
+    {
+      "properties": {
+        "type": {
+          "const": "facturacion.cobro.anular"
+        },
+        "payload": {
+          "type": "object",
+          "required": [
+            "citaId",
+            "motivo"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "citaId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "facturaId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "motivo": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

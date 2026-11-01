@@ -1,0 +1,15 @@
+{
+  "name": "@sigec/scripts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Scripts de desarrollo: tablas DynamoDB, topologia RabbitMQ, poller del outbox",
+  "scripts": {
+    "dynamodb:init": "node dynamodb-init.mjs",
+    "rabbitmq:declare": "node rabbitmq-declare.mjs"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.1161.0",
+    "amqplib": "^2.2.0"
+  }
+}

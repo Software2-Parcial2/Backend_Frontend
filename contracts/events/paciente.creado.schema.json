@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sigec.local/contracts/events/paciente.creado.schema.json",
+  "title": "paciente.creado",
+  "description": "Evento MS2 -> varios (exchange sigec.eventos, routing key = type).",
+  "allOf": [
+    {
+      "$ref": "envelope.schema.json"
+    },
+    {
+      "properties": {
+        "type": {
+          "const": "paciente.creado"
+        },
+        "payload": {
+          "type": "object",
+          "required": [
+            "pacienteId",
+            "nombre",
+            "documento"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "pacienteId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "nombre": {
+              "type": "string"
+            },
+            "documento": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

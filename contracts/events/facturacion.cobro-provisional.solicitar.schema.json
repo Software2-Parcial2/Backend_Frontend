@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sigec.local/contracts/events/facturacion.cobro-provisional.solicitar.schema.json",
+  "title": "facturacion.cobro-provisional.solicitar",
+  "description": "Comando MS3 -> MS6 (exchange sigec.saga, routing key = type).",
+  "allOf": [
+    {
+      "$ref": "envelope.schema.json"
+    },
+    {
+      "properties": {
+        "type": {
+          "const": "facturacion.cobro-provisional.solicitar"
+        },
+        "payload": {
+          "type": "object",
+          "required": [
+            "citaId",
+            "pacienteId",
+            "medicoId",
+            "especialidad",
+            "fechaHora"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "citaId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "pacienteId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "medicoId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "especialidad": {
+              "type": "string"
+            },
+            "fechaHora": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

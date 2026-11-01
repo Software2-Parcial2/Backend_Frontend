@@ -30,9 +30,14 @@ services:
 
   dynamodb:
     image: amazon/dynamodb-local:latest
-    command: ["-jar", "DynamoDBLocal.jar", "-sharedDb", "-inMemory"]
+    # Solo desarrollo: el volumen nombrado nuevo es de root y la imagen corre como "dynamodblocal",
+    # asi que sin esto SQLite no puede abrir /data ("unable to open database file").
+    user: root
+    command: ["-jar", "DynamoDBLocal.jar", "-sharedDb", "-dbPath", "/data"]
     ports:
       - "8000:8000"
+    volumes:
+      - dynamodb_data:/data
 
   # Almacenamiento compatible con S3 (reemplaza a MinIO, cuyas imagenes ya no se publican).
   # Sin credenciales en desarrollo; en AWS se usara S3 real.
@@ -131,3 +136,4 @@ volumes:
   s3_data:
   rabbit_data:
   n8n_data:
+  dynamodb_data:

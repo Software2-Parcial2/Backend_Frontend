@@ -17,6 +17,14 @@ spring:
     port: ${RABBITMQ_PORT:5672}
     username: ${RABBITMQ_USER:sigec}
     password: ${RABBITMQ_PASSWORD:cambia_esto}
+    # Publisher confirms: el relay del outbox espera la confirmacion del broker antes de marcar published_at.
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    listener:
+      simple:
+        acknowledge-mode: manual
+        prefetch: 10
+        default-requeue-rejected: false
   security:
     oauth2:
       resourceserver:

@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sigec.local/contracts/events/notificaciones.cita-confirmada.enviar.schema.json",
+  "title": "notificaciones.cita-confirmada.enviar",
+  "description": "Comando MS3 -> MS8 (exchange sigec.saga, routing key = type).",
+  "allOf": [
+    {
+      "$ref": "envelope.schema.json"
+    },
+    {
+      "properties": {
+        "type": {
+          "const": "notificaciones.cita-confirmada.enviar"
+        },
+        "payload": {
+          "type": "object",
+          "required": [
+            "citaId",
+            "pacienteId",
+            "medicoId",
+            "fechaHora"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "citaId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "pacienteId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "medicoId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "fechaHora": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

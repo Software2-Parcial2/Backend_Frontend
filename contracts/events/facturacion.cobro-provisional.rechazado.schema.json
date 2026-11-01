@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sigec.local/contracts/events/facturacion.cobro-provisional.rechazado.schema.json",
+  "title": "facturacion.cobro-provisional.rechazado",
+  "description": "Respuesta MS6 -> MS3 (exchange sigec.saga, routing key = type).",
+  "allOf": [
+    {
+      "$ref": "envelope.schema.json"
+    },
+    {
+      "properties": {
+        "type": {
+          "const": "facturacion.cobro-provisional.rechazado"
+        },
+        "payload": {
+          "type": "object",
+          "required": [
+            "citaId",
+            "motivo"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "citaId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "motivo": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

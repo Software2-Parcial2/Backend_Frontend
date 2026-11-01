@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sigec.local/contracts/events/notificaciones.cita-confirmada.fallida.schema.json",
+  "title": "notificaciones.cita-confirmada.fallida",
+  "description": "Respuesta MS8 -> MS3 (exchange sigec.saga, routing key = type).",
+  "allOf": [
+    {
+      "$ref": "envelope.schema.json"
+    },
+    {
+      "properties": {
+        "type": {
+          "const": "notificaciones.cita-confirmada.fallida"
+        },
+        "payload": {
+          "type": "object",
+          "required": [
+            "citaId",
+            "motivo"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "citaId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "motivo": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

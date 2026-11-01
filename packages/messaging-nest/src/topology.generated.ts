@@ -1,0 +1,101 @@
+// GENERADO por scripts/gen-contracts.mjs desde contracts/events/topology.json. No editar a mano.
+export const TOPOLOGY = {
+  "exchanges": [
+    {
+      "name": "sigec.saga",
+      "type": "direct",
+      "durable": true
+    },
+    {
+      "name": "sigec.eventos",
+      "type": "topic",
+      "durable": true
+    },
+    {
+      "name": "sigec.retry",
+      "type": "direct",
+      "durable": true
+    },
+    {
+      "name": "sigec.dlx",
+      "type": "direct",
+      "durable": true
+    }
+  ],
+  "retry": {
+    "maxRetries": 3,
+    "tiers": [
+      {
+        "suffix": "retry.5s",
+        "ttlMs": 5000
+      },
+      {
+        "suffix": "retry.30s",
+        "ttlMs": 30000
+      },
+      {
+        "suffix": "retry.2m",
+        "ttlMs": 120000
+      }
+    ],
+    "exchange": "sigec.retry",
+    "deadLetterExchange": "sigec.dlx"
+  },
+  "queues": [
+    {
+      "name": "ms6.saga.comandos",
+      "owner": "MS6",
+      "bindings": [
+        {
+          "exchange": "sigec.saga",
+          "routingKeys": [
+            "facturacion.cobro-provisional.solicitar",
+            "facturacion.cobro.anular",
+            "facturacion.cobro.confirmar"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ms8.saga.comandos",
+      "owner": "MS8",
+      "bindings": [
+        {
+          "exchange": "sigec.saga",
+          "routingKeys": [
+            "notificaciones.cita-confirmada.enviar",
+            "notificaciones.cita-cancelada.enviar"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ms3.saga.respuestas",
+      "owner": "MS3",
+      "bindings": [
+        {
+          "exchange": "sigec.saga",
+          "routingKeys": [
+            "facturacion.cobro-provisional.registrado",
+            "facturacion.cobro-provisional.rechazado",
+            "facturacion.cobro.anulado",
+            "notificaciones.cita-confirmada.enviada",
+            "notificaciones.cita-confirmada.fallida"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ms4.eventos.pacientes",
+      "owner": "MS4",
+      "bindings": [
+        {
+          "exchange": "sigec.eventos",
+          "routingKeys": [
+            "paciente.creado"
+          ]
+        }
+      ]
+    }
+  ]
+} as const;

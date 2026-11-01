@@ -1,0 +1,35 @@
+{
+  "name": "@sigec/messaging-nest",
+  "version": "0.1.0",
+  "description": "Sobre de mensajes, publicador con confirms y consumidor con reintentos/DLQ para RabbitMQ (SIGEC)",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "gen": "node scripts/gen-contracts.mjs",
+    "build": "node scripts/gen-contracts.mjs && tsc -p tsconfig.build.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "amqplib": "^2.2.0"
+  },
+  "peerDependencies": {
+    "@nestjs/common": "^12.0.1",
+    "reflect-metadata": "^0.2.2"
+  },
+  "devDependencies": {
+    "@nestjs/common": "^12.0.1",
+    "@types/amqplib": "^0.10.8",
+    "@types/node": "^24.0.0",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1",
+    "typescript": "^6.0.2",
+    "vite": "^8.0.0",
+    "vitest": "^4.1.2"
+  }
+}

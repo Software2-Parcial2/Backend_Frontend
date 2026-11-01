@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sigec.local/contracts/events/notificaciones.cita-confirmada.enviada.schema.json",
+  "title": "notificaciones.cita-confirmada.enviada",
+  "description": "Respuesta MS8 -> MS3 (exchange sigec.saga, routing key = type).",
+  "allOf": [
+    {
+      "$ref": "envelope.schema.json"
+    },
+    {
+      "properties": {
+        "type": {
+          "const": "notificaciones.cita-confirmada.enviada"
+        },
+        "payload": {
+          "type": "object",
+          "required": [
+            "citaId",
+            "notificacionId",
+            "canal"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "citaId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "notificacionId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "canal": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

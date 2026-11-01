@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sigec.local/contracts/events/envelope.schema.json",
+  "title": "Sobre de mensaje SIGEC",
+  "type": "object",
+  "required": [
+    "id",
+    "type",
+    "occurredAt",
+    "correlationId",
+    "causationId",
+    "version",
+    "payload"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Identificador unico del mensaje. Los consumidores deduplican por este campo."
+    },
+    "type": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(\\.[a-z0-9-]+)+$",
+      "description": "Tipo del mensaje; coincide con la routing key."
+    },
+    "occurredAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 en UTC (termina en Z)."
+    },
+    "correlationId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Id de la SAGA (sagaId) o del flujo que origina el mensaje."
+    },
+    "causationId": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "uuid"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Id del mensaje que causo este (null si es el primero)."
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Version del esquema del payload."
+    },
+    "payload": {
+      "type": "object"
+    }
+  }
+}
