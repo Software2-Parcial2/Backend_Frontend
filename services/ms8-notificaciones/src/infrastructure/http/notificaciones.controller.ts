@@ -1,16 +1,21 @@
-import { Controller, Get } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { ListarNotificacionesUseCase } from '../../application/listar-notificaciones.use-case.js';
+import { Controller, Get, Inject, ParseUUIDPipe, Query } from '@nestjs/common';
+import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { Roles } from '@sigec/auth-nest';
+import type { NotificacionRepository } from '../../application/enviar-notificacion.use-case.js';
 import type { Notificacion } from '../../domain/notificacion.js';
+import { NOTIFICACION_REPOSITORY } from '../notificaciones.tokens.js';
 
 @ApiTags('notificaciones')
 @ApiBearerAuth()
 @Controller('api/notificaciones')
 export class NotificacionesController {
-  constructor(private readonly listar: ListarNotificacionesUseCase) {}
+  constructor(@Inject(NOTIFICACION_REPOSITORY) private readonly repo: NotificacionRepository) {}
 
+  /** Notificaciones de una cita (sin citaId devuelve []). */
   @Get()
-  listarNotificaciones(): Notificacion[] {
-    return this.listar.ejecutar();
+  @Roles('administrador', 'recepcion', 'medico')
+  @ApiQuery({ name: 'citaId', required: false })
+  async listar(@Query('citaId', new ParseUUIDPipe({ optional: true })) citaId?: string): Promise<Notificacion[]> {
+    return citaId ? this.repo.porCita(citaId) : [];
   }
 }

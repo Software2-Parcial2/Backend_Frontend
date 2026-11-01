@@ -46,7 +46,8 @@ echo "== Preparacion"
 curl -s -u "$AUTH" -X PUT "$MGMT/queues/%2F/$Q_FAC" -H 'content-type: application/json' -d '{"durable":true}' -o /dev/null
 curl -s -u "$AUTH" -X POST "$MGMT/bindings/%2F/e/sigec.eventos/q/$Q_FAC" -H 'content-type: application/json' -d '{"routing_key":"factura.#"}' -o /dev/null
 # Relay de MS6 (proceso aparte; el de MS2 va dentro del servicio)
-(cd services/ms6-facturacion && nohup php artisan outbox:relay --interval=1 >/tmp/sigec-logs/ms6-relay.log 2>&1 & echo $! >/tmp/sigec-ms6-relay.pid)
+mkdir -p /tmp/sigec-logs
+(cd services/ms6-facturacion; nohup php artisan outbox:relay --interval=1 >/tmp/sigec-logs/ms6-relay.log 2>&1 </dev/null & echo $! >/tmp/sigec-ms6-relay.pid)
 # Se vacia cualquier pendiente anterior (de otras pruebas) y SOLO ENTONCES se purgan las colas, para medir desde cero.
 wait_for "backlog MS2" pending_pac 0 60; wait_for "backlog MS6" pending_fac 0 60
 sleep 1; purge "$Q_PAC"; purge "$Q_FAC"

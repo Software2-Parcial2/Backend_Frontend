@@ -41,7 +41,8 @@ cmd_start() {
     IFS='|' read -r name port dir command health <<<"$entry"
     wanted "$name" "$@" || continue
     if [ -n "$(pid_on_port "$port")" ]; then echo "$name ya esta en el puerto $port"; continue; fi
-    (cd "$ROOT/$dir" && nohup bash -c "$command" >"$LOGS/$name.log" 2>&1 &)
+    # `;` y no `&&`: con `cd && nohup ... &` toda la lista queda en un subshell que retiene la salida (y las tuberias).
+    (cd "$ROOT/$dir"; nohup bash -c "$command" >"$LOGS/$name.log" 2>&1 </dev/null &)
   done
   for entry in "${SERVICES[@]}"; do
     IFS='|' read -r name port dir command health <<<"$entry"
@@ -76,10 +77,28 @@ POLLER_PID="/tmp/sigec-outbox-poller.pid"
 cmd_poller_start() {
   [ -f "$POLLER_JS" ] || (cd "$ROOT/services/ms3-citas/lambda-outbox" && npm run build >/dev/null 2>&1)
   if [ -f "$POLLER_PID" ] && kill -0 "$(cat "$POLLER_PID")" 2>/dev/null; then echo "poller ya en marcha"; return; fi
-  nohup node "$POLLER_JS" >"$LOGS/outbox-poller.log" 2>&1 &
+  nohup node "$POLLER_JS" >"$LOGS/outbox-poller.log" 2>&1 </dev/null &
   echo $! >"$POLLER_PID"; echo "outbox-poller iniciado (pid $(cat "$POLLER_PID")), log $LOGS/outbox-poller.log"
 }
 cmd_poller_stop() { [ -f "$POLLER_PID" ] && kill "$(cat "$POLLER_PID")" 2>/dev/null && echo "outbox-poller parado"; rm -f "$POLLER_PID"; }
+
+# Procesos de fondo de MS6: relay del outbox (publica las respuestas) y consumidor de comandos de la SAGA.
+MS6_DIR="$ROOT/services/ms6-facturacion"
+cmd_workers_start() {
+  for w in "outbox:relay --interval=1" "saga:consume"; do
+    name="${w%% *}"; pidf="/tmp/sigec-ms6-${name//:/-}.pid"
+    if [ -f "$pidf" ] && kill -0 "$(cat "$pidf")" 2>/dev/null; then echo "ms6 $name ya en marcha"; continue; fi
+    (cd "$MS6_DIR"; nohup php artisan $w >"$LOGS/ms6-${name//:/-}.log" 2>&1 </dev/null & echo $! >"$pidf")
+    echo "ms6 $name iniciado"
+  done
+}
+cmd_workers_stop() {
+  for name in outbox-relay saga-consume; do
+    pidf="/tmp/sigec-ms6-$name.pid"
+    [ -f "$pidf" ] && kill "$(cat "$pidf")" 2>/dev/null && echo "ms6 $name parado"
+    rm -f "$pidf"
+  done
+}
 
 action="${1:-status}"; shift || true
 case "$action" in
@@ -88,5 +107,7 @@ case "$action" in
   status) cmd_status ;;
   poller-start) cmd_poller_start ;;
   poller-stop) cmd_poller_stop ;;
-  *) echo "uso: $0 start|stop|status|poller-start|poller-stop [servicios...]"; exit 1 ;;
+  workers-start) cmd_workers_start ;;
+  workers-stop) cmd_workers_stop ;;
+  *) echo "uso: $0 start|stop|status|poller-start|poller-stop|workers-start|workers-stop [servicios...]"; exit 1 ;;
 esac

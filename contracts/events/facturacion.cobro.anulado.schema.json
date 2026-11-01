@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://sigec.local/contracts/events/facturacion.cobro.anulado.schema.json",
   "title": "facturacion.cobro.anulado",
-  "description": "Respuesta MS6 -> MS3 (exchange sigec.saga, routing key = type).",
+  "description": "Respuesta MS6 -> MS3 (exchange sigec.saga, routing key = type). facturaId es opcional: puede no existir cobro que anular.",
   "allOf": [
     {
       "$ref": "envelope.schema.json"
@@ -15,8 +15,7 @@
         "payload": {
           "type": "object",
           "required": [
-            "citaId",
-            "facturaId"
+            "citaId"
           ],
           "additionalProperties": false,
           "properties": {

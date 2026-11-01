@@ -39,7 +39,8 @@ const key = (pk, sk) => ({
  */
 const tables = [
   // --- MS3 (citas / orquestador de la SAGA) ---
-  { name: 'citas', ...key('pk', 'sk') },
+  // gsi1 (disperso): SAGAs en curso por plazo y notificaciones pendientes por proximo intento.
+  { name: 'citas', ...key('pk', 'sk'), gsi1: true },
   { name: 'idempotency_keys', ...key('pk'), ttl: 'expiresAt' },
   { name: 'outbox', ...key('pk'), stream: true },
   { name: 'processed_messages', ...key('pk'), ttl: 'expiresAt' },
@@ -48,6 +49,19 @@ const tables = [
   { name: 'ms8_idempotency_keys', ...key('pk'), ttl: 'expiresAt' },
   { name: 'ms8_outbox', ...key('pk'), stream: true },
   { name: 'ms8_processed_messages', ...key('pk'), ttl: 'expiresAt' },
+];
+
+const GSI1 = {
+  IndexName: 'gsi1',
+  KeySchema: [
+    { AttributeName: 'gsi1pk', KeyType: 'HASH' },
+    { AttributeName: 'gsi1sk', KeyType: 'RANGE' },
+  ],
+  Projection: { ProjectionType: 'KEYS_ONLY' },
+};
+const GSI1_ATTRS = [
+  { AttributeName: 'gsi1pk', AttributeType: 'S' },
+  { AttributeName: 'gsi1sk', AttributeType: 'N' },
 ];
 
 async function describe(name) {
@@ -66,8 +80,9 @@ for (const t of tables) {
     await client.send(
       new CreateTableCommand({
         TableName: t.name,
-        AttributeDefinitions: t.AttributeDefinitions,
+        AttributeDefinitions: t.gsi1 ? [...t.AttributeDefinitions, ...GSI1_ATTRS] : t.AttributeDefinitions,
         KeySchema: t.KeySchema,
+        ...(t.gsi1 ? { GlobalSecondaryIndexes: [GSI1] } : {}),
         BillingMode: 'PAY_PER_REQUEST',
         ...(t.stream ? { StreamSpecification: { StreamEnabled: true, StreamViewType: 'NEW_IMAGE' } } : {}),
       }),
@@ -81,6 +96,16 @@ for (const t of tables) {
       }),
     );
     action = 'stream activado';
+  }
+  if (t.gsi1 && table && !(table.GlobalSecondaryIndexes ?? []).some((g) => g.IndexName === 'gsi1')) {
+    await client.send(
+      new UpdateTableCommand({
+        TableName: t.name,
+        AttributeDefinitions: [...t.AttributeDefinitions, ...GSI1_ATTRS],
+        GlobalSecondaryIndexUpdates: [{ Create: GSI1 }],
+      }),
+    );
+    action = 'indice gsi1 creado';
   }
   if (t.ttl) {
     const ttl = (await client.send(new DescribeTimeToLiveCommand({ TableName: t.name }))).TimeToLiveDescription;

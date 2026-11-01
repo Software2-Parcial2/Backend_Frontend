@@ -37,6 +37,15 @@ DDD + Arquitectura Hexagonal + Clean Architecture en cada servicio.
 | n8n | n8n | 5678 |
 | shell / PWA / remote-vue / remote-angular | Rsbuild / Vite / Vite / Angular | 5173 / 5174 / 5175 / 4201 |
 
+### Paquetes compartidos (`packages/`)
+
+| Paquete | Uso |
+|---|---|
+| `@sigec/auth-nest` | guard JWT de Keycloak (`jose`), `@Public()`, `@Roles()`, `@CurrentUser()` |
+| `@sigec/messaging-nest` | sobre de mensajes, publicador con confirms, consumidor con reintentos/DLQ, `buildOutboxItem` |
+| `@sigec/idempotency-nest` | `@Idempotent()` (interceptor), almacen DynamoDB, deduplicador de consumidores |
+| `@sigec/mfe-contract` | tipos del contrato `mount/unmount` de los microfrontends |
+
 ## Reglas de capas
 
 ```
@@ -79,3 +88,51 @@ Formato `tipo(ámbito): descripción en imperativo`, en minúsculas y sin punto 
 - Ámbito: servicio o app (`gateway`, `ms2`, `ms3`, `shell`, `infra`...).
 - Ejemplo: `feat(ms2): crear paciente con escritura en outbox`.
 - Un cambio lógico por commit; no mezclar servicios sin motivo.
+
+## Mensajeria, idempotencia y outbox (reglas)
+
+- **Contratos:** todo mensaje de RabbitMQ cumple el sobre comun (`id`, `type`, `occurredAt`, `correlationId`, `causationId`, `version`,
+  `payload`) y tiene su JSON Schema en `contracts/events/`. La topologia (exchanges, colas, DLQ, colas de espera) esta en
+  `contracts/events/topology.json`; `make rabbitmq-declare` la declara y cada servicio declara sus colas al arrancar.
+  Un cambio de mensaje = cambiar su schema + README + los productores/consumidores.
+- **Publicar:** mensajes persistentes, con publisher confirms. **Consumir:** ack manual, reintentos limitados (colas de espera 5 s / 30 s / 2 min,
+  3 reintentos) y DLQ; deduplicar siempre por `id` del mensaje (`processed_messages`).
+- **Outbox:** un evento o comando que debe salir **nunca** se publica directamente: se escribe en la tabla/item `outbox` en la misma transaccion que
+  el cambio de negocio (SQL: MS2/MS4/MS6; DynamoDB `TransactWriteItems` con `buildOutboxItem`: MS3/MS8). Un relay lo publica al menos una vez
+  (`docs/outbox.md`). El `id` del sobre es el id de la fila del outbox.
+- **Idempotencia HTTP:** `Idempotency-Key` (UUID) obligatoria en POST/PUT/PATCH de negocio (`contracts/idempotency.md`, `docs/idempotencia.md`).
+  Respuestas: `400` sin cabecera, `422` mismo key con otra peticion, `409` + `Retry-After` en proceso, replay con `Idempotent-Replay: true`.
+- **SAGA de citas:** orquestada por MS3 (`docs/saga-citas.md`). La maquina de estados (`application/saga/saga-machine.ts`) es pura y sin framework;
+  la persistencia aplica cada transicion en una sola transaccion (cita + saga + horario + outbox).
+- **CORS solo en el gateway.** Ningun otro servicio lo activa.
+
+## Pruebas
+
+| Que | Comando |
+|---|---|
+| Spring (Testcontainers; necesita Docker) | `(cd services/ms2-pacientes && ./mvnw test)` y `ms4-historias` |
+| Laravel MS6 (BD `ms6_facturacion_test`) | `(cd services/ms6-facturacion && php artisan test)` |
+| Nest (unitarias + DynamoDB Local) | `pnpm --filter ms3-citas test`, `ms8-notificaciones`, `ms5-api`, `ms7-api` |
+| Paquetes compartidos | `pnpm --filter @sigec/messaging-nest test` (usar `set -a; source .env; set +a` para el RabbitMQ real), `@sigec/idempotency-nest`, `@sigec/auth-nest` |
+| Lambda del outbox | `(cd services/ms3-citas/lambda-outbox && set -a && source ../../../.env && set +a && npm test)` |
+| Idempotencia por el gateway (curl) | `scripts/dev-services.sh start gateway ms2 ms3 ms6 && scripts/test-idempotencia.sh` |
+| Relay del outbox con RabbitMQ apagado/encendido | `scripts/dev-services.sh start gateway ms2 ms6 && scripts/test-outbox.sh` |
+| **SAGA de extremo a extremo** (51 comprobaciones, ~4 min) | `docker compose up -d && make dynamodb-init && make rabbitmq-declare && make e2e-saga` |
+
+`scripts/dev-services.sh` levanta/para servicios por puerto (`start|stop|status [gateway ms2 ms3 ms4 ms5 ms6 ms7 ms8]`, `poller-start|poller-stop`,
+`workers-start|workers-stop` para el relay y el consumidor de MS6). Logs en `/tmp/sigec-logs`. `scripts/e2e-saga.sh` arranca y detiene lo que necesita.
+
+## Trampas conocidas
+
+- **Paquetes compartidos de pnpm** (`injectWorkspacePackages`): los servicios usan una copia. `pnpm build`/`test` de un servicio la resincronizan,
+  pero si **anades un archivo nuevo** a un paquete hay que ejecutar `pnpm install --force --offline` en la raiz.
+- **Procesos huerfanos:** lanzar un proceso con `cd d && cmd &` deja un subshell vivo y el pid guardado es el equivocado. Usa `(cd d; cmd &)`.
+  Si un relay/consumidor antiguo sigue vivo con codigo viejo puede robar mensajes: `ps -eo pid,args | grep -E "artisan (outbox:relay|saga:consume)"`.
+- **DynamoDB Local** corre como root en el compose (volumen persistente `dynamodb_data`, solo desarrollo). `make dynamodb-init` es repetible.
+- `pkill -f` con un patron que aparece en el propio comando mata tu shell; usa `pkill -f "[p]atron"`.
+- En MS6 las pruebas usan PostgreSQL (`ms6_facturacion_test`), no SQLite (las migraciones usan `jsonb`).
+
+## Estado y pendientes
+
+Ver `docs/PENDIENTES.md`.
+

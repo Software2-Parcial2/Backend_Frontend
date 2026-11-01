@@ -75,7 +75,7 @@
         ],
         "workers": [
             "Composer\\Config::disableProcessTimeout",
-            "@php artisan outbox:relay & @php artisan queue:work rabbitmq --tries=3; wait"
+            "@php artisan outbox:relay & @php artisan saga:consume; wait"
         ]
     },
     "extra": {

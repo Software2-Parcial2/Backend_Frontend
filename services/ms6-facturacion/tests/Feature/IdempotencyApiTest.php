@@ -97,16 +97,18 @@ describe('POST /api/facturacion/facturas con Idempotency-Key', function () {
         $body = facturaBody();
         postFactura($body, $key)->assertCreated();
         DB::table('idempotency_keys')->update(['expires_at' => now()->subMinute()]);
-        $again = postFactura($body, $key)->assertCreated();
+        // Vencida: se ejecuta de verdad (sin Idempotent-Replay). Como ya hay un cobro vigente para esa cita, responde 409.
+        $again = postFactura($body, $key)->assertStatus(409);
         expect($again->headers->get('Idempotent-Replay'))->toBeNull()
-            ->and(DB::table('facturas')->count())->toBe(2);
+            ->and(DB::table('facturas')->count())->toBe(1);
     });
 
     it('la clave esta acotada por usuario', function () {
         $key = (string) Str::uuid();
         $body = facturaBody();
         postFactura($body, $key, ['sub' => 'ana'])->assertCreated();
-        $otro = postFactura($body, $key, ['sub' => 'luis'])->assertCreated();
+        // Para otro usuario la clave es nueva: se ejecuta de verdad (409 porque la cita ya tiene cobro), sin ver la respuesta de ana.
+        $otro = postFactura($body, $key, ['sub' => 'luis'])->assertStatus(409);
         expect($otro->headers->get('Idempotent-Replay'))->toBeNull();
     });
 });

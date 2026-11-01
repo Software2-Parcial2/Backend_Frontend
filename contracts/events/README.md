@@ -33,7 +33,7 @@ y con **publisher confirms**. Los consumidores usan **ack manual**.
 | `notificaciones.cita-cancelada.enviar` | comando | MS3 → MS8 | `sigec.saga` | citaId, pacienteId, motivo |
 | `facturacion.cobro-provisional.registrado` | respuesta | MS6 → MS3 | `sigec.saga` | citaId, facturaId, monto |
 | `facturacion.cobro-provisional.rechazado` | respuesta | MS6 → MS3 | `sigec.saga` | citaId, motivo |
-| `facturacion.cobro.anulado` | respuesta | MS6 → MS3 | `sigec.saga` | citaId, facturaId |
+| `facturacion.cobro.anulado` | respuesta | MS6 → MS3 | `sigec.saga` | citaId, facturaId? |
 | `notificaciones.cita-confirmada.enviada` | respuesta | MS8 → MS3 | `sigec.saga` | citaId, notificacionId, canal |
 | `notificaciones.cita-confirmada.fallida` | respuesta | MS8 → MS3 | `sigec.saga` | citaId, motivo |
 | `paciente.creado` | evento de dominio | MS2 → varios | `sigec.eventos` | pacienteId, nombre, documento |

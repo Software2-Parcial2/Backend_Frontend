@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Factura;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -24,7 +25,19 @@ class FacturaController extends Controller
             'monto' => ['required', 'numeric', 'gt:0', 'max:99999999.99'],
         ]);
 
-        $factura = DB::transaction(function () use ($data) {
+        try {
+            $factura = $this->crear($data);
+        } catch (UniqueConstraintViolationException) {
+            // Un solo cobro vigente por cita (indice unico parcial).
+            return response()->json(['message' => 'Ya existe un cobro vigente para esta cita'], 409);
+        }
+
+        return response()->json($factura->refresh(), 201);
+    }
+
+    private function crear(array $data): Factura
+    {
+        return DB::transaction(function () use ($data) {
             $factura = Factura::create($data + ['estado' => 'PENDIENTE']);
             DB::table('outbox')->insert([
                 'id' => (string) Str::uuid(),
@@ -43,7 +56,5 @@ class FacturaController extends Controller
 
             return $factura;
         });
-
-        return response()->json($factura->refresh(), 201);
     }
 }

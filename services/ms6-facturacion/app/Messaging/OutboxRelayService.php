@@ -35,7 +35,7 @@ final class OutboxRelayService
             $count = 0;
             foreach ($rows as $row) {
                 try {
-                    ($this->publish)(self::EXCHANGE, self::envelope($row));
+                    ($this->publish)($row->exchange ?? self::EXCHANGE, self::envelope($row));
                 } catch (Throwable $e) {
                     $failure = $e;
                     break; // se confirma (commit) lo publicado antes y se reintenta desde esta fila
@@ -68,8 +68,8 @@ final class OutboxRelayService
             'id' => $row->id,
             'type' => $row->event_type,
             'occurredAt' => Carbon::parse($row->created_at)->utc()->format('Y-m-d\TH:i:s.v\Z'),
-            'correlationId' => $row->aggregate_id,
-            'causationId' => null,
+            'correlationId' => $row->correlation_id ?? $row->aggregate_id,
+            'causationId' => $row->causation_id ?? null,
             'version' => 1,
             'payload' => $payload === [] ? new \stdClass : $payload,
         ];
