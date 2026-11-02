@@ -80,3 +80,46 @@ describe('autorizacion por paciente', function () {
         expect($this->getJson('/api/facturacion/facturas', authHeaders())->assertOk()->json())->toHaveCount(2);
     });
 });
+
+describe('ingresos agregados', function () {
+    function insertarFactura(string $estado, float $monto, string $fecha): void
+    {
+        DB::table('facturas')->insert(['id' => (string) Str::uuid(), 'cita_id' => (string) Str::uuid(), 'paciente_id' => (string) Str::uuid(),
+            'monto' => $monto, 'estado' => $estado, 'created_at' => $fecha, 'updated_at' => $fecha]);
+    }
+
+    it('suma por mes solo confirmadas y provisionales dentro del rango', function () {
+        insertarFactura('CONFIRMADA', 100, '2026-01-10 10:00:00');
+        insertarFactura('CONFIRMADA', 50.5, '2026-01-20 10:00:00');
+        insertarFactura('PROVISIONAL', 30, '2026-01-25 10:00:00');
+        insertarFactura('ANULADA', 999, '2026-01-26 10:00:00');
+        insertarFactura('CONFIRMADA', 70, '2026-02-02 10:00:00');
+        insertarFactura('CONFIRMADA', 5, '2025-12-31 23:00:00'); // fuera del rango
+
+        $res = $this->getJson('/api/facturacion/facturas/ingresos?desde=2026-01-01&hasta=2026-02-28', authHeaders())->assertOk()->json();
+        expect($res)->toEqual([
+            ['periodo' => '2026-01', 'confirmado' => 150.5, 'provisional' => 30.0, 'facturas' => 3],
+            ['periodo' => '2026-02', 'confirmado' => 70.0, 'provisional' => 0.0, 'facturas' => 1],
+        ]);
+    });
+
+    it('agrupa por dia', function () {
+        insertarFactura('CONFIRMADA', 10, '2026-03-01 08:00:00');
+        insertarFactura('CONFIRMADA', 15, '2026-03-01 18:00:00');
+        $res = $this->getJson('/api/facturacion/facturas/ingresos?desde=2026-03-01&hasta=2026-03-02&agrupar=dia', authHeaders())->assertOk()->json();
+        expect($res)->toHaveCount(1)->and($res[0]['periodo'])->toBe('2026-03-01')->and($res[0]['confirmado'])->toEqual(25);
+    });
+
+    it('valida parametros y rango maximo', function () {
+        $this->getJson('/api/facturacion/facturas/ingresos', authHeaders())->assertUnprocessable();
+        $this->getJson('/api/facturacion/facturas/ingresos?desde=2026-02-01&hasta=2026-01-01', authHeaders())->assertUnprocessable();
+        $this->getJson('/api/facturacion/facturas/ingresos?desde=2020-01-01&hasta=2026-01-01', authHeaders())->assertUnprocessable();
+    });
+
+    it('solo caja y administrador', function () {
+        $url = '/api/facturacion/facturas/ingresos?desde=2026-01-01&hasta=2026-01-31';
+        $this->getJson($url, authHeaders(['realm_access' => ['roles' => ['recepcion']]]))->assertForbidden();
+        $this->getJson($url, authHeaders(['realm_access' => ['roles' => ['paciente']], 'paciente_id' => (string) Str::uuid()]))->assertForbidden();
+        $this->getJson($url, authHeaders(['realm_access' => ['roles' => ['administrador']]]))->assertOk();
+    });
+});

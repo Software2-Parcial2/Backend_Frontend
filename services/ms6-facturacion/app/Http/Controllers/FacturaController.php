@@ -27,6 +27,42 @@ class FacturaController extends Controller
         return response()->json($query->get());
     }
 
+    /**
+     * Ingresos agregados por periodo (dia|mes) entre `desde` y `hasta` (fechas AAAA-MM-DD, maximo 366 dias). Solo personal de gestion.
+     * `confirmado` suma las facturas CONFIRMADA; `provisional` las PROVISIONAL (aun sin confirmar); las ANULADA y PENDIENTE no cuentan.
+     */
+    public function ingresos(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'desde' => ['required', 'date_format:Y-m-d'],
+            'hasta' => ['required', 'date_format:Y-m-d', 'after_or_equal:desde'],
+            'agrupar' => ['sometimes', 'in:dia,mes'],
+        ]);
+        $desde = \Carbon\Carbon::parse($data['desde'])->startOfDay();
+        $hasta = \Carbon\Carbon::parse($data['hasta'])->endOfDay();
+        if ($desde->diffInDays($hasta) > 366) {
+            return response()->json(['message' => 'El rango maximo es de 366 dias'], 422);
+        }
+        $unidad = ($data['agrupar'] ?? 'mes') === 'dia' ? 'day' : 'month';
+        $formato = $unidad === 'day' ? 'YYYY-MM-DD' : 'YYYY-MM';
+
+        $filas = Factura::query()
+            ->whereBetween('created_at', [$desde, $hasta])
+            ->whereIn('estado', ['CONFIRMADA', 'PROVISIONAL'])
+            ->selectRaw("to_char(date_trunc('{$unidad}', created_at), '{$formato}') as periodo")
+            ->selectRaw("COALESCE(SUM(monto) FILTER (WHERE estado = 'CONFIRMADA'), 0) as confirmado")
+            ->selectRaw("COALESCE(SUM(monto) FILTER (WHERE estado = 'PROVISIONAL'), 0) as provisional")
+            ->selectRaw('COUNT(*) as facturas')
+            ->groupBy('periodo')->orderBy('periodo')->get();
+
+        return response()->json($filas->map(fn ($f) => [
+            'periodo' => $f->periodo,
+            'confirmado' => (float) $f->confirmado,
+            'provisional' => (float) $f->provisional,
+            'facturas' => (int) $f->facturas,
+        ])->values());
+    }
+
     /** Crea una factura PENDIENTE y escribe el evento en el outbox en la misma transaccion. */
     public function store(Request $request): JsonResponse
     {

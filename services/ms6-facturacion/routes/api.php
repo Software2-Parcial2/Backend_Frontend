@@ -10,6 +10,7 @@ Route::prefix('facturacion')->group(function () {
     Route::middleware('keycloak.jwt')->group(function () {
         Route::get('/facturas', [FacturaController::class, 'index'])->middleware('role:caja,administrador,recepcion,paciente');
         // El orden importa: autenticacion -> rol -> idempotencia.
+        Route::get('/facturas/ingresos', [FacturaController::class, 'ingresos'])->middleware('role:caja,administrador');
         Route::post('/facturas', [FacturaController::class, 'store'])->middleware(['role:caja,administrador,recepcion', 'idempotent']);
     });
 });
