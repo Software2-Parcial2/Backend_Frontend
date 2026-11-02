@@ -61,12 +61,12 @@ describe('GraphQL /graphql (integracion con JWT firmados)', () => {
 
   it('sin token o con token invalido: 401', async () => {
     // GraphQL responde 200 con `errors`; el codigo lo marca la excepcion HTTP de los guards.
-    const sinAcceso = async (r: request.Test) => {
-      const b = (await r).body;
+    const sinAcceso = (r: { body: any }) => {
+      const b = r.body;
       return { datos: b.data, estado: b.errors?.[0]?.extensions?.originalError?.statusCode ?? b.errors?.[0]?.extensions?.code };
     };
     for (const tk of [undefined, 'abc', await token(['administrador'], { exp: '-1m' }), await token(['administrador'], { issuer: 'http://otro/realms/x' })]) {
-      const r = await sinAcceso(await gql('{ citas { items { citaId } } }', tk));
+      const r = sinAcceso(await gql('{ citas { items { citaId } } }', tk));
       expect(r.datos).toBeFalsy();
       expect([401, 'UNAUTHENTICATED']).toContain(r.estado);
     }

@@ -126,3 +126,20 @@ ni necesita una cuenta de servicio en Keycloak, y la auditoria ve al usuario rea
 - GraphQL responde HTTP 200 con `errors` (401/403 dentro de `extensions`), como es habitual; el gateway ya enruta `/graphql` a MS7.
 - Limites: profundidad 6 y 120 campos (`GRAPHQL_MAX_DEPTH`/`GRAPHQL_MAX_COMPLEXITY`); la complejidad cuenta campos, no multiplica por el tamano de las listas.
 - Se anadieron las dependencias `dataloader` y `@as-integrations/express5` (necesaria para `@nestjs/apollo` con Express 5).
+
+### L3 - Servidor MCP y agente
+Hecho: servidor MCP (`@modelcontextprotocol/sdk`, transporte **en memoria**: agente y herramientas viven en el mismo proceso; stdio exigiria un proceso hijo por consulta y HTTP un puerto
+extra que proteger; cambiar el transporte permite publicar el mismo servidor a otros clientes MCP), 6 herramientas de solo lectura con zod, adaptadores Gemini/Claude/simulado
+(`LLM_PROVIDER`), bucle con limites (iteraciones, tiempo, llamadas por turno, consultas/hora por usuario), auditoria, redaccion, reportes (spec JSON zod -> JSON/xlsx/csv/pdf),
+`POST /api/inteligencia/agente/consulta`, `POST /api/inteligencia/reportes?formato=`, `GET /api/inteligencia/agente/auditoria`. 72 pruebas en ms7-api.
+
+- **Los proveedores reales (Gemini, Claude) NO se probaron contra su API:** no hay `GEMINI_API_KEY` ni `ANTHROPIC_API_KEY` en este entorno. Los adaptadores se verificaron con clientes simulados
+  del SDK (traduccion de mensajes, herramientas, llamadas, `AbortSignal`). Hay una prueba real opcional (`describe.skipIf`) que corre sola si defines `GEMINI_API_KEY`.
+  Los ids de modelo por defecto (`gemini-2.5-flash`, `claude-sonnet-5-5`) son configurables (`GEMINI_MODEL`, `CLAUDE_MODEL`); revisa que sigan vigentes.
+- **`consultar_politicas` aun no tiene RAG:** responde "no se encontro informacion suficiente" hasta L4.
+- La auditoria y el limite de uso estan **en memoria** (se pierden al reiniciar y no se comparten entre replicas). Para produccion: tabla en PostgreSQL / Redis.
+- La defensa contra inyeccion de prompts es por capas (delimitadores + regla en el prompt + lista blanca por rol + solo lectura + zod + redaccion), pero ninguna es infalible con un LLM real;
+  las pruebas verifican las capas deterministas con un modelo simulado que "obedece" ordenes maliciosas. Conviene un conjunto de pruebas adversariales con el modelo real.
+- El proveedor `simulated` (palabras clave) es un doble de pruebas, no un modelo; no lo uses en produccion.
+- Los reportes de riesgo de inasistencia heredan la limitacion de L2 (atributos estimados) y el modelo actual es sintetico.
+- Limite de filas por reporte: 1000 (PDF: 500). Las descargas se generan en memoria.

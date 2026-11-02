@@ -1,20 +1,15 @@
-import { ForbiddenException, BadRequestException, ServiceUnavailableException, Inject } from '@nestjs/common';
+import { Inject } from '@nestjs/common';
 import { Args, Context, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql';
 import { CurrentUser, Roles, type AuthUser } from '@sigec/auth-nest';
 import DataLoader from 'dataloader';
 import { GestionService } from '../../application/gestion.service.js';
-import {
-  AccesoDenegadoError, ConsultaInvalidaError, ServicioNoDisponibleError,
-  type CitaResumen, type Identidad, type RiesgoInasistencia,
-} from '../../domain/gestion.js';
+import type { CitaResumen, Identidad, RiesgoInasistencia } from '../../domain/gestion.js';
+import { ROLES_GESTION, ROLES_INGRESOS } from '../../application/roles.js';
+import { traducir } from '../errores.js';
 import {
   CitaRiesgoType, CitaType, DemandaType, IngresoPeriodoType, IngresosArgs, PaginaArgs, PaginaCitasType, ResumenCitasArgs,
   ResumenCitasType, RiesgoArgs, RiesgoType,
 } from './tipos.js';
-
-/** Roles de gestion. Los ingresos se limitan ademas a caja y administrador (MS6 lo vuelve a exigir). */
-export const ROLES_GESTION = ['administrador', 'recepcion', 'caja'];
-export const ROLES_INGRESOS = ['administrador', 'caja'];
 
 interface ContextoGql {
   req: { headers: { authorization?: string } };
@@ -24,18 +19,6 @@ interface ContextoGql {
 export function identidadDe(ctx: ContextoGql, user: AuthUser | undefined): Identidad {
   const token = ctx.req.headers.authorization?.replace(/^Bearer\s+/i, '') ?? '';
   return { token, roles: user?.roles ?? [], usuario: user?.username ?? user?.sub ?? 'desconocido' };
-}
-
-/** Traduce los errores de dominio a errores GraphQL con codigo estable. */
-async function traducir<T>(p: Promise<T>): Promise<T> {
-  try {
-    return await p;
-  } catch (e) {
-    if (e instanceof AccesoDenegadoError) throw new ForbiddenException(e.message);
-    if (e instanceof ConsultaInvalidaError) throw new BadRequestException(e.message);
-    if (e instanceof ServicioNoDisponibleError) throw new ServiceUnavailableException(e.message);
-    throw e;
-  }
 }
 
 @Resolver(() => CitaType)
