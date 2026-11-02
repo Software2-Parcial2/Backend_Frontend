@@ -170,6 +170,17 @@ services:
       - ./ml/no-show/models:/models/no-show:ro,z
       - ./ml/demanda/models:/models/demanda:ro,z
     ports: ["8007:8007"]
+  # Embeddings multilingues para el RAG de MS7 (servicio aparte de Whisper: ver docs/inteligencia.md). Desarrollo: scripts/dev-services.sh start ms7-embeddings (8027).
+  ms7-embeddings:
+    profiles: ["ml"]
+    build:
+      context: .
+      dockerfile: services/ms7-inteligencia/embeddings/Dockerfile
+    environment:
+      EMBEDDINGS_API_KEY: ${EMBEDDINGS_API_KEY:-}
+    volumes:
+      - ms7_models:/models
+    ports: ["8027:8027"]
   # ms7-whisper:
   #   build: ./services/ms7-inteligencia/whisper
   #   ports: ["8017:8000"]
@@ -189,3 +200,4 @@ volumes:
   rabbit_data:
   n8n_data:
   dynamodb_data:
+  ms7_models:

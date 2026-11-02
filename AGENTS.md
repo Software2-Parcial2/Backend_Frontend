@@ -123,7 +123,7 @@ Formato `tipo(ámbito): descripción en imperativo`, en minúsculas y sin punto 
 | Notificaciones E2E con MS8 + n8n reales (29; Mailtrap real solo con credenciales) | `make n8n-import && scripts/e2e-notificaciones.sh` |
 | Telegram real (token del `.env`) | `scripts/test-telegram.sh [chat_id]` |
 
-`scripts/dev-services.sh` levanta/para servicios por puerto (`start|stop|status [gateway ms2 ms3 ms4 ms5 ms5-inference ms6 ms7 ms7-ml ms8]`, `poller-start|poller-stop`,
+`scripts/dev-services.sh` levanta/para servicios por puerto (`start|stop|status [gateway ms2 ms3 ms4 ms5 ms5-inference ms6 ms7 ms7-ml ms7-embeddings ms8]`, `poller-start|poller-stop`,
 `workers-start|workers-stop` para el relay y el consumidor de MS6). Logs en `/tmp/sigec-logs`. `scripts/e2e-saga.sh` arranca y detiene lo que necesita.
 
 - **Reprocesar una DLQ:** `make dlq-replay QUEUE=ms6.saga.comandos [LIMIT=10]` mueve mensajes de `<cola>.dlq` a `<cola>` conservando el id del sobre.

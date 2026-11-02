@@ -143,3 +143,22 @@ extra que proteger; cambiar el transporte permite publicar el mismo servidor a o
 - El proveedor `simulated` (palabras clave) es un doble de pruebas, no un modelo; no lo uses en produccion.
 - Los reportes de riesgo de inasistencia heredan la limitacion de L2 (atributos estimados) y el modelo actual es sintetico.
 - Limite de filas por reporte: 1000 (PDF: 500). Las descargas se generan en memoria.
+
+### L4 - RAG sobre documentos administrativos
+Hecho: 5 documentos ficticios en `docs/rag/` (marcados como ejemplo), servicio de **embeddings separado** (`services/ms7-inteligencia/embeddings`, puerto 8027), migracion versionada
+(`services/ms7-inteligencia/api/migrations/0001_rag.sql`: tablas + indice HNSW coseno, vector(384)) con ejecutor propio (checksum, bloqueo asesor), ingesta con fragmentos solapados y metadatos
+(documento, seccion, version), `consultar_politicas` conectada al RAG (cita documento y seccion, descarta bajo `RAG_SCORE_MINIMO`), `POST /api/inteligencia/rag/reindexar` y `GET .../estado` (administrador).
+
+**Por que un servicio de embeddings aparte (y no reutilizar Whisper):** Whisper es CPU-intensivo y de peticiones largas (audio); el RAG necesita embeddings de baja latencia en cada consulta del agente. Con un
+solo proceso una transcripcion bloquearia las consultas; ademas escalan y se reinician de forma independiente y tienen limites de entrada distintos. Comparten la misma dependencia (`sentence-transformers`), no el proceso.
+
+**Recuperacion medida** (modelo `paraphrase-multilingual-MiniLM-L12-v2`, 12 preguntas de `test/rag.recuperacion.spec.ts`, con pgvector real): acierto en el primer resultado 10/12, entre los 3 primeros 11/12;
+3 preguntas fuera de alcance (capital de Francia, receta, Unity) obtienen puntuaciones <= 0.11 y quedan por debajo del umbral 0.3 (el agente respondera que no hay informacion suficiente).
+- **Limitacion conocida:** «¿Atienden los domingos?» (y «Horario de atención los domingos») no recupera la seccion «Consulta externa» (puntuaciones 0.31-0.43, gana «Atencion telefonica» / «Feriados»). Un modelo
+  de embeddings mayor (p. ej. multilingual-e5) o busqueda hibrida (BM25 + vectorial) lo mejoraria. Esta registrado como `it.fails` en la prueba.
+- La prueba de recuperacion solo corre con `RAG_IT=1` (necesita PostgreSQL con pgvector y el servicio de embeddings); aqui se ejecuto con un contenedor temporal `pgvector/pgvector:pg17` en el puerto 5498
+  porque el puerto 5432 estaba ocupado por otro proyecto. No se ejecuto contra el PostgreSQL del compose de SIGEC.
+- La primera ejecucion del servicio de embeddings descarga ~470 MB del modelo desde Hugging Face (volumen `ms7_models` en Docker; `~/.cache/huggingface` en desarrollo).
+- Cambiar de modelo con otra dimension exige una migracion nueva (`vector(N)`) y `reindexar` con `forzar: true`. El cliente de MS7 rechaza dimensiones distintas de 384.
+- Los documentos se leen del disco (`RAG_DOCS_DIR`, por defecto `docs/rag`); en Docker hay que montarlos. No hay control de acceso por documento: todo el RAG es visible para los roles de gestion.
+- `consultar_politicas` aun no se probo con un LLM real (ver L3).
