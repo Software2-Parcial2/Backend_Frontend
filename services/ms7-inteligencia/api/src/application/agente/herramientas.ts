@@ -70,7 +70,10 @@ export const HERRAMIENTAS: DefinicionHerramienta[] = [
     forma: { pregunta: z.string().trim().min(3).max(300), maximo: z.number().int().min(1).max(8).default(4) },
     ejecutar: async (a, c) => {
       const fragmentos = await c.politicas.buscar(a.pregunta as string, a.maximo as number);
-      return fragmentos.length === 0 ? { fragmentos: [], aviso: 'No se encontro informacion suficiente en los documentos.' } : { fragmentos };
+      // `documento` se renombra: el redactor elimina claves llamadas "documento" (documento de identidad) y borraria la cita de la fuente.
+      return fragmentos.length === 0
+        ? { fragmentos: [], aviso: 'No se encontro informacion suficiente en los documentos.' }
+        : { fragmentos: fragmentos.map(({ documento, ...resto }) => ({ fuente_titulo: documento, ...resto })) };
     },
   },
   {

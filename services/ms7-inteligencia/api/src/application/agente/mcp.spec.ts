@@ -27,6 +27,15 @@ describe('servidor MCP (transporte en memoria)', () => {
     await Promise.all([adm.cerrar(), rec.cerrar(), pac.cerrar()]);
   });
 
+  it('consultar_politicas conserva la cita de la fuente aunque el redactor elimine "documento" de identidad', async () => {
+    const base = ctx(['administrador']);
+    const c = await conectarMcp({ ...base, politicas: { buscar: async () => [{ documento: 'Aranceles y descuentos', seccion: 'Consultas', version: '1', texto: 'La consulta cuesta Bs 120.', puntuacion: 0.8 }] } }, new AuditoriaEnMemoria());
+    const r = await c.cliente.callTool({ name: 'consultar_politicas', arguments: { pregunta: 'cuanto cuesta una consulta' } });
+    const f = JSON.parse((r.content as { text: string }[])[0]!.text).fragmentos[0];
+    expect(f).toMatchObject({ fuente_titulo: 'Aranceles y descuentos', seccion: 'Consultas', version: '1' });
+    await c.cerrar();
+  });
+
   it('valida argumentos con zod y redacta campos personales de las salidas', async () => {
     const c = await conectarMcp(ctx(['administrador']), new AuditoriaEnMemoria());
     const mala = await c.cliente.callTool({ name: 'consultar_prediccion_inasistencia', arguments: { dias: 999 } });

@@ -105,8 +105,8 @@ Hecho: API FastAPI (`/predict/no-show`, `/segments/demanda`, `/model/info`), `ml
 - **El Random Forest NO esta entrenado con datos reales:** no hay credenciales de Kaggle en este entorno (`~/.kaggle/kaggle.json`). El script falla con un mensaje claro
   sin ellas. Solo existe un modelo de humo con datos **sinteticos** (`rf-noshow-...-sintetico`, AUC ~0.6, sin valor predictivo) para probar el flujo; `sintetico: true` aparece en cada respuesta.
   Las metricas reales (precision/recall/F1/AUC e importancias) se generaran al ejecutar `ml/no-show/train.py`.
-- **`scripts/seed/citas-sinteticas.mjs` no se ha ejecutado** (stack de SIGEC apagado; el puerto 5432 lo ocupa otro proyecto). MS3 solo acepta fechas futuras, asi que las citas
-  sembradas son de los proximos meses (no historicas). Arranca MS8 con `NOTIF_SENDER=simulated` al sembrar. La segmentacion se probo con el generador interno `--fuente sintetico`.
+- **`scripts/seed/citas-sinteticas.mjs`** se ejecuto despues (bloque L5) contra el stack real: 595 citas creadas por la API. MS3 solo acepta fechas futuras, asi que las citas
+  sembradas son de los proximos meses (no historicas). Arranca MS8 con `NOTIF_SENDER=simulated` al sembrar. La segmentacion `--fuente ms3` funciono y destaco el problema de los valores atipicos (ver L5).
 - K-means: con datos sinteticos la silueta es baja (~0.2); es esperable con observaciones especialidad-semana ruidosas. Con datos reales conviene revisar `evaluacion_k`.
 - No hay estado "asistio / no asistio" en MS3: el modelo de inasistencia solo puede entrenarse con el dataset externo; para usarlo con citas de SIGEC faltan `edad`, `beca` y el historial por paciente (MS2/MS3).
 
@@ -162,3 +162,28 @@ solo proceso una transcripcion bloquearia las consultas; ademas escalan y se rei
 - Cambiar de modelo con otra dimension exige una migracion nueva (`vector(N)`) y `reindexar` con `forzar: true`. El cliente de MS7 rechaza dimensiones distintas de 384.
 - Los documentos se leen del disco (`RAG_DOCS_DIR`, por defecto `docs/rag`); en Docker hay que montarlos. No hay control de acceso por documento: todo el RAG es visible para los roles de gestion.
 - `consultar_politicas` aun no se probo con un LLM real (ver L3).
+
+### L5 - Voz para reportes (y cierre del bloque L)
+Hecho: servicio Whisper (`services/ms7-inteligencia/whisper`, faster-whisper, `POST /transcribir`, limites de 10 MB y 60 s, puerto 8017, Dockerfile), `POST /api/inteligencia/agente/voz` en MS7,
+dashboard en el remoto Vue (resumen con GraphQL/Apollo + ECharts, caja de consulta, microfono con Web Speech o grabacion + Whisper, tabla/grafico del reporte, exportacion Excel/CSV/PDF, herramientas usadas),
+`scripts/e2e-ms7.sh` y `docs/inteligencia.md` (diagramas Mermaid).
+
+**Verificado en un stack real** (Keycloak, gateway, MS3, MS6, ML, embeddings, Whisper, PostgreSQL+pgvector): `scripts/e2e-ms7.sh` -> **37 correctas, 0 fallidas, 0 omitidas** (incluye consulta por voz con audio de espeak-ng
+transcrito por Whisper `small`, y un `.xlsx` valido con hojas Datos/Resumen y cabecera Grupo/Citas/Confirmadas/Canceladas). Ademas `scripts/seed/citas-sinteticas.mjs` sembro 595 citas por la API real.
+Para ejecutarlo aqui hubo que remapear el puerto de PostgreSQL (5432 ocupado por otro proyecto): ahora el compose usa `POSTGRES_HOST_PORT` (`POSTGRES_HOST_PORT=5440 POSTGRES_PORT=5440 DB_PORT=5440 scripts/e2e-ms7.sh`).
+
+Errores reales que la verificacion encontro y se corrigieron: (1) el redactor eliminaba la clave `documento` de los fragmentos del RAG y el agente no podia citar la fuente (ahora `fuente_titulo`);
+(2) los graficos del dashboard no se pintaban cuando los datos llegaban despues del montaje (visto en el navegador); (3) la silueta de K-means premiaba aislar un valor atipico (73 citas en una semana de una prueba anterior): ahora los
+valores extremos (> Q3 + 3*IQR) se excluyen del ajuste y se informan en `atipicos_excluidos`.
+
+**Pendiente / limites**
+- **Los LLM reales (Gemini/Claude) siguen sin probarse** (sin API keys): el E2E usa el proveedor simulado.
+- **Whisper:** la calidad depende del modelo (`base` confunde palabras con voz sintetica; `small` acierta). Con voz humana, acento y ruido ambiente habra que validarlo; la voz de espeak-ng no es representativa.
+  Descarga ~460 MB la primera vez; en CPU una frase corta tarda unos segundos.
+- **El remoto Vue se verifico en Firefox headless con un backend simulado** (datos, graficos, respuesta del asistente, tabla y botones). **No se probo el microfono real** (Web Speech ni `MediaRecorder`: no hay audio en el entorno) ni
+  la descarga de archivos, ni dentro del shell con Keycloak. Web Speech API solo existe en Chromium/Safari; en Firefox siempre se usa la grabacion + Whisper.
+- El paquete de la pantalla pesa ~760 kB (ECharts + Apollo); se podria dividir con `import()` dinamico. No hay pruebas de componentes Vue (solo de la logica en `src/lib`).
+- `Web Speech` envia el audio al servicio del navegador (p. ej. Google en Chrome): no es privado. Si la politica de datos lo prohibe, desactivar esa estrategia y usar solo Whisper.
+- El dashboard no tiene paginacion ni filtros de fecha configurables (ventana fija: 90 dias atras y 30 adelante).
+- K-means con datos de MS3: MS3 solo guarda citas futuras (se siembran de los proximos meses), asi que la "demanda" es la agenda reservada, no demanda historica.
+- Las respuestas GraphQL de error no pasan por el gateway con 401 si no hay token: lo rechaza el gateway (HTTP 401 sin cuerpo GraphQL).

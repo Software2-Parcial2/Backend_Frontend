@@ -11,7 +11,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
-      - "5432:5432"
+      - "${POSTGRES_HOST_PORT:-5432}:5432"
     volumes:
       - pg_data:/var/lib/postgresql/data
       - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro,z
@@ -181,9 +181,18 @@ services:
     volumes:
       - ms7_models:/models
     ports: ["8027:8027"]
-  # ms7-whisper:
-  #   build: ./services/ms7-inteligencia/whisper
-  #   ports: ["8017:8000"]
+  # Transcripcion de voz (faster-whisper). Solo la llama MS7; no se expone al navegador. Desarrollo: scripts/dev-services.sh start ms7-whisper (8017).
+  ms7-whisper:
+    profiles: ["ml"]
+    build:
+      context: .
+      dockerfile: services/ms7-inteligencia/whisper/Dockerfile
+    environment:
+      WHISPER_API_KEY: ${WHISPER_API_KEY:-}
+      WHISPER_MODEL: ${WHISPER_MODEL:-small}
+    volumes:
+      - ms7_models:/models
+    ports: ["8017:8017"]
   # ms8-notificaciones:
   #   build: ./services/ms8-notificaciones
   #   env_file: .env

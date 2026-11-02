@@ -1,10 +1,13 @@
-import { Body, Controller, Get, Inject, Post, Query, Req, StreamableFile } from '@nestjs/common';
+import { Body, Controller, Get, Inject, Post, Query, Req, StreamableFile, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CurrentUser, Roles, type AuthUser } from '@sigec/auth-nest';
 import { IsInt, IsOptional, IsString, Max, MaxLength, Min, MinLength } from 'class-validator';
 import { Type } from 'class-transformer';
 import { AgenteService } from '../../application/agente/agente.service.js';
 import { AUDITORIA_PORT, type AuditoriaPort } from '../../application/agente/ports.js';
+import { VozService } from '../../application/voz/voz.service.js';
+import { AudioRechazadoError } from '../../application/voz/ports.js';
 import { ReportesService } from '../../application/reportes/reportes.service.js';
 import { aCsv, aPdf, aXlsx } from '../../application/reportes/exportadores.js';
 import { ROLES_GESTION } from '../../application/roles.js';
@@ -37,6 +40,7 @@ export class AgenteController {
     @Inject(AgenteService) private readonly agente: AgenteService,
     @Inject(ReportesService) private readonly reportes: ReportesService,
     @Inject(AUDITORIA_PORT) private readonly auditoria: AuditoriaPort,
+    @Inject(VozService) private readonly voz: VozService,
   ) {}
 
   /** Consulta en lenguaje natural. El agente solo usa herramientas de lectura permitidas por tu rol. */
@@ -44,6 +48,22 @@ export class AgenteController {
   @Roles(...ROLES_GESTION)
   consulta(@Body() dto: ConsultaAgenteDto, @Req() req: { headers: { authorization?: string } }, @CurrentUser() user?: AuthUser) {
     return traducir(this.agente.consultar(dto.texto, identidadDeReq(req, user)));
+  }
+
+  /**
+   * Consulta por voz: el audio (campo multipart `audio`) se transcribe con Whisper y el texto va al agente. Devuelve la transcripcion
+   * y la respuesta para que el usuario confirme que se entendio bien. El navegador nunca habla con Whisper.
+   */
+  @Post('agente/voz')
+  @Roles(...ROLES_GESTION)
+  @UseInterceptors(FileInterceptor('audio', { limits: { fileSize: Number(process.env.VOZ_MAX_BYTES ?? 10 * 1024 * 1024), files: 1 } }))
+  consultaVoz(
+    @UploadedFile() audio: { buffer: Buffer; mimetype: string; originalname: string } | undefined,
+    @Req() req: { headers: { authorization?: string } },
+    @CurrentUser() user?: AuthUser,
+  ) {
+    if (!audio) return traducir(Promise.reject(new AudioRechazadoError(422, 'Falta el archivo de audio (campo multipart "audio")')));
+    return traducir(this.voz.consultar(audio.buffer, audio.mimetype, audio.originalname, identidadDeReq(req, user)));
   }
 
   /** Registro de las llamadas a herramientas (solo administrador). */

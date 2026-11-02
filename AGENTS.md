@@ -27,7 +27,7 @@ DDD + Arquitectura Hexagonal + Clean Architecture en cada servicio.
 | MS5 inferencia | FastAPI + TensorFlow | 8005 |
 | MS6 Facturación | Laravel (PHP) | 8006 |
 | MS7 Inteligencia (API) | NestJS | 3007 |
-| MS7 ml / whisper | FastAPI | 8007 / 8017 |
+| MS7 ml / whisper / embeddings | FastAPI | 8007 / 8017 / 8027 |
 | MS8 Notificaciones | NestJS | 3008 |
 | PostgreSQL | pgvector pg16 | 5432 |
 | MongoDB | mongo 7 | 27017 |
@@ -114,6 +114,7 @@ Formato `tipo(ámbito): descripción en imperativo`, en minúsculas y sin punto 
 | Laravel MS6 (BD `ms6_facturacion_test`) | `(cd services/ms6-facturacion && php artisan test)` |
 | Nest (unitarias + DynamoDB Local) | `pnpm --filter ms3-citas test`, `ms8-notificaciones`, `ms5-api`, `ms7-api` |
 | Paquetes compartidos | `pnpm --filter @sigec/messaging-nest test` (usar `set -a; source .env; set +a` para el RabbitMQ real), `@sigec/idempotency-nest`, `@sigec/auth-nest` |
+| MS7 (GraphQL, agente, reportes, RAG, voz; stack real, token real) | `docker compose up -d && make dynamodb-init rabbitmq-declare && scripts/e2e-ms7.sh` (37 comprobaciones; proveedor de IA simulado) |
 | Lambda del outbox | `(cd services/ms3-citas/lambda-outbox && set -a && source ../../../.env && set +a && npm test)` |
 | Idempotencia por el gateway (curl) | `scripts/dev-services.sh start gateway ms2 ms3 ms6 && scripts/test-idempotencia.sh` |
 | Relay del outbox con RabbitMQ apagado/encendido | `scripts/dev-services.sh start gateway ms2 ms6 && scripts/test-outbox.sh` |
@@ -132,6 +133,16 @@ Formato `tipo(ámbito): descripción en imperativo`, en minúsculas y sin punto 
 - **Listados:** nunca `Scan`; consultas por indice (`gsi2` paciente, `gsi3` medico/fecha, `gsi4` general) con `limite` y `cursor` opaco (validado contra la particion).
 - **Validacion de mensajes:** en Nest cada mensaje se valida con Ajv contra `contracts/events/<tipo>.schema.json` al publicar y al consumir.
   Nunca publiques pruebas de mensajes invalidos por `sigec.saga`/`sigec.eventos`: llegan a las colas reales (usa el exchange por defecto hacia una cola de prueba).
+
+## Inteligencia (MS7)
+
+- Ver `docs/inteligencia.md` (diagramas). GraphQL **solo** en MS7 (`/graphql`, enrutado por el gateway). Identidad: se propaga el token del usuario a MS3/MS6.
+- El agente (MCP en memoria + Gemini/Claude/`simulated` por `LLM_PROVIDER`) solo usa herramientas de **solo lectura**, por rol, con parametros validados con zod; nunca ejecuta SQL ni codigo. Los reportes son una
+  especificacion JSON validada (`ReporteSpecSchema`). Resultados de herramientas y documentos = datos, no instrucciones. Datos de pacientes/clinicos nunca llegan al modelo (`redaccion.ts`).
+- RAG: documentos en `docs/rag/` (EJEMPLOS ficticios), `POST /api/inteligencia/rag/reindexar`; migraciones versionadas en `services/ms7-inteligencia/api/migrations/` (inmutables una vez aplicadas).
+- Servicios Python de MS7 (`ml` 8007, `whisper` 8017, `embeddings` 8027) son internos: solo los llama la API de MS7. Cada uno tiene su `.venv` (`uv venv` + `uv pip install -r requirements.txt`).
+- Modelos de ML: `ml/no-show/train.py` (Kaggle; sin credenciales falla, no inventa datos) y `ml/demanda/segmentar.py`. Los modelos `sintetico` solo sirven para probar el flujo.
+- El puerto del host de PostgreSQL es `POSTGRES_HOST_PORT` (por defecto 5432) si otro proyecto ocupa el 5432.
 
 ## Notificaciones (MS8 + n8n)
 

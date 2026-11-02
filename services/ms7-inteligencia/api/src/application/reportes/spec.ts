@@ -89,6 +89,8 @@ export interface ReporteResultado {
   columnas: ColumnaDef[];
   filas: Record<string, string | number | null>[];
   grafico: ReporteSpec['grafico'];
+  /** Especificacion validada que produjo este reporte (permite re-ejecutarlo / exportarlo en otro formato). */
+  especificacion: ReporteSpec;
   /** true si los datos provienen de modelos entrenados con datos sinteticos (se advierte en las exportaciones). */
   sintetico: boolean;
   nota?: string;

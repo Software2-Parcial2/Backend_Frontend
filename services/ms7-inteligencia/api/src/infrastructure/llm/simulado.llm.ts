@@ -47,10 +47,10 @@ function redactar(resultados: { nombre: string; contenido: string; error?: boole
         if (r.error) return `La herramienta ${r.nombre} devolvio un error: ${cuerpo.slice(0, 200)}`;
         if (r.nombre === 'consultar_politicas') {
           try {
-            const j = JSON.parse(cuerpo) as { fragmentos?: { documento: string; seccion: string; texto: string }[] };
+            const j = JSON.parse(cuerpo) as { fragmentos?: { fuente_titulo: string; seccion: string; texto: string }[] };
             if (!j.fragmentos?.length) return 'No hay informacion suficiente en los documentos para responder.';
             const f = j.fragmentos[0]!;
-            return `Segun "${f.documento}", seccion "${f.seccion}": ${f.texto.slice(0, 300)}`;
+            return `Segun "${f.fuente_titulo}", seccion "${f.seccion}": ${f.texto.slice(0, 300)}`;
           } catch { /* cae al formato generico */ }
         }
         return `${r.nombre}: ${cuerpo.slice(0, 400)}`;

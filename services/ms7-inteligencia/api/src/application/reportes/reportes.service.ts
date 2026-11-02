@@ -73,6 +73,7 @@ export class ReportesService {
       columnas: columnas.map((c) => ({ ...c })),
       filas: filas.slice(0, MAX_FILAS).map((fila) => Object.fromEntries(spec.columnas.map((c) => [c, fila[c] ?? null]))),
       grafico: spec.grafico,
+      especificacion: spec,
       sintetico,
       nota,
     };

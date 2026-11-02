@@ -11,6 +11,8 @@ import { AuditoriaEnMemoria } from '../src/application/agente/auditoria.js';
 import { AUDITORIA_PORT, LLM_PORT, POLITICAS_PORT } from '../src/application/agente/ports.js';
 import { GestionService } from '../src/application/gestion.service.js';
 import { CITAS_GATEWAY, FACTURACION_GATEWAY, ML_GATEWAY } from '../src/application/ports.js';
+import { AudioRechazadoError, TRANSCRIPCION_PORT, type TranscripcionPort } from '../src/application/voz/ports.js';
+import { VozService } from '../src/application/voz/voz.service.js';
 import { ReportesService } from '../src/application/reportes/reportes.service.js';
 import { AgenteController } from '../src/infrastructure/http/agente.controller.js';
 import { SimuladoLlm } from '../src/infrastructure/llm/simulado.llm.js';
@@ -25,6 +27,7 @@ const citas = [
 
 describe('Agente y reportes por HTTP (JWT firmados, proveedor simulado)', () => {
   let app: INestApplication;
+  let transcribir: TranscripcionPort['transcribir'] = async () => ({ texto: 'resumen de citas por medico', idioma: 'es', duracionS: 2.1, modelo: 'falso' });
   let jwks: Server;
   let key: CryptoKey;
   const token = (roles: string[]) =>
@@ -46,6 +49,8 @@ describe('Agente y reportes por HTTP (JWT firmados, proveedor simulado)', () => 
         { provide: ML_GATEWAY, useValue: {
           demanda: async () => ({ k: 2, silueta: 0.4, fuente: 'test', sintetico: false, segmentos: [], especialidades: [{ especialidad: 'Pediatria', segmento: 0, etiqueta: 'Demanda alta', citasPorSemana: 30, citasTotal: 360 }] }),
           predecirNoShow: async (items: { id: string }[]) => ({ predicciones: items.map((i) => ({ id: i.id, probabilidad_inasistencia: 0.4, riesgo: 'MEDIO' })), version_modelo: 'v', sintetico: true }) } },
+        { provide: TRANSCRIPCION_PORT, useValue: { transcribir: (...a: Parameters<TranscripcionPort['transcribir']>) => transcribir(...a) } },
+        VozService,
         { provide: LLM_PORT, useValue: new SimuladoLlm() },
         { provide: AUDITORIA_PORT, useValue: new AuditoriaEnMemoria() },
         { provide: POLITICAS_PORT, useValue: { buscar: async () => [] } },
@@ -120,6 +125,42 @@ describe('Agente y reportes por HTTP (JWT firmados, proveedor simulado)', () => 
     const hoja = wb.getWorksheet('Datos')!;
     expect((hoja.getRow(1).values as string[]).slice(1)).toEqual(['Periodo', 'Confirmado', 'Facturas']);
     expect(hoja.getRow(2).getCell(2).value).toBe(100);
+  });
+
+  const subirAudio = async (roles: string[] | null, adjunto: { buf: Buffer; tipo: string } | null) => {
+    const r = request(app.getHttpServer()).post('/api/inteligencia/agente/voz');
+    if (roles) r.set('Authorization', `Bearer ${await token(roles)}`);
+    if (adjunto) r.attach('audio', adjunto.buf, { filename: 'consulta.webm', contentType: adjunto.tipo });
+    return r;
+  };
+
+  it('voz: transcribe, consulta al agente y devuelve ambos para confirmar', async () => {
+    const r = await subirAudio(['administrador'], { buf: Buffer.from('audio-falso'), tipo: 'audio/webm' });
+    expect(r.status).toBe(201);
+    expect(r.body.transcripcion).toEqual({ texto: 'resumen de citas por medico', idioma: 'es', duracionS: 2.1, modelo: 'falso' });
+    expect(r.body.herramientasUsadas[0]).toMatchObject({ nombre: 'obtener_resumen_citas', ok: true });
+    expect(r.body.respuesta).toContain('m1');
+  });
+
+  it('voz: 401 sin token, 403 paciente, 422 sin archivo, 415 tipo no soportado', async () => {
+    const audio = { buf: Buffer.from('x'), tipo: 'audio/webm' };
+    expect((await subirAudio(null, audio)).status).toBe(401);
+    expect((await subirAudio(['paciente'], audio)).status).toBe(403);
+    expect((await subirAudio(['administrador'], null)).status).toBe(422);
+    expect((await subirAudio(['administrador'], { buf: Buffer.from('MZ...'), tipo: 'application/x-msdownload' })).status).toBe(415);
+  });
+
+  it('voz: errores de Whisper (audio largo, ilegible, sin voz, servicio caido)', async () => {
+    const audio = { buf: Buffer.from('x'), tipo: 'audio/wav' };
+    transcribir = async () => { throw new AudioRechazadoError(413, 'El audio dura 120.0 s y el maximo es 60 s'); };
+    expect((await subirAudio(['administrador'], audio)).status).toBe(413);
+    transcribir = async () => ({ texto: '  ', idioma: 'es', duracionS: 1, modelo: 'f' });
+    const vacio = await subirAudio(['administrador'], audio);
+    expect(vacio.status).toBe(422);
+    expect(vacio.body.message).toMatch(/No se entendio/);
+    transcribir = async () => { throw new (await import('../src/domain/gestion.js')).ServicioNoDisponibleError('MS7 Whisper', 'ECONNREFUSED'); };
+    expect((await subirAudio(['administrador'], audio)).status).toBe(503);
+    transcribir = async () => ({ texto: 'resumen de citas por medico', idioma: 'es', duracionS: 2.1, modelo: 'falso' });
   });
 
   it('la auditoria solo la ve el administrador', async () => {

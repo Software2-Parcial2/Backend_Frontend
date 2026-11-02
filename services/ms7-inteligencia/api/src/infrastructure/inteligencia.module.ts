@@ -7,7 +7,10 @@ import { ListarAnalisisUseCase } from '../application/listar-inteligencia.use-ca
 import { CITAS_GATEWAY, FACTURACION_GATEWAY, ML_GATEWAY } from '../application/ports.js';
 import { EMBEDDINGS_PORT, RAG_FUENTE, RAG_REPO } from '../application/rag/ports.js';
 import { OPCIONES_RAG, RagService } from '../application/rag/rag.service.js';
+import { TRANSCRIPCION_PORT } from '../application/voz/ports.js';
+import { VozService } from '../application/voz/voz.service.js';
 import { ReportesService } from '../application/reportes/reportes.service.js';
+import { WhisperHttpClient } from './clients/whisper.client.js';
 import { CitasHttpClient } from './clients/citas.client.js';
 import { FacturacionHttpClient } from './clients/facturacion.client.js';
 import { MlHttpClient } from './clients/ml.client.js';
@@ -48,6 +51,8 @@ const opcionesAgente = (): OpcionesAgente => ({
     GestionService,
     ReportesService,
     AgenteService,
+    { provide: TRANSCRIPCION_PORT, useClass: WhisperHttpClient },
+    VozService,
     GestionResolver,
   ],
   exports: [GestionService, ReportesService, AgenteService],

@@ -25,22 +25,25 @@ Los problemas y limites conocidos por bloque estan en `docs/PENDIENTES.md`. Este
 | I | SAGA de citas (MS3), E2E 51/51 | Hecho (`a16fc8f`) |
 | 0 (seguridad) | Claim `paciente_id`, listados por indice con cursor, Ajv, `make dlq-replay` | Hecho (`255500b`) |
 | J | Notificaciones MS8 + n8n (Mailtrap, Telegram) | Hecho (`ec47522`); Mailtrap/Telegram reales sin verificar (faltan credenciales) |
-| **K** | MS5 imagenes e inferencia de radiografias | Codigo, docs y pruebas unitarias hechos y commiteados; **E2E sin ejecutar** (ver abajo) |
+| K | MS5 imagenes e inferencia de radiografias (`29a7a0f`) | Codigo, docs y pruebas unitarias hechos; **E2E `e2e-imagenes.sh` sin ejecutar** |
+| L1 | MS7: modelos de ML (inasistencia, K-means) y API FastAPI | Hecho; Random Forest solo con datos **sinteticos** (faltan credenciales de Kaggle) |
+| L2 | MS7: GraphQL de gestion + endpoint de ingresos en MS6 | Hecho |
+| L3 | MS7: servidor MCP, agente (Gemini/Claude/simulado), reportes xlsx/csv/pdf | Hecho; **LLM reales sin probar** (faltan API keys) |
+| L4 | MS7: RAG con pgvector + servicio de embeddings | Hecho; recuperacion medida 10/12 en top-1 |
+| **L5** | MS7: voz (Whisper), dashboard Vue, `scripts/e2e-ms7.sh` | Hecho; **E2E 37/37 en stack real** (ver `docs/inteligencia.md`) |
 
-## Donde estamos: Bloque K (MS5)
+## Donde estamos
 
-Commiteado. Verificado: `pnpm --filter ms5-api test` (22 ok) y `pytest` de inferencia (25 ok). Documentado en `docs/imagenes-ia.md` y `docs/PENDIENTES.md`.
-
-**Falta**
-1. Ejecutar `scripts/e2e-imagenes.sh`. No se pudo: el stack de SIGEC esta apagado y el puerto 5432 lo ocupa `emprendeu-db-1` (otro proyecto).
-   Hay que parar ese contenedor (o cambiar el puerto) y luego `docker compose up -d && make dynamodb-init rabbitmq-declare s3-init && scripts/e2e-imagenes.sh`.
-2. Entrenar el modelo real (credenciales Kaggle); mientras tanto la inferencia usa `stub-no-clinico`.
+Bloques 0-L terminados en el repo (commits locales, sin push). **Pendiente de verificar con credenciales o hardware que no hay aqui:**
+1. `scripts/e2e-imagenes.sh` (bloque K): ejecutarlo; si el puerto 5432 esta ocupado usa `POSTGRES_HOST_PORT=5440 POSTGRES_PORT=5440 DB_PORT=5440` (ver `docs/PENDIENTES.md`).
+2. Entrenar los modelos reales: `ml/pneumonia/train.py` y `ml/no-show/train.py` (ambos piden `~/.kaggle/kaggle.json`; los modelos actuales son sinteticos / `stub-no-clinico`).
+3. Probar Gemini y Claude reales (`GEMINI_API_KEY` / `ANTHROPIC_API_KEY`, `LLM_PROVIDER`) y el microfono real en el navegador.
+4. Mailtrap y Telegram reales (bloque J).
 
 ## Siguientes fases (inferidas, no hay plan escrito)
 
 - **MS4 Historias clinicas:** solo esqueleto; falta dominio y casos de uso (y vincular resultados de MS5).
-- **MS7 Inteligencia:** solo carpetas (`api`, `ml`, `whisper`); falta GraphQL de gestion, ML, voz, RAG con pgvector, mensajeria e idempotencia.
+- **MS7:** mensajeria/idempotencia (no las usa), registrar asistencia en MS3 para entrenar el modelo de inasistencia con datos propios, pantalla integrada en el shell.
 - **Frontends:** pantallas de negocio, PWA offline de datos, iconos PNG, `expo prebuild --clean`, lint de la PWA (TS 7), validador local TFLite/TF.js.
 - **AWS:** desplegar y probar la Lambda `lambda-outbox`.
-- **Deudas:** `paciente.actualizado`, fila de MS2 para el paciente demo, Ajv en MS6/Spring, fijar version de n8n y Postgres 17,
-  credenciales reales de Mailtrap/Telegram para completar la verificacion del bloque J.
+- **Deudas:** `paciente.actualizado`, fila de MS2 para el paciente demo, Ajv en MS6/Spring, fijar version de n8n y Postgres 17.
