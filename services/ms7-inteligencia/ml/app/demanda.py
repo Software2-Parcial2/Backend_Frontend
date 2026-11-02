@@ -49,15 +49,27 @@ def agregar(df: pd.DataFrame) -> pd.DataFrame:
 
 def segmentar(df: pd.DataFrame, k: int | None = None, k_max: int = 8, seed: int = 42) -> dict[str, Any]:
     obs = agregar(df)
+    # Valores extremos (volumen > Q3 + 3*IQR, p. ej. datos de prueba olvidados o una carga masiva): se excluyen del ajuste y se informan aparte;
+    # si no, K-means les dedica un segmento propio y la silueta lo premia.
+    q1, q3 = obs["citas"].quantile([0.25, 0.75])
+    valla = q3 + 3 * (q3 - q1)
+    extremos = obs[obs["citas"] > valla] if q3 > q1 else obs.iloc[0:0]
+    atipicos = [{"especialidad": r.especialidad, "semana": r.semana, "citas": int(r.citas)} for r in extremos.itertuples()]
+    obs = obs.drop(extremos.index).reset_index(drop=True)
     if len(obs) < 6:
         raise ValueError(f"Hay solo {len(obs)} observaciones especialidad-semana; se necesitan al menos 6 para segmentar.")
     x = StandardScaler().fit_transform(obs[ATRIBUTOS])
     tope = min(k_max, len(obs) - 1)
+    # Un segmento con muy pocas observaciones suele ser un valor atipico aislado (la silueta lo premia artificialmente):
+    # solo se consideran los k cuyo segmento mas pequeno tenga al menos max(3, 5 %) de las observaciones.
+    minimo = max(3, int(np.ceil(0.05 * len(obs))))
     evaluacion = []
     for kk in range(2, tope + 1):
         km = KMeans(n_clusters=kk, n_init=10, random_state=seed).fit(x)
-        evaluacion.append({"k": kk, "inercia": float(km.inertia_), "silueta": float(silhouette_score(x, km.labels_))})
-    elegido = k or max(evaluacion, key=lambda e: e["silueta"])["k"]
+        menor = int(np.bincount(km.labels_).min())
+        evaluacion.append({"k": kk, "inercia": float(km.inertia_), "silueta": float(silhouette_score(x, km.labels_)), "segmento_menor": menor, "valido": menor >= minimo})
+    validos = [e for e in evaluacion if e["valido"]] or evaluacion
+    elegido = k or max(validos, key=lambda e: e["silueta"])["k"]
     km = KMeans(n_clusters=elegido, n_init=10, random_state=seed).fit(x)
     obs["segmento"] = km.labels_
 
@@ -86,11 +98,13 @@ def segmentar(df: pd.DataFrame, k: int | None = None, k_max: int = 8, seed: int 
     resumen = obs.groupby("especialidad").agg(semanas=("semana", "nunique"), citas_total=("citas", "sum"), citas_semana=("citas", "mean"))
     return {
         "k": int(elegido),
-        "criterio": "silueta maxima" if k is None else "k indicado",
+        "criterio": "silueta maxima entre los k sin segmentos diminutos" if k is None else "k indicado",
+        "tamano_minimo_segmento": minimo,
         "silueta": next(e["silueta"] for e in evaluacion if e["k"] == elegido) if any(e["k"] == elegido for e in evaluacion) else None,
         "evaluacion_k": evaluacion,
         "atributos": ATRIBUTOS,
         "observaciones": int(len(obs)),
+        "atipicos_excluidos": atipicos,
         "segmentos": segmentos,
         "segmento_por_especialidad": {e: {"segmento": s, "etiqueta": nombres[s]} for e, s in por_esp.items()},
         "demanda_por_especialidad": {

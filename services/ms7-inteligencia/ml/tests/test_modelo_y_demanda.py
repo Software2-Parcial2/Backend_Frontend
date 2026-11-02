@@ -35,8 +35,8 @@ def test_segmentacion_separa_volumenes_y_etiqueta(datos_citas):
 
 def test_k_por_silueta_y_evaluacion(datos_citas):
     r = segmentar(datos_citas)
-    assert r["criterio"] == "silueta maxima"
-    mejor = max(r["evaluacion_k"], key=lambda e: e["silueta"])
+    assert r["criterio"].startswith("silueta maxima")
+    mejor = max((e for e in r["evaluacion_k"] if e["valido"]), key=lambda e: e["silueta"])
     assert r["k"] == mejor["k"]
 
 
@@ -45,3 +45,19 @@ def test_errores_claros(datos_citas):
         agregar(datos_citas.drop(columns=["estado"]))
     with pytest.raises(ValueError, match="al menos 6"):
         segmentar(datos_citas.head(3))
+
+
+def test_un_valor_atipico_se_excluye_y_se_informa(datos_citas):
+    """Una especialidad con 200 citas en UNA semana (p. ej. datos de prueba olvidados) no debe acaparar un segmento propio."""
+    import pandas as pd
+
+    atipico = pd.DataFrame({"especialidad": "outlier", "fecha_hora": pd.Timestamp("2026-02-02T10:00:00Z"), "medico_id": "x",
+                            "estado": "CONFIRMADA", "fecha_creacion": pd.Timestamp("2026-01-30T10:00:00Z")}, index=range(200))
+    r = segmentar(pd.concat([datos_citas, atipico], ignore_index=True))
+    assert r["atipicos_excluidos"] == [{"especialidad": "outlier", "semana": "2026-02-02/2026-02-08", "citas": 200}]
+    assert "outlier" not in r["segmento_por_especialidad"]
+    assert min(s["observaciones"] for s in r["segmentos"]) >= r["tamano_minimo_segmento"]
+
+
+def test_sin_atipicos_no_se_excluye_nada(datos_citas):
+    assert segmentar(datos_citas)["atipicos_excluidos"] == []
