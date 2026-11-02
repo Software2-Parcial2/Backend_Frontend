@@ -157,9 +157,19 @@ services:
   #   build: ./services/ms7-inteligencia/api
   #   env_file: .env
   #   ports: ["3007:3000"]
-  # ms7-ml:
-  #   build: ./services/ms7-inteligencia/ml
-  #   ports: ["8007:8000"]
+  # MS7 ML (inasistencia + segmentacion de demanda). Los modelos se generan con ml/no-show/train.py y ml/demanda/segmentar.py.
+  # En desarrollo: scripts/dev-services.sh start ms7-ml (puerto 8007).
+  ms7-ml:
+    profiles: ["ml"]
+    build:
+      context: .
+      dockerfile: services/ms7-inteligencia/ml/Dockerfile
+    environment:
+      ML_API_KEY: ${ML_API_KEY:-}
+    volumes:
+      - ./ml/no-show/models:/models/no-show:ro,z
+      - ./ml/demanda/models:/models/demanda:ro,z
+    ports: ["8007:8007"]
   # ms7-whisper:
   #   build: ./services/ms7-inteligencia/whisper
   #   ports: ["8017:8000"]

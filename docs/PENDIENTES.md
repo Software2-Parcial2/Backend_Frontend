@@ -95,3 +95,17 @@ Hecho: API Nest (subida con firma real, S3, Mongo, URL prefirmada, comandos/resu
   entrenamiento completo con el comando de `docs/imagenes-ia.md`. Mientras tanto la inferencia responde `modelo: "stub-no-clinico"`.
 - Las 4 pruebas omitidas de la API (Mongo/S3 reales) requieren el stack levantado.
 - `ml/.venv-tfjs/` y los `.keras`/`.tflite` estan en `.gitignore`.
+
+## Bloque L - MS7 inteligencia
+
+### L1 - Modelos de ML (services/ms7-inteligencia/ml)
+Hecho: API FastAPI (`/predict/no-show`, `/segments/demanda`, `/model/info`), `ml/no-show/train.py`, `ml/demanda/segmentar.py`,
+`scripts/seed/citas-sinteticas.mjs`, Dockerfile y 12 pruebas (`pytest`). Ver `services/ms7-inteligencia/ml/README.md`.
+
+- **El Random Forest NO esta entrenado con datos reales:** no hay credenciales de Kaggle en este entorno (`~/.kaggle/kaggle.json`). El script falla con un mensaje claro
+  sin ellas. Solo existe un modelo de humo con datos **sinteticos** (`rf-noshow-...-sintetico`, AUC ~0.6, sin valor predictivo) para probar el flujo; `sintetico: true` aparece en cada respuesta.
+  Las metricas reales (precision/recall/F1/AUC e importancias) se generaran al ejecutar `ml/no-show/train.py`.
+- **`scripts/seed/citas-sinteticas.mjs` no se ha ejecutado** (stack de SIGEC apagado; el puerto 5432 lo ocupa otro proyecto). MS3 solo acepta fechas futuras, asi que las citas
+  sembradas son de los proximos meses (no historicas). Arranca MS8 con `NOTIF_SENDER=simulated` al sembrar. La segmentacion se probo con el generador interno `--fuente sintetico`.
+- K-means: con datos sinteticos la silueta es baja (~0.2); es esperable con observaciones especialidad-semana ruidosas. Con datos reales conviene revisar `evaluacion_k`.
+- No hay estado "asistio / no asistio" en MS3: el modelo de inasistencia solo puede entrenarse con el dataset externo; para usarlo con citas de SIGEC faltan `edad`, `beca` y el historial por paciente (MS2/MS3).

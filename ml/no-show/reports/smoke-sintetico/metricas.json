@@ -1,0 +1,72 @@
+{
+  "version": "rf-noshow-20261102-da892edd-sintetico",
+  "dataset": "sintetico",
+  "filas": {
+    "train": 9583,
+    "test": 2417
+  },
+  "umbral": 0.49000000000000005,
+  "metricas_test": {
+    "precision": 0.27871148459383754,
+    "recall": 0.4335511982570806,
+    "f1": 0.3393009377664109,
+    "auc": 0.6069869214284284,
+    "matriz_confusion": {
+      "tn": 1443,
+      "fp": 515,
+      "fn": 260,
+      "tp": 199
+    },
+    "prevalencia_inasistencia": 0.18990484071162597
+  },
+  "auc_referencia_azar": 0.5,
+  "importancias": [
+    {
+      "variable": "antelacion_dias",
+      "importancia_gini": 0.5195673890204607,
+      "importancia_permutacion_auc": 0.09601957001163872
+    },
+    {
+      "variable": "citas_previas",
+      "importancia_gini": 0.05676320778251175,
+      "importancia_permutacion_auc": 0.002362020736111914
+    },
+    {
+      "variable": "tasa_inasistencia_previa",
+      "importancia_gini": 0.019907441283588633,
+      "importancia_permutacion_auc": 0.002238623289515518
+    },
+    {
+      "variable": "inasistencias_previas",
+      "importancia_gini": 0.01173176272434552,
+      "importancia_permutacion_auc": 0.00010514931202307843
+    },
+    {
+      "variable": "beca",
+      "importancia_gini": 0.027214340963678186,
+      "importancia_permutacion_auc": -0.00035617243151946364
+    },
+    {
+      "variable": "sms_recibido",
+      "importancia_gini": 0.02979321699663376,
+      "importancia_permutacion_auc": -0.0020828465309628676
+    },
+    {
+      "variable": "dia_semana",
+      "importancia_gini": 0.09783934884494225,
+      "importancia_permutacion_auc": -0.0027807264092789773
+    },
+    {
+      "variable": "edad",
+      "importancia_gini": 0.2371832923838393,
+      "importancia_permutacion_auc": -0.008329717087152666
+    }
+  ],
+  "parametros": {
+    "n_estimators": 100,
+    "min_samples_leaf": 25,
+    "class_weight": "balanced_subsample",
+    "umbral": 0.49000000000000005
+  },
+  "entrenado_en": "2026-11-02T02:44:58.793269+00:00"
+}
