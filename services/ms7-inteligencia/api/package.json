@@ -31,6 +31,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^1.3.0",
     "@apollo/server": "^5.5.1",
+    "@as-integrations/express5": "^1.1.2",
     "@google/genai": "^2.32.0",
     "@modelcontextprotocol/sdk": "^1.32.2",
     "@nestjs/apollo": "^14.1.1",
@@ -47,6 +48,7 @@
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
     "csv-stringify": "^6.9.0",
+    "dataloader": "^2.2.3",
     "exceljs": "^4.4.0",
     "graphql": "^17.0.2",
     "jose": "^6.2.14",

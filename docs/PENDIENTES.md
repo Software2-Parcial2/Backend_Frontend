@@ -109,3 +109,20 @@ Hecho: API FastAPI (`/predict/no-show`, `/segments/demanda`, `/model/info`), `ml
   sembradas son de los proximos meses (no historicas). Arranca MS8 con `NOTIF_SENDER=simulated` al sembrar. La segmentacion se probo con el generador interno `--fuente sintetico`.
 - K-means: con datos sinteticos la silueta es baja (~0.2); es esperable con observaciones especialidad-semana ruidosas. Con datos reales conviene revisar `evaluacion_k`.
 - No hay estado "asistio / no asistio" en MS3: el modelo de inasistencia solo puede entrenarse con el dataset externo; para usarlo con citas de SIGEC faltan `edad`, `beca` y el historial por paciente (MS2/MS3).
+
+### L2 - API de MS7 y GraphQL
+Hecho: `/graphql` (code-first, Apollo 5) con `resumenCitas`, `ingresos`, `demandaEspecialidades`, `riesgoInasistencia` y `citas` paginadas por cursor;
+`GestionService` (casos de uso compartidos con el MCP de L3); endpoint `GET /api/facturacion/facturas/ingresos` nuevo en MS6 (con pruebas); soporte de contexto
+GraphQL en `@sigec/auth-nest` (`requestOf`). Pruebas: 21 en ms7-api (unitarias + integracion con JWT firmados por un JWKS local) y 26 de facturas en MS6.
+
+**Decision de identidad:** se **propaga el token del usuario** a MS3/MS6 (cada servicio vuelve a validarlo y aplica su propia regla por rol). Asi MS7 no tiene privilegios propios
+ni necesita una cuenta de servicio en Keycloak, y la auditoria ve al usuario real. Solo se justificaria una cuenta de servicio para tareas sin usuario (informes programados), que aun no existen.
+
+- **No probado contra el stack real** (Keycloak/MS3/MS6/ML apagados). Las integraciones HTTP (`clients/*.ts`) solo se verificaron con dobles; ejecutar con el stack levantado.
+- **El riesgo de inasistencia usa atributos estimados:** SIGEC no registra `edad`, `beca` ni asistencia previa en MS3; se envian valores neutros (`edad=35`, `beca=false`, `inasistencias_previas=0`) y la respuesta lo declara en
+  `atributosEstimados`. `citas_previas` se cuenta solo dentro del lote. Para predicciones utiles hay que traer la edad desde MS2 y registrar asistencia (estado "NO_ASISTIO").
+- **El resumen de citas lee MS3 paginando** (hasta 5000 citas, `truncado: true` si se corta) y filtra por fecha en MS7: MS3 solo filtra por rango con `medicoId`. Un endpoint agregado en MS3 seria mas eficiente.
+- **Ingresos por especialidad no existe:** MS6 no conoce la especialidad (solo `cita_id`); habria que cruzar con MS3.
+- GraphQL responde HTTP 200 con `errors` (401/403 dentro de `extensions`), como es habitual; el gateway ya enruta `/graphql` a MS7.
+- Limites: profundidad 6 y 120 campos (`GRAPHQL_MAX_DEPTH`/`GRAPHQL_MAX_COMPLEXITY`); la complejidad cuenta campos, no multiplica por el tamano de las listas.
+- Se anadieron las dependencias `dataloader` y `@as-integrations/express5` (necesaria para `@nestjs/apollo` con Express 5).

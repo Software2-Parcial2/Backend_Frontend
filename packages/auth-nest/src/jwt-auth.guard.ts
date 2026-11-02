@@ -9,6 +9,7 @@ import { Reflector } from '@nestjs/core';
 import { createRemoteJWKSet, jwtVerify } from 'jose';
 import type { AuthOptions, AuthUser } from './auth-user.js';
 import { AUTH_OPTIONS, IS_PUBLIC_KEY } from './auth.constants.js';
+import { requestOf } from './request.js';
 
 interface HttpRequest {
   headers: Record<string, string | string[] | undefined>;
@@ -38,7 +39,7 @@ export class JwtAuthGuard implements CanActivate {
     ]);
     if (isPublic) return true;
 
-    const request = context.switchToHttp().getRequest<HttpRequest>();
+    const request = requestOf<HttpRequest>(context);
     const header = request.headers['authorization'];
     const value = Array.isArray(header) ? header[0] : header;
     const [scheme, token] = value?.split(' ') ?? [];

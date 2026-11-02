@@ -2,6 +2,7 @@ import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@
 import { Reflector } from '@nestjs/core';
 import type { AuthUser } from './auth-user.js';
 import { ROLES_KEY } from './auth.constants.js';
+import { requestOf } from './request.js';
 
 /** Guard global de roles: solo actua en rutas con @Roles(...). Va despues de JwtAuthGuard. */
 @Injectable()
@@ -15,7 +16,7 @@ export class RolesGuard implements CanActivate {
     ]);
     if (!required || required.length === 0) return true;
 
-    const user = context.switchToHttp().getRequest<{ user?: AuthUser }>().user;
+    const user = requestOf<{ user?: AuthUser }>(context).user;
     if (!user || !required.some((role) => user.roles.includes(role))) {
       throw new ForbiddenException('Rol insuficiente');
     }
