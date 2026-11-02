@@ -12,3 +12,5 @@ ml/data/
 *.keras
 *.joblib
 *.tsbuildinfo
+ml/.venv-tfjs/
+ml/pneumonia/models/*.tflite

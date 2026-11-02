@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sigec.local/contracts/events/imagenes.analisis.solicitar.schema.json",
+  "title": "imagenes.analisis.solicitar",
+  "description": "Comando MS5 API -> MS5 inferencia (exchange sigec.saga). La imagen esta en S3 (bucket privado).",
+  "allOf": [
+    {
+      "$ref": "envelope.schema.json"
+    },
+    {
+      "properties": {
+        "type": {
+          "const": "imagenes.analisis.solicitar"
+        },
+        "payload": {
+          "type": "object",
+          "required": [
+            "imagenId",
+            "pacienteId",
+            "bucket",
+            "objectKey",
+            "mime",
+            "hashSha256"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "imagenId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "pacienteId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "bucket": {
+              "type": "string"
+            },
+            "objectKey": {
+              "type": "string"
+            },
+            "mime": {
+              "enum": [
+                "image/jpeg",
+                "image/png",
+                "application/dicom"
+              ]
+            },
+            "hashSha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

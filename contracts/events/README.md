@@ -36,6 +36,9 @@ y con **publisher confirms**. Los consumidores usan **ack manual**.
 | `facturacion.cobro.anulado` | respuesta | MS6 → MS3 | `sigec.saga` | citaId, facturaId? |
 | `notificaciones.cita-confirmada.enviada` | respuesta | MS8 → MS3 | `sigec.saga` | citaId, notificacionId, canal |
 | `notificaciones.cita-confirmada.fallida` | respuesta | MS8 → MS3 | `sigec.saga` | citaId, motivo |
+| `imagenes.analisis.solicitar` | comando | MS5 API → MS5 inferencia | `sigec.saga` | imagenId, pacienteId, bucket, objectKey, mime, hashSha256 |
+| `imagenes.analisis.completado` | respuesta | MS5 inferencia → MS5 API | `sigec.saga` | imagenId, probabilidad_neumonia, clase, version_modelo, modelo, aviso |
+| `imagenes.analisis.fallido` | respuesta | MS5 inferencia → MS5 API | `sigec.saga` | imagenId, motivo |
 | `paciente.creado` | evento de dominio | MS2 → varios | `sigec.eventos` | pacienteId, nombre, documento, email? |
 | `cita.confirmada` | evento de dominio | MS3 → varios | `sigec.eventos` | citaId, pacienteId, medicoId, fechaHora |
 | `factura.creada` | evento de dominio | MS6 → varios | `sigec.eventos` | facturaId, citaId, pacienteId, monto, estado |
@@ -81,6 +84,8 @@ la copia se publica en `sigec.dlx` → `<q>.dlq`. Un mensaje que no es JSON vali
 | `ms8.saga.comandos` | MS8 | los dos comandos `notificaciones.*` |
 | `ms3.saga.respuestas` | MS3 | las cinco respuestas |
 | `ms4.eventos.pacientes` | MS4 | `paciente.creado` |
+| `ms5.inferencia.comandos` | MS5 inferencia (Python) | `imagenes.analisis.solicitar` |
+| `ms5.api.respuestas` | MS5 API | `imagenes.analisis.completado`, `.fallido` |
 | `ms8.eventos` | MS8 | `cita.confirmada`, `paciente.creado` (contacto del paciente y recordatorios) |
 
 Cada servicio declara sus colas al arrancar (idempotente; si los argumentos difieren RabbitMQ responde `406

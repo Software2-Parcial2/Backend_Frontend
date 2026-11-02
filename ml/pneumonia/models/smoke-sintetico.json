@@ -1,0 +1,23 @@
+{
+  "nombre": "smoke-sintetico-NO-USAR",
+  "version": "2026.11.01.2241",
+  "umbral": Infinity,
+  "capa_grad_cam": "out_relu",
+  "dataset": "SINTETICO (ruido aleatorio, no son radiografias)",
+  "metricas_prueba": {
+    "umbral": Infinity,
+    "auc": 0.5,
+    "sensibilidad": 0.0,
+    "especificidad": 1.0,
+    "exactitud": 0.5,
+    "matriz_confusion": {
+      "VN": 8,
+      "FP": 0,
+      "FN": 8,
+      "VP": 0
+    },
+    "n": 16
+  },
+  "aviso": "Apoyo a la decision clinica; NO es un diagnostico. Proyecto academico, sin validacion clinica.",
+  "clinico": false
+}

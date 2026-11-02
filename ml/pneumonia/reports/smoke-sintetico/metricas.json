@@ -1,0 +1,30 @@
+{
+  "validacion": {
+    "umbral": Infinity,
+    "auc": 0.5,
+    "sensibilidad": 0.0,
+    "especificidad": 1.0,
+    "exactitud": 0.5,
+    "matriz_confusion": {
+      "VN": 4,
+      "FP": 0,
+      "FN": 4,
+      "VP": 0
+    },
+    "n": 8
+  },
+  "prueba": {
+    "umbral": Infinity,
+    "auc": 0.5,
+    "sensibilidad": 0.0,
+    "especificidad": 1.0,
+    "exactitud": 0.5,
+    "matriz_confusion": {
+      "VN": 8,
+      "FP": 0,
+      "FN": 8,
+      "VP": 0
+    },
+    "n": 16
+  }
+}

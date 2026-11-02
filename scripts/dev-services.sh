@@ -25,6 +25,7 @@ SERVICES=(
   "ms5|3005|services/ms5-imagenes/api|pnpm start:dev|/health"
   "ms7|3007|services/ms7-inteligencia/api|pnpm start:dev|/health"
   "ms8|3008|services/ms8-notificaciones|pnpm start:dev|/health"
+  "ms5-inference|8005|services/ms5-imagenes/inference|.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8005|/health"
   "ms6|8006|services/ms6-facturacion|php artisan serve --port=8006|/api/facturacion/health"
 )
 

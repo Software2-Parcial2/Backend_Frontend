@@ -44,6 +44,8 @@ const tables = [
   { name: 'idempotency_keys', ...key('pk'), ttl: 'expiresAt' },
   { name: 'outbox', ...key('pk'), stream: true },
   { name: 'processed_messages', ...key('pk'), ttl: 'expiresAt' },
+  // --- MS5 (imagenes): idempotencia de las subidas ---
+  { name: 'ms5_idempotency_keys', ...key('pk'), ttl: 'expiresAt' },
   // --- MS8 (notificaciones) ---
   // gsi1: notificaciones PENDIENTES por proximo intento; gsi2: recordatorios pendientes por fecha de la cita. TTL: codigos de vinculo.
   { name: 'notificaciones', ...key('pk', 'sk'), gsis: ['gsi1', 'gsi2'], ttl: 'expiresAt' },

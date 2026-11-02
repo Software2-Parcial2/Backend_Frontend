@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sigec.local/contracts/events/imagenes.analisis.completado.schema.json",
+  "title": "imagenes.analisis.completado",
+  "description": "Respuesta MS5 inferencia -> MS5 API. APOYO A LA DECISION, no un diagnostico.",
+  "allOf": [
+    {
+      "$ref": "envelope.schema.json"
+    },
+    {
+      "properties": {
+        "type": {
+          "const": "imagenes.analisis.completado"
+        },
+        "payload": {
+          "type": "object",
+          "required": [
+            "imagenId",
+            "probabilidad_neumonia",
+            "clase",
+            "version_modelo",
+            "modelo",
+            "aviso"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "imagenId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "probabilidad_neumonia": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "clase": {
+              "enum": [
+                "NEUMONIA",
+                "NORMAL"
+              ]
+            },
+            "version_modelo": {
+              "type": "string"
+            },
+            "modelo": {
+              "type": "string"
+            },
+            "aviso": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

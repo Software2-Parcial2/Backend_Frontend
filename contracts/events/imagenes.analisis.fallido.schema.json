@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sigec.local/contracts/events/imagenes.analisis.fallido.schema.json",
+  "title": "imagenes.analisis.fallido",
+  "description": "Respuesta MS5 inferencia -> MS5 API cuando la imagen no se pudo analizar (no se reintenta).",
+  "allOf": [
+    {
+      "$ref": "envelope.schema.json"
+    },
+    {
+      "properties": {
+        "type": {
+          "const": "imagenes.analisis.fallido"
+        },
+        "payload": {
+          "type": "object",
+          "required": [
+            "imagenId",
+            "motivo"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "imagenId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "motivo": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

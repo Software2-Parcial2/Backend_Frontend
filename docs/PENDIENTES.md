@@ -83,3 +83,15 @@ y `scripts/e2e-notificaciones.sh` (29). **Lo que NO se pudo verificar en este en
 - El monitor de DLQ de MS8 alerta por crecimiento de cualquier `*.dlq`; no distingue gravedad ni agrupa alertas repetidas.
 - La vinculacion de Telegram no verifica que el `chatId` sea de una persona (cualquiera con un codigo valido se vincula); el codigo es de un solo uso y dura 10 min.
 - Se corrigio un fallo real del consumidor de Laravel (consumidores huerfanos al reconectar por inactividad) que dejaba mensajes sin atender.
+
+## Bloque K - MS5 imagenes e inferencia
+
+Hecho: API Nest (subida con firma real, S3, Mongo, URL prefirmada, comandos/resultados por RabbitMQ), inferencia FastAPI con consumidor y DLQ,
+`train.py`/`convertir.py`, `scripts/e2e-imagenes.sh`, `docs/imagenes-ia.md`. Verificado: `pnpm --filter ms5-api test` (22 ok, 4 omitidas) y `pytest` de inferencia (25 ok).
+
+- **`scripts/e2e-imagenes.sh` NO se ha ejecutado:** el stack estaba apagado y el puerto 5432 lo ocupaba el Postgres de otro proyecto (`emprendeu-db-1`),
+  asi que `docker compose up` de SIGEC habria chocado. Ejecutarlo antes de dar el bloque por cerrado.
+- **No hay modelo real entrenado:** solo el humo sintetico en `ml/pneumonia/` (no clinico). Faltan credenciales de Kaggle (`~/.kaggle/kaggle.json`);
+  entrenamiento completo con el comando de `docs/imagenes-ia.md`. Mientras tanto la inferencia responde `modelo: "stub-no-clinico"`.
+- Las 4 pruebas omitidas de la API (Mongo/S3 reales) requieren el stack levantado.
+- `ml/.venv-tfjs/` y los `.keras`/`.tflite` estan en `.gitignore`.

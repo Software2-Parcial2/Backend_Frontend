@@ -2,7 +2,7 @@
 SHELL := /bin/bash
 ENV_FILE := .env
 
-.PHONY: infra-up dynamodb-init rabbitmq-declare e2e-saga dlq-replay n8n-import n8n-export
+.PHONY: infra-up dynamodb-init rabbitmq-declare e2e-saga dlq-replay n8n-import n8n-export s3-init
 
 infra-up:
 	docker compose up -d
@@ -37,3 +37,7 @@ n8n-import:
 n8n-export:
 	docker compose exec -T n8n n8n export:workflow --all --separate --output=/tmp/wf-export
 	@mkdir -p infra/n8n/workflows; for f in sigecEnviarNotif:enviar-notificacion sigecAlertaInter:alerta-interna sigecRecordatori:recordatorio-cita sigecTelegramVin:telegram-vinculacion; do id=$${f%%:*}; name=$${f##*:}; docker compose cp n8n:/tmp/wf-export/$$id.json infra/n8n/workflows/$$name.json; done
+
+# Crea (repetible) el bucket privado de radiografias en SeaweedFS.
+s3-init:
+	set -a; source $(ENV_FILE); set +a; node scripts/s3-init.mjs

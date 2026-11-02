@@ -397,6 +397,154 @@ export const SCHEMAS: readonly Record<string, unknown>[] = [
   },
   {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://sigec.local/contracts/events/imagenes.analisis.completado.schema.json",
+    "title": "imagenes.analisis.completado",
+    "description": "Respuesta MS5 inferencia -> MS5 API. APOYO A LA DECISION, no un diagnostico.",
+    "allOf": [
+      {
+        "$ref": "envelope.schema.json"
+      },
+      {
+        "properties": {
+          "type": {
+            "const": "imagenes.analisis.completado"
+          },
+          "payload": {
+            "type": "object",
+            "required": [
+              "imagenId",
+              "probabilidad_neumonia",
+              "clase",
+              "version_modelo",
+              "modelo",
+              "aviso"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "imagenId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "probabilidad_neumonia": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "clase": {
+                "enum": [
+                  "NEUMONIA",
+                  "NORMAL"
+                ]
+              },
+              "version_modelo": {
+                "type": "string"
+              },
+              "modelo": {
+                "type": "string"
+              },
+              "aviso": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://sigec.local/contracts/events/imagenes.analisis.fallido.schema.json",
+    "title": "imagenes.analisis.fallido",
+    "description": "Respuesta MS5 inferencia -> MS5 API cuando la imagen no se pudo analizar (no se reintenta).",
+    "allOf": [
+      {
+        "$ref": "envelope.schema.json"
+      },
+      {
+        "properties": {
+          "type": {
+            "const": "imagenes.analisis.fallido"
+          },
+          "payload": {
+            "type": "object",
+            "required": [
+              "imagenId",
+              "motivo"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "imagenId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "motivo": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://sigec.local/contracts/events/imagenes.analisis.solicitar.schema.json",
+    "title": "imagenes.analisis.solicitar",
+    "description": "Comando MS5 API -> MS5 inferencia (exchange sigec.saga). La imagen esta en S3 (bucket privado).",
+    "allOf": [
+      {
+        "$ref": "envelope.schema.json"
+      },
+      {
+        "properties": {
+          "type": {
+            "const": "imagenes.analisis.solicitar"
+          },
+          "payload": {
+            "type": "object",
+            "required": [
+              "imagenId",
+              "pacienteId",
+              "bucket",
+              "objectKey",
+              "mime",
+              "hashSha256"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "imagenId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "pacienteId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "bucket": {
+                "type": "string"
+              },
+              "objectKey": {
+                "type": "string"
+              },
+              "mime": {
+                "enum": [
+                  "image/jpeg",
+                  "image/png",
+                  "application/dicom"
+                ]
+              },
+              "hashSha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
     "$id": "https://sigec.local/contracts/events/notificaciones.cita-cancelada.enviar.schema.json",
     "title": "notificaciones.cita-cancelada.enviar",
     "description": "Comando MS3 -> MS8 (exchange sigec.saga, routing key = type).",

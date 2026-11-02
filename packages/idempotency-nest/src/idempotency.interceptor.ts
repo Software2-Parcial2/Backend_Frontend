@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import {
   CallHandler,
   ExecutionContext,
@@ -18,6 +19,8 @@ interface Req {
   originalUrl?: string;
   url: string;
   body?: unknown;
+  /** Archivo subido (multer) si la peticion es multipart. */
+  file?: { buffer?: Buffer };
   headers: Record<string, string | string[] | undefined>;
   user?: { sub?: string };
 }
@@ -54,7 +57,9 @@ export class IdempotencyInterceptor implements NestInterceptor {
     const req = http.getRequest<Req>();
     const res = http.getResponse<Res>();
     const scope = req.user?.sub ?? 'anon';
-    const hash = requestHash(req.method, req.originalUrl ?? req.url, req.body);
+    // En una subida multipart el contenido del archivo forma parte de la huella: la misma clave con otro archivo es otra peticion (422).
+    const cuerpo = req.file?.buffer ? { ...(req.body as object), __archivo: createHash('sha256').update(req.file.buffer).digest('hex') } : req.body;
+    const hash = requestHash(req.method, req.originalUrl ?? req.url, cuerpo);
     const header = req.headers['idempotency-key'];
     const key = Array.isArray(header) ? header[0] : header;
 

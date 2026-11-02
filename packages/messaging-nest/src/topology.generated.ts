@@ -109,6 +109,31 @@ export const TOPOLOGY = {
           ]
         }
       ]
+    },
+    {
+      "name": "ms5.inferencia.comandos",
+      "owner": "MS5-inferencia",
+      "bindings": [
+        {
+          "exchange": "sigec.saga",
+          "routingKeys": [
+            "imagenes.analisis.solicitar"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ms5.api.respuestas",
+      "owner": "MS5-api",
+      "bindings": [
+        {
+          "exchange": "sigec.saga",
+          "routingKeys": [
+            "imagenes.analisis.completado",
+            "imagenes.analisis.fallido"
+          ]
+        }
+      ]
     }
   ]
 } as const;
