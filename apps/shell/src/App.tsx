@@ -5,6 +5,9 @@ import { oidcConfig } from './auth/oidc';
 import { rolesFromToken } from './auth/sigecUser';
 import { RemoteContainer } from './components/RemoteContainer';
 import { Home } from './pages/Home';
+import { EstacionClinica } from './pages/EstacionClinica';
+import { GestionEmpresarial } from './pages/GestionEmpresarial';
+import { MesaDeCaja } from './pages/MesaDeCaja';
 import './App.css';
 
 function RequireLogin({ children }: { children: ReactNode }) {
@@ -33,8 +36,11 @@ function Layout() {
         <strong>SIGEC</strong>
         <nav>
           <NavLink to="/">Inicio</NavLink>
-          <NavLink to="/clinica">Clínica</NavLink>
-          <NavLink to="/gestion">Gestión</NavLink>
+          <NavLink to="/estacion-clinica">Estación Clínica (UI)</NavLink>
+          <NavLink to="/gestion-empresarial">Gestión & MCP (UI)</NavLink>
+          <NavLink to="/caja-facturacion">Caja SAGA (UI)</NavLink>
+          <NavLink to="/clinica">Remoto Angular</NavLink>
+          <NavLink to="/gestion">Remoto Vue</NavLink>
         </nav>
         <div className="session">
           {auth.isAuthenticated && auth.user ? (
@@ -56,6 +62,9 @@ function Layout() {
       <main>
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/estacion-clinica" element={<EstacionClinica />} />
+          <Route path="/gestion-empresarial" element={<GestionEmpresarial />} />
+          <Route path="/caja-facturacion" element={<MesaDeCaja />} />
           <Route
             path="/clinica"
             element={
