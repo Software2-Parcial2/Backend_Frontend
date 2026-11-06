@@ -16,3 +16,4 @@ ml/.venv-tfjs/
 ml/pneumonia/models/*.tflite
 ml/demanda/models/*.json
 ml/no-show/data/
+backups/

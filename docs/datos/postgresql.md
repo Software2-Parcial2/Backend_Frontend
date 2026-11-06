@@ -199,14 +199,15 @@ erDiagram
   }
   agente_auditoria {
     bigint id PK
-    timestamptz ocurrido_en
-    text usuario_id
-    text rol
+    timestamptz en
+    text usuario "sub de Keycloak"
+    text_array roles
     text herramienta
-    jsonb parametros
-    boolean ok
-    int duracion_ms
-    text error
+    jsonb argumentos
+    text estado "ok|error|rechazada"
+    text detalle
+    int ms
+    int bytes
   }
   schema_migrations {
     text version PK
@@ -219,7 +220,7 @@ erDiagram
 - **pgvector:** `vector(384)` (modelo `paraphrase-multilingual-MiniLM-L12-v2`); indice `HNSW (embedding vector_cosine_ops) WITH (m = 16, ef_construction = 64)`.
   Se eligio HNSW (no IVFFlat) porque no necesita datos previos para entrenar listas y da buena recuperacion con pocos miles de fragmentos. En consulta: `SET LOCAL hnsw.ef_search = 40` (valor por defecto) y
   `ORDER BY embedding <=> $1 LIMIT k`; la similitud es `1 - distancia`. Cambiar de modelo = migracion nueva con otra dimension + reindexar.
-- `agente_auditoria`: parametros ya redactados (nunca datos de pacientes ni la pregunta en claro; se guarda un resumen). Indices `(ocurrido_en DESC)` y `(usuario_id, ocurrido_en DESC)` (limite de uso por usuario y consulta del administrador).
+- `agente_auditoria`: la escribe el adaptador `AuditoriaPg` en segundo plano (la lectura sigue en memoria; un fallo de la base nunca rompe una consulta; `AUDITORIA_PERSISTENTE=false` la desactiva). `argumentos` son los parametros ya validados con zod de cada herramienta (filtros, y la pregunta de `consultar_politicas`, que es texto administrativo); los datos de pacientes no llegan a esta capa (`redaccion.ts`). Indices `(en DESC)` y `(usuario, en DESC)`.
 - No hay datos clinicos en esta base.
 
 ## Outbox, idempotencia y retencion (MS2, MS4, MS6)
@@ -239,6 +240,15 @@ por rango mensual de `created_at` y `DROP PARTITION` en lugar de `DELETE`. **Dis
 Las tablas estan en 3FN. Desnormalizaciones deliberadas: `consultas.medico_id`/`historias.paciente_id` son ids de otro servicio (no hay FK posible); `payload jsonb` del outbox y `signos_vitales jsonb`
 son documentos opacos o de forma variable. La especialidad se guarda por `codigo` (clave natural estable) en MS3/MS6 para no depender de un uuid de otro servicio.
 
+## Desviaciones conocidas
+
+- **`facturas.created_at/updated_at` son `timestamp(0) without time zone`** (convencion de `$table->timestamps()` de Laravel; Eloquent los escribe en UTC). Convertirlos a `timestamptz` toca columnas que el codigo usa, asi que no se hizo; las tablas nuevas de MS6 usan `timestamptz`. Pendiente en `docs/PENDIENTES.md`.
+- **Tablas por defecto de Laravel** (`users`, `cache`, `jobs`) siguen existiendo sin uso (bloque C).
+
+## Esquema real y diccionario
+
+Los diagramas de arriba explican el diseno; los **generados desde las bases reales** estan en [erd-generado.md](erd-generado.md) y el diccionario en [diccionario-generado.md](diccionario-generado.md) (`make datos-docs`).
+
 ## Explicacion de planes
 
-`docs/datos/explain.md` (generado por `scripts/datos/explain.mjs`) contiene el `EXPLAIN` de las 5 consultas principales contra una base real con datos de semilla.
+[explain.md](explain.md) (generado por `make datos-explain`) contiene el `EXPLAIN` de las 5 consultas principales contra una base real con datos de semilla.

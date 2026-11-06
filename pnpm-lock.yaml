@@ -329,6 +329,9 @@ importers:
       mongodb:
         specifier: ^7.7.0
         version: 7.7.0
+      pg:
+        specifier: ^8.23.1
+        version: 8.23.1
 
   services/ms3-citas:
     dependencies:

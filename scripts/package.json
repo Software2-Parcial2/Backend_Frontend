@@ -9,7 +9,11 @@
     "rabbitmq:declare": "node rabbitmq-declare.mjs",
     "dlq:replay": "node dlq-replay.mjs",
     "test": "node --test \"test/*.test.mjs\"",
-    "mongo:init": "node mongo-init/index.mjs"
+    "mongo:init": "node mongo-init/index.mjs",
+    "seed": "node seed/seed.mjs",
+    "seed:reset": "node seed/seed.mjs --reset",
+    "datos:explain": "node datos/explain.mjs",
+    "datos:docs": "node datos/generar-docs.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.1161.0",
@@ -17,6 +21,7 @@
     "@aws-sdk/lib-dynamodb": "^3.1161.0",
     "@aws-sdk/s3-request-presigner": "^3.1161.0",
     "amqplib": "^2.2.0",
-    "mongodb": "^7.7.0"
+    "mongodb": "^7.7.0",
+    "pg": "^8.23.1"
   }
 }
