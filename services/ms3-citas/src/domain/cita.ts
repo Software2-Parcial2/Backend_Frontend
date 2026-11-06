@@ -8,6 +8,9 @@ export type CitaEstado =
   | 'CANCELADA' // compensada antes de existir un cobro conocido
   | 'ANULADA'; // compensada habiendo un cobro (que se anula)
 
+/** Asistencia a la cita ya ocurrida (alimenta el modelo de inasistencia de MS7). Opcional: solo existe tras la cita. */
+export type Asistencia = 'ASISTIO' | 'NO_ASISTIO';
+
 export type NotificacionEstado = 'NO_APLICA' | 'PENDIENTE' | 'ENVIADA';
 
 export interface CitaInput {
@@ -63,6 +66,8 @@ export interface CitaAggregate {
   motivoFallo?: string;
   notificacion: NotificacionInfo;
   saga: SagaState;
+  /** Registro posterior a la cita; ausente mientras no se registre. */
+  asistencia?: Asistencia;
   createdAt: number;
   updatedAt: number;
   /** Version optimista del agregado. */

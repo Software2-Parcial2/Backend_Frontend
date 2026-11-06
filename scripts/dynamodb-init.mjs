@@ -40,7 +40,8 @@ const key = (pk, sk) => ({
 const tables = [
   // --- MS3 (citas / orquestador de la SAGA) ---
   // gsi1 (disperso): SAGAs en curso por plazo y notificaciones pendientes por proximo intento.
-  { name: 'citas', ...key('pk', 'sk'), gsis: ['gsi1', 'gsi2', 'gsi3', 'gsi4'] },
+  // TTL (expiresAt) solo en horarios LIBRE generados por la semilla: limpia agenda vieja; ninguna regla de negocio depende de el.
+  { name: 'citas', ...key('pk', 'sk'), gsis: ['gsi1', 'gsi2', 'gsi3', 'gsi4'], ttl: 'expiresAt' },
   { name: 'idempotency_keys', ...key('pk'), ttl: 'expiresAt' },
   { name: 'outbox', ...key('pk'), stream: true },
   { name: 'processed_messages', ...key('pk'), ttl: 'expiresAt' },

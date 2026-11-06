@@ -1,4 +1,4 @@
-import type { CitaAggregate, HorarioOp, OutboxMessage } from '../../domain/cita.js';
+import type { CitaAggregate, Horario, HorarioOp, OutboxMessage } from '../../domain/cita.js';
 
 export interface FiltroCitas {
   /** Citas de un paciente (indice por paciente). */
@@ -12,6 +12,21 @@ export interface FiltroCitas {
 export interface PaginaCitas {
   items: CitaAggregate[];
   /** Cursor para la siguiente pagina; null si no hay mas. */
+  siguiente: string | null;
+}
+
+export interface FiltroDisponibilidad {
+  medicoId: string;
+  /** ISO 8601 UTC normalizado (inclusive). */
+  desde: string;
+  hasta: string;
+  /** Solo los horarios que hoy se pueden reservar (LIBRE o con la reserva vencida). */
+  soloLibres?: boolean;
+}
+
+export interface PaginaHorarios {
+  /** `estado` es el EFECTIVO: una reserva vencida se muestra LIBRE. Orden cronologico. */
+  items: Horario[];
   siguiente: string | null;
 }
 
@@ -45,4 +60,6 @@ export interface CitaRepository {
   notificacionesPendientes(now: number, limit?: number): Promise<string[]>;
   /** Busca por indice (nunca Scan), mas recientes primero, con paginacion por cursor opaco. */
   buscar(filtro: FiltroCitas, limite: number, cursor?: string): Promise<PaginaCitas>;
+  /** Horarios de un medico en un rango (Query por clave, orden cronologico, cursor opaco). */
+  disponibilidad(filtro: FiltroDisponibilidad, limite: number, cursor?: string): Promise<PaginaHorarios>;
 }

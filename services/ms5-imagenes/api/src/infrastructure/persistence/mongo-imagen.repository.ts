@@ -5,7 +5,7 @@ import type { Imagen, ImagenEstado, ResultadoAnalisis } from '../../domain/image
 const schema = new mongoose.Schema<Imagen & { _id: string }>(
   {
     _id: { type: String, required: true },
-    pacienteId: { type: String, required: true, index: true },
+    pacienteId: { type: String, required: true },
     estudio: { type: String, required: true },
     estado: { type: String, required: true, enum: ['SUBIDA', 'ANALIZANDO', 'ANALIZADA', 'FALLIDA'] },
     hashSha256: { type: String, required: true },

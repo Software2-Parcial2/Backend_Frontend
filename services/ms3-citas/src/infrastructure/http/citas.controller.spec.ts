@@ -1,4 +1,4 @@
-import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import type { AuthUser } from '@sigec/auth-nest';
 import { CitasController } from './citas.controller.js';
 import type { CitaSagaService } from '../../application/saga/cita-saga.service.js';
@@ -19,6 +19,7 @@ function setup(citas: CitaAggregate[] = [cita(PACIENTE)]) {
     obtener: async (id: string) => citas.find((c) => c.citaId === id) ?? null,
     buscar: async (f: unknown) => (calls.push(f), { items: citas, siguiente: null }),
     solicitar: async () => ({ citaId: 'x', sagaId: 'y' }),
+    disponibilidad: async (f: unknown) => (calls.push(f), { items: [{ medicoId: 'm', fechaHora: '2026-12-01T10:00:00.000Z', estado: 'CONFIRMADO', citaId: 'c9' }, { medicoId: 'm', fechaHora: '2026-12-01T11:00:00.000Z', estado: 'LIBRE' }], siguiente: 'sig' }),
   } as unknown as CitaSagaService;
   return { controller: new CitasController(saga), calls };
 }
@@ -67,5 +68,17 @@ describe('CitasController - autorizacion por rol', () => {
   it('un usuario con rol paciente Y de personal no queda restringido', async () => {
     const { controller } = setup([cita(OTRO)]);
     await expect(controller.obtener('c1', { sub: 'x', roles: ['paciente', 'recepcion'] })).resolves.toBeDefined();
+  });
+
+  it('disponibilidad: normaliza el rango, no expone citaId y traduce CONFIRMADO a OCUPADO', async () => {
+    const { controller, calls } = setup();
+    const r = await controller.disponibilidad({ medicoId: 'm', desde: '2026-12-01', hasta: '2026-12-02T00:00:00Z', soloLibres: true });
+    expect(calls[0]).toEqual({ medicoId: 'm', desde: '2026-12-01T00:00:00.000Z', hasta: '2026-12-02T00:00:00.000Z', soloLibres: true });
+    expect(r).toEqual({ items: [{ fechaHora: '2026-12-01T10:00:00.000Z', estado: 'OCUPADO' }, { fechaHora: '2026-12-01T11:00:00.000Z', estado: 'LIBRE' }], siguiente: 'sig' });
+  });
+
+  it('disponibilidad: rango invertido responde 400', async () => {
+    const { controller } = setup();
+    await expect(controller.disponibilidad({ medicoId: 'm', desde: '2026-12-02', hasta: '2026-12-01' })).rejects.toBeInstanceOf(BadRequestException);
   });
 });

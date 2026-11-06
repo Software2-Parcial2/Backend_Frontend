@@ -6,12 +6,14 @@ import {
   type DynamoDBDocumentClient,
 } from '@aws-sdk/lib-dynamodb';
 import { buildOutboxItem, createEnvelope } from '@sigec/messaging-nest';
-import { CursorInvalidoError, type CitaChange, type CitaRepository, type FiltroCitas, type PaginaCitas } from '../../application/saga/cita-repository.js';
+import { CursorInvalidoError, type CitaChange, type CitaRepository, type FiltroCitas, type FiltroDisponibilidad, type PaginaCitas, type PaginaHorarios } from '../../application/saga/cita-repository.js';
 import {
   ConcurrentUpdateError,
+  estadoEfectivo,
   HorarioNoDisponibleError,
   HorarioPerdidoError,
   type CitaAggregate,
+  type Horario,
   type HorarioOp,
 } from '../../domain/cita.js';
 
@@ -151,6 +153,65 @@ export class DynamoCitaRepository implements CitaRepository {
   }
 
   /**
+   * Horarios de un medico entre `desde` y `hasta` (Query sobre la clave base: pk = HORARIO#medico, sk ISO = orden cronologico).
+   * El estado devuelto es el EFECTIVO (una reserva vencida se ve LIBRE). Con `soloLibres`, el filtro corre en DynamoDB tras leer
+   * la pagina, asi que una consulta puede devolver menos de `limite`; se repite (hasta 10 veces) para llenar la pagina.
+   * El cursor se valida contra la particion del medico consultado.
+   */
+  async disponibilidad(filtro: FiltroDisponibilidad, limite: number, cursor?: string): Promise<PaginaHorarios> {
+    const partition = `HORARIO#${filtro.medicoId}`;
+    let start: Record<string, unknown> | undefined = cursor ? decodeHorarioCursor(cursor, partition) : undefined;
+    const now = this.now();
+    const items: Horario[] = [];
+    let last: { pk: string; sk: string } | undefined;
+    let hayMas = false;
+    let recortado = false;
+    for (let i = 0; i < MAX_CONSULTAS_FILTRADAS && items.length < limite; i++) {
+      const res = await this.doc.send(
+        new QueryCommand({
+          TableName: this.tables.citas,
+          KeyConditionExpression: 'pk = :p AND sk BETWEEN :a AND :b',
+          ...(filtro.soloLibres
+            ? { FilterExpression: 'estado = :libre OR (estado = :reservado AND reservaExpiraEn < :now)' }
+            : {}),
+          ExpressionAttributeValues: {
+            ':p': partition,
+            ':a': filtro.desde,
+            ':b': filtro.hasta,
+            ...(filtro.soloLibres ? { ':libre': 'LIBRE', ':reservado': 'RESERVADO', ':now': now } : {}),
+          },
+          Limit: limite,
+          ExclusiveStartKey: start,
+        }),
+      );
+      for (const raw of res.Items ?? []) {
+        if (items.length === limite) {
+          recortado = true;
+          break;
+        }
+        const h = raw as unknown as Horario;
+        const estado = estadoEfectivo(h, now);
+        items.push({
+          medicoId: h.medicoId,
+          fechaHora: h.fechaHora,
+          estado,
+          ...(estado === 'LIBRE' ? {} : { citaId: h.citaId, ...(h.reservaExpiraEn !== undefined ? { reservaExpiraEn: h.reservaExpiraEn } : {}) }),
+        });
+        last = { pk: partition, sk: h.fechaHora };
+      }
+      if (recortado) break;
+      start = res.LastEvaluatedKey;
+      if (!start) {
+        hayMas = false; // se llego al final del rango
+        break;
+      }
+      hayMas = true; // quedan items por evaluar (si el bucle termina por limite, hay cursor)
+    }
+    const siguiente = (hayMas || recortado) && last ? Buffer.from(JSON.stringify(last)).toString('base64url') : null;
+    return { items, siguiente };
+  }
+
+  /**
    * Consulta por indice: paciente (gsi2), medico+fecha (gsi3) o todas (gsi4), mas recientes primero.
    * El cursor es la LastEvaluatedKey codificada; se valida que pertenezca a la particion consultada para que un cursor
    * manipulado no permita leer las citas de otro paciente o medico.
@@ -185,6 +246,19 @@ export class DynamoCitaRepository implements CitaRepository {
       items: (res.Items ?? []).map(toAggregate),
       siguiente: res.LastEvaluatedKey ? Buffer.from(JSON.stringify(res.LastEvaluatedKey)).toString('base64url') : null,
     };
+  }
+}
+
+/** Maximo de lecturas repetidas para llenar una pagina filtrada. */
+const MAX_CONSULTAS_FILTRADAS = 10;
+
+function decodeHorarioCursor(cursor: string, partition: string): { pk: string; sk: string } {
+  try {
+    const key = JSON.parse(Buffer.from(cursor, 'base64url').toString('utf8')) as Record<string, unknown>;
+    if (key.pk !== partition || typeof key.sk !== 'string' || Object.keys(key).length !== 2) throw new Error();
+    return { pk: key.pk, sk: key.sk };
+  } catch {
+    throw new CursorInvalidoError();
   }
 }
 

@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { CreateTableCommand, DeleteTableCommand, DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, QueryCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, PutCommand, QueryCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
 import { createEnvelope } from '@sigec/messaging-nest';
 import { CursorInvalidoError } from '../../application/saga/cita-repository.js';
 import {
@@ -253,6 +253,69 @@ describe.skipIf(!available)('DynamoCitaRepository (DynamoDB Local)', () => {
       const manipulado = Buffer.from(JSON.stringify({ ...key, gsi2pk: `PACIENTE#${luis}` })).toString('base64url');
       await expect(repo.buscar({ pacienteId: ana }, 1, manipulado)).rejects.toBeInstanceOf(CursorInvalidoError);
       await expect(repo.buscar({ pacienteId: ana }, 1, 'basura')).rejects.toBeInstanceOf(CursorInvalidoError);
+    });
+  });
+
+  describe('disponibilidad de horarios (Query por clave, con cursor)', () => {
+    const slot = (m: string, h: number, extra: Record<string, unknown> = {}) =>
+      doc.send(new PutCommand({ TableName: tables.citas, Item: { pk: `HORARIO#${m}`, sk: fecha(h), medicoId: m, fechaHora: fecha(h), estado: 'LIBRE', ...extra } }));
+
+    it('devuelve los horarios del medico en orden cronologico, paginados, sin mezclar otros medicos', async () => {
+      const m = medico();
+      const otro = medico();
+      for (const h of [104, 101, 103, 102, 100]) await slot(m, h);
+      await slot(otro, 101);
+      const rango = { medicoId: m, desde: fecha(100), hasta: fecha(110) };
+      const p1 = await repo.disponibilidad(rango, 2);
+      expect(p1.items.map((x) => x.fechaHora)).toEqual([fecha(100), fecha(101)]);
+      expect(p1.siguiente).not.toBeNull();
+      const p2 = await repo.disponibilidad(rango, 2, p1.siguiente!);
+      expect(p2.items.map((x) => x.fechaHora)).toEqual([fecha(102), fecha(103)]);
+      const p3 = await repo.disponibilidad(rango, 2, p2.siguiente!);
+      expect(p3.items.map((x) => x.fechaHora)).toEqual([fecha(104)]);
+      expect(p3.siguiente).toBeNull();
+    });
+
+    it('respeta el rango (limites inclusivos)', async () => {
+      const m = medico();
+      for (const h of [120, 121, 122, 123]) await slot(m, h);
+      const r = await repo.disponibilidad({ medicoId: m, desde: fecha(121), hasta: fecha(122) }, 10);
+      expect(r.items.map((x) => x.fechaHora)).toEqual([fecha(121), fecha(122)]);
+    });
+
+    it('una reserva vencida se muestra LIBRE y una vigente RESERVADO (sin depender del TTL)', async () => {
+      const m = medico();
+      await slot(m, 130, { estado: 'RESERVADO', citaId: randomUUID(), reservaExpiraEn: now - 1 });
+      await slot(m, 131, { estado: 'RESERVADO', citaId: randomUUID(), reservaExpiraEn: now + 60_000 });
+      await slot(m, 132, { estado: 'CONFIRMADO', citaId: randomUUID() });
+      const r = await repo.disponibilidad({ medicoId: m, desde: fecha(130), hasta: fecha(132) }, 10);
+      expect(r.items.map((x) => x.estado)).toEqual(['LIBRE', 'RESERVADO', 'CONFIRMADO']);
+      expect(r.items[0]).not.toHaveProperty('citaId');
+    });
+
+    it('soloLibres llena la pagina aunque haya muchos ocupados entre medias y no se salta ninguno', async () => {
+      const m = medico();
+      // 1 libre, 6 confirmados, 1 libre, 1 reserva vencida, 1 libre
+      await slot(m, 140);
+      for (const h of [141, 142, 143, 144, 145, 146]) await slot(m, h, { estado: 'CONFIRMADO', citaId: randomUUID() });
+      await slot(m, 147);
+      await slot(m, 148, { estado: 'RESERVADO', citaId: randomUUID(), reservaExpiraEn: now - 1 });
+      await slot(m, 149);
+      const rango = { medicoId: m, desde: fecha(140), hasta: fecha(150), soloLibres: true };
+      const p1 = await repo.disponibilidad(rango, 2);
+      expect(p1.items.map((x) => x.fechaHora)).toEqual([fecha(140), fecha(147)]);
+      const p2 = await repo.disponibilidad(rango, 2, p1.siguiente!);
+      expect(p2.items.map((x) => x.fechaHora)).toEqual([fecha(148), fecha(149)]);
+      if (p2.siguiente) expect((await repo.disponibilidad(rango, 2, p2.siguiente)).items).toEqual([]);
+    });
+
+    it('un cursor de otro medico o manipulado se rechaza', async () => {
+      const ana = medico();
+      const luis = medico();
+      for (const h of [160, 161, 162]) await slot(ana, h);
+      const p = await repo.disponibilidad({ medicoId: ana, desde: fecha(160), hasta: fecha(170) }, 1);
+      await expect(repo.disponibilidad({ medicoId: luis, desde: fecha(160), hasta: fecha(170) }, 1, p.siguiente!)).rejects.toBeInstanceOf(CursorInvalidoError);
+      await expect(repo.disponibilidad({ medicoId: ana, desde: fecha(160), hasta: fecha(170) }, 1, 'basura')).rejects.toBeInstanceOf(CursorInvalidoError);
     });
   });
 });

@@ -222,7 +222,7 @@ importers:
         version: 8.3.5(@types/node@24.19.2)(jiti@2.4.2)(terser@5.51.2)
       vitest:
         specifier: ^4.1.2
-        version: 4.1.12(@opentelemetry/api@1.10.0)(@types/node@24.19.2)(@vitest/coverage-v8@4.1.12)(vite@8.3.5(@types/node@24.19.2)(jiti@2.4.2)(terser@5.51.2))
+        version: 4.1.12(@opentelemetry/api@1.10.0)(@types/node@24.19.2)(@vitest/coverage-v8@4.1.12)(happy-dom@21.0.4)(vite@8.3.5(@types/node@24.19.2)(jiti@2.4.2)(terser@5.51.2))
 
   packages/idempotency-nest:
     dependencies:
@@ -268,7 +268,7 @@ importers:
         version: 8.3.5(@types/node@24.19.2)(jiti@2.4.2)(terser@5.51.2)
       vitest:
         specifier: ^4.1.2
-        version: 4.1.12(@opentelemetry/api@1.10.0)(@types/node@24.19.2)(@vitest/coverage-v8@4.1.12)(vite@8.3.5(@types/node@24.19.2)(jiti@2.4.2)(terser@5.51.2))
+        version: 4.1.12(@opentelemetry/api@1.10.0)(@types/node@24.19.2)(@vitest/coverage-v8@4.1.12)(happy-dom@21.0.4)(vite@8.3.5(@types/node@24.19.2)(jiti@2.4.2)(terser@5.51.2))
 
   packages/messaging-nest:
     dependencies:
@@ -305,7 +305,7 @@ importers:
         version: 8.3.5(@types/node@24.19.2)(jiti@2.4.2)(terser@5.51.2)
       vitest:
         specifier: ^4.1.2
-        version: 4.1.12(@opentelemetry/api@1.10.0)(@types/node@24.19.2)(@vitest/coverage-v8@4.1.12)(vite@8.3.5(@types/node@24.19.2)(jiti@2.4.2)(terser@5.51.2))
+        version: 4.1.12(@opentelemetry/api@1.10.0)(@types/node@24.19.2)(@vitest/coverage-v8@4.1.12)(happy-dom@21.0.4)(vite@8.3.5(@types/node@24.19.2)(jiti@2.4.2)(terser@5.51.2))
 
   packages/mfe-contract: {}
 
@@ -326,6 +326,9 @@ importers:
       amqplib:
         specifier: ^2.2.0
         version: 2.2.0
+      mongodb:
+        specifier: ^7.7.0
+        version: 7.7.0
 
   services/ms3-citas:
     dependencies:
@@ -428,7 +431,7 @@ importers:
         version: 8.3.5(@types/node@24.19.2)(jiti@2.4.2)(terser@5.51.2)
       vitest:
         specifier: ^4.1.2
-        version: 4.1.12(@opentelemetry/api@1.10.0)(@types/node@24.19.2)(@vitest/coverage-v8@4.1.12)(vite@8.3.5(@types/node@24.19.2)(jiti@2.4.2)(terser@5.51.2))
+        version: 4.1.12(@opentelemetry/api@1.10.0)(@types/node@24.19.2)(@vitest/coverage-v8@4.1.12)(happy-dom@21.0.4)(vite@8.3.5(@types/node@24.19.2)(jiti@2.4.2)(terser@5.51.2))
 
   services/ms5-imagenes/api:
     dependencies:
@@ -540,7 +543,7 @@ importers:
         version: 8.3.5(@types/node@24.19.2)(jiti@2.4.2)(terser@5.51.2)
       vitest:
         specifier: ^4.1.2
-        version: 4.1.12(@opentelemetry/api@1.10.0)(@types/node@24.19.2)(@vitest/coverage-v8@4.1.12)(vite@8.3.5(@types/node@24.19.2)(jiti@2.4.2)(terser@5.51.2))
+        version: 4.1.12(@opentelemetry/api@1.10.0)(@types/node@24.19.2)(@vitest/coverage-v8@4.1.12)(happy-dom@21.0.4)(vite@8.3.5(@types/node@24.19.2)(jiti@2.4.2)(terser@5.51.2))
 
   services/ms7-inteligencia/api:
     dependencies:
@@ -685,7 +688,7 @@ importers:
         version: 8.3.5(@types/node@24.19.2)(jiti@2.4.2)(terser@5.51.2)
       vitest:
         specifier: ^4.1.2
-        version: 4.1.12(@opentelemetry/api@1.10.0)(@types/node@24.19.2)(@vitest/coverage-v8@4.1.12)(vite@8.3.5(@types/node@24.19.2)(jiti@2.4.2)(terser@5.51.2))
+        version: 4.1.12(@opentelemetry/api@1.10.0)(@types/node@24.19.2)(@vitest/coverage-v8@4.1.12)(happy-dom@21.0.4)(vite@8.3.5(@types/node@24.19.2)(jiti@2.4.2)(terser@5.51.2))
 
   services/ms8-notificaciones:
     dependencies:
@@ -791,7 +794,7 @@ importers:
         version: 8.3.5(@types/node@24.19.2)(jiti@2.4.2)(terser@5.51.2)
       vitest:
         specifier: ^4.1.2
-        version: 4.1.12(@opentelemetry/api@1.10.0)(@types/node@24.19.2)(@vitest/coverage-v8@4.1.12)(vite@8.3.5(@types/node@24.19.2)(jiti@2.4.2)(terser@5.51.2))
+        version: 4.1.12(@opentelemetry/api@1.10.0)(@types/node@24.19.2)(@vitest/coverage-v8@4.1.12)(happy-dom@21.0.4)(vite@8.3.5(@types/node@24.19.2)(jiti@2.4.2)(terser@5.51.2))
 
 packages:
 
@@ -12233,35 +12236,6 @@ snapshots:
       '@types/node': 24.19.2
       '@vitest/coverage-v8': 4.1.12(vitest@4.1.12)
       happy-dom: 21.0.4
-    transitivePeerDependencies:
-      - msw
-
-  vitest@4.1.12(@opentelemetry/api@1.10.0)(@types/node@24.19.2)(@vitest/coverage-v8@4.1.12)(vite@8.3.5(@types/node@24.19.2)(jiti@2.4.2)(terser@5.51.2)):
-    dependencies:
-      '@vitest/expect': 4.1.12
-      '@vitest/mocker': 4.1.12(vite@8.3.5(@types/node@24.19.2)(jiti@2.4.2)(terser@5.51.2))
-      '@vitest/pretty-format': 4.1.12
-      '@vitest/runner': 4.1.12
-      '@vitest/snapshot': 4.1.12
-      '@vitest/spy': 4.1.12
-      '@vitest/utils': 4.1.12
-      es-module-lexer: 2.3.2
-      expect-type: 1.4.0
-      magic-string: 0.30.21
-      obug: 2.2.1
-      pathe: 2.0.3
-      picomatch: 4.0.7
-      std-env: 4.3.0
-      tinybench: 2.9.0
-      tinyexec: 1.3.1
-      tinyglobby: 0.2.17
-      tinyrainbow: 3.2.0
-      vite: 8.3.5(@types/node@24.19.2)(jiti@2.4.2)(terser@5.51.2)
-      why-is-node-running: 2.3.0
-    optionalDependencies:
-      '@opentelemetry/api': 1.10.0
-      '@types/node': 24.19.2
-      '@vitest/coverage-v8': 4.1.12(vitest@4.1.12)
     transitivePeerDependencies:
       - msw
 

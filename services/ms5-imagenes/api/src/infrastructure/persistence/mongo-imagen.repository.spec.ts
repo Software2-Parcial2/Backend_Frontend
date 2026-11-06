@@ -12,8 +12,16 @@ const nueva = (pacienteId: string, creadaEn: number, over: Partial<Imagen> = {})
   id: randomUUID(), pacienteId, estudio: 'x', estado: 'SUBIDA', hashSha256: 'a'.repeat(64), mime: 'image/png', bytes: 5, bucket: 'b', objectKey: `k/${randomUUID()}`, usuarioId: 'u', intentosAnalisis: 0, creadaEn, actualizadaEn: creadaEn, ...over,
 });
 
+// El validador $jsonSchema real (scripts/mongo-init): todas las pruebas del repositorio corren con el activo, asi que un
+// cambio del modelo que el validador rechace rompe aqui y no en produccion.
+const { aplicar } = (await import('../../../../../../scripts/mongo-init/index.mjs' as string)) as { aplicar: (db: unknown) => Promise<string[]> };
+
 describe.skipIf(!available)('MongoImagenRepository (MongoDB)', () => {
   const repo = new MongoImagenRepository(conn);
+  beforeAll(async () => {
+    await aplicar(conn.db);
+    await repo.guardar(nueva('00000000-0000-4000-8000-000000000000', 1)); // fuerza la coleccion/indices de Mongoose
+  });
   afterAll(async () => {
     await conn.dropDatabase().catch(() => undefined);
     await conn.close();
@@ -64,5 +72,43 @@ describe.skipIf(!available)('MongoImagenRepository (MongoDB)', () => {
     await repo.transicion(i.id, ['ANALIZANDO'], { estado: 'ANALIZADA' }, 400);
     expect((await repo.atascadas(9999, 50)).map((x) => x.id)).not.toContain(i.id);
     expect(await repo.marcarEnvio(i.id, ['SUBIDA'], 500)).toBeNull();
+  });
+
+  describe('validador $jsonSchema del servidor (scripts/mongo-init)', () => {
+    const col = () => conn.db!.collection('imagenes');
+    const valido = () => {
+      const { id, ...resto } = nueva(randomUUID(), 10);
+      return { _id: id, ...resto } as Record<string, unknown>;
+    };
+
+    it('acepta lo que escribe el repositorio, incluido el resultado del analisis', async () => {
+      const i = nueva(randomUUID(), 20);
+      await repo.guardar(i);
+      await repo.transicion(i.id, ['SUBIDA'], { estado: 'ANALIZADA', resultado: { probabilidad_neumonia: 0.4, clase: 'NORMAL', version_modelo: 'v1', modelo: 'stub-no-clinico', aviso: 'x' } }, 30);
+      expect((await repo.obtener(i.id))?.estado).toBe('ANALIZADA');
+    });
+
+    it.each([
+      ['estado fuera del catalogo', { estado: 'BORRADA' }],
+      ['mime no permitido', { mime: 'application/pdf' }],
+      ['hash que no es SHA-256 en hexadecimal', { hashSha256: 'zz' }],
+      ['tamano negativo', { bytes: -1 }],
+      ['campo desconocido', { extra: 1 }],
+      ['probabilidad fuera de 0..1', { resultado: { probabilidad_neumonia: 1.5, clase: 'NORMAL', modelo: 'm' } }],
+      ['clase invalida', { resultado: { probabilidad_neumonia: 0.5, clase: 'OTRA', modelo: 'm' } }],
+    ])('rechaza %s', async (_nombre, cambio) => {
+      await expect(col().insertOne({ ...valido(), ...cambio } as never)).rejects.toMatchObject({ code: 121 });
+    });
+
+    it('rechaza un documento sin campos obligatorios', async () => {
+      const { pacienteId: _omitido, ...sin } = valido();
+      await expect(col().insertOne(sin as never)).rejects.toMatchObject({ code: 121 });
+    });
+
+    it('la clave de S3 es unica', async () => {
+      const a = valido();
+      await col().insertOne(a as never);
+      await expect(col().insertOne({ ...valido(), objectKey: a.objectKey } as never)).rejects.toMatchObject({ code: 11000 });
+    });
   });
 });

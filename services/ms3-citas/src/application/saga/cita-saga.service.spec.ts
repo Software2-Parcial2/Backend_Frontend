@@ -19,6 +19,9 @@ class MemoryRepo implements CitaRepository {
   conflictosPendientes = 0;
   constructor(private now: () => number) {}
 
+  async disponibilidad() {
+    return { items: [], siguiente: null };
+  }
   async cargar(id: string) {
     const c = this.citas.get(id);
     return c ? structuredClone(c) : null;

@@ -2,7 +2,7 @@
 SHELL := /bin/bash
 ENV_FILE := .env
 
-.PHONY: infra-up dynamodb-init rabbitmq-declare e2e-saga dlq-replay n8n-import n8n-export s3-init
+.PHONY: infra-up dynamodb-init rabbitmq-declare e2e-saga dlq-replay n8n-import n8n-export s3-init mongo-init
 
 infra-up:
 	docker compose up -d
@@ -41,3 +41,8 @@ n8n-export:
 # Crea (repetible) el bucket privado de radiografias en SeaweedFS.
 s3-init:
 	set -a; source $(ENV_FILE); set +a; node scripts/s3-init.mjs
+
+# Crea (repetible) la coleccion de MongoDB de MS5 con su validador $jsonSchema e indices (scripts/mongo-init).
+# Lee .env sin pisar variables ya definidas: MONGO_URL=mongodb://localhost:27040/sigec_imagenes make mongo-init
+mongo-init:
+	pnpm --filter @sigec/scripts run mongo:init
