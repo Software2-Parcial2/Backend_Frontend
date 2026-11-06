@@ -58,7 +58,7 @@ final class SagaCommandHandler
 
             return;
         }
-        $monto = (float) (config('facturacion.tarifas')[strtolower($p['especialidad'])] ?? 0);
+        $monto = $this->tarifa($p['especialidad']);
         if ($monto <= 0) {
             $this->rechazar($env, $citaId, "sin tarifa para la especialidad {$p['especialidad']}");
 
@@ -67,6 +67,21 @@ final class SagaCommandHandler
 
         $factura = Factura::create(['cita_id' => $citaId, 'paciente_id' => $p['pacienteId'], 'monto' => $monto, 'estado' => 'PROVISIONAL']);
         $this->responder($env, 'facturacion.cobro-provisional.registrado', $factura->id, ['citaId' => $citaId, 'facturaId' => $factura->id, 'monto' => $monto]);
+    }
+
+    /** Tarifa vigente de la tabla `tarifas`; si no hay fila vigente, la de config/facturacion.php (0 = sin tarifa). */
+    private function tarifa(string $especialidad): float
+    {
+        $esp = strtolower($especialidad);
+        $hoy = now()->toDateString();
+        $monto = DB::table('tarifas')
+            ->where('especialidad', $esp)
+            ->where('vigente_desde', '<=', $hoy)
+            ->where(fn ($q) => $q->whereNull('vigente_hasta')->orWhere('vigente_hasta', '>', $hoy))
+            ->orderByDesc('vigente_desde')
+            ->value('monto');
+
+        return round((float) ($monto ?? (config('facturacion.tarifas')[$esp] ?? 0)), 2);
     }
 
     private function anular(array $env): void

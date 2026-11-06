@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { AgenteService, OPCIONES_AGENTE, type OpcionesAgente } from '../application/agente/agente.service.js';
 import { AuditoriaEnMemoria } from '../application/agente/auditoria.js';
+import { AuditoriaPg } from './auditoria-pg.js';
+import { pool_ } from './rag/pg.js';
 import { AUDITORIA_PORT, LLM_PORT, POLITICAS_PORT } from '../application/agente/ports.js';
 import { GestionService } from '../application/gestion.service.js';
 import { ListarAnalisisUseCase } from '../application/listar-inteligencia.use-case.js';
@@ -39,7 +41,7 @@ const opcionesAgente = (): OpcionesAgente => ({
     { provide: FACTURACION_GATEWAY, useClass: FacturacionHttpClient },
     { provide: ML_GATEWAY, useClass: MlHttpClient },
     { provide: LLM_PORT, useFactory: () => crearLlm() },
-    { provide: AUDITORIA_PORT, useFactory: () => new AuditoriaEnMemoria() },
+    { provide: AUDITORIA_PORT, useFactory: () => (process.env.AUDITORIA_PERSISTENTE === 'false' ? new AuditoriaEnMemoria() : new AuditoriaPg(pool_)) },
     { provide: EMBEDDINGS_PORT, useClass: EmbeddingsHttpClient },
     { provide: RAG_REPO, useClass: PgRagRepository },
     { provide: RAG_FUENTE, useClass: DocumentosEnDisco },
