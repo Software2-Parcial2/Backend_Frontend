@@ -30,6 +30,7 @@ Los problemas y limites conocidos por bloque estan en `docs/PENDIENTES.md`. Este
 | L2 | MS7: GraphQL de gestion + endpoint de ingresos en MS6 | Hecho |
 | L3 | MS7: servidor MCP, agente (Gemini/Claude/simulado), reportes xlsx/csv/pdf | Hecho; **LLM reales sin probar** (faltan API keys) |
 | L4 | MS7: RAG con pgvector + servicio de embeddings | Hecho; recuperacion medida 10/12 en top-1 |
+| **Datos** | Auditoria y modelo de datos (`docs/datos/`): migraciones ms2/ms4/ms6/ms7, disponibilidad de horarios (Query), `mongo-init`, semilla, EXPLAIN, diccionario generado | Hecho; ver `docs/PENDIENTES.md` (bloque Datos) |
 | **L5** | MS7: voz (Whisper), dashboard Vue, `scripts/e2e-ms7.sh` | Hecho; **E2E 37/37 en stack real** (ver `docs/inteligencia.md`) |
 
 ## Donde estamos

@@ -115,6 +115,7 @@ Formato `tipo(ámbito): descripción en imperativo`, en minúsculas y sin punto 
 | Nest (unitarias + DynamoDB Local) | `pnpm --filter ms3-citas test`, `ms8-notificaciones`, `ms5-api`, `ms7-api` |
 | Paquetes compartidos | `pnpm --filter @sigec/messaging-nest test` (usar `set -a; source .env; set +a` para el RabbitMQ real), `@sigec/idempotency-nest`, `@sigec/auth-nest` |
 | MS7 (GraphQL, agente, reportes, RAG, voz; stack real, token real) | `docker compose up -d && make dynamodb-init rabbitmq-declare && scripts/e2e-ms7.sh` (37 comprobaciones; proveedor de IA simulado) |
+| Esquemas de datos (Spring/Testcontainers): restricciones, inmutabilidad, purga | `(cd services/ms2-pacientes && ./mvnw test -Dtest=EsquemaDatosIntegrationTest)` y `ms4-historias` |
 | Lambda del outbox | `(cd services/ms3-citas/lambda-outbox && set -a && source ../../../.env && set +a && npm test)` |
 | Idempotencia por el gateway (curl) | `scripts/dev-services.sh start gateway ms2 ms3 ms6 && scripts/test-idempotencia.sh` |
 | Relay del outbox con RabbitMQ apagado/encendido | `scripts/dev-services.sh start gateway ms2 ms6 && scripts/test-outbox.sh` |
@@ -152,6 +153,31 @@ Formato `tipo(ámbito): descripción en imperativo`, en minúsculas y sin punto 
 - Secretos compartidos en `.env` (nunca en el repo): `N8N_WEBHOOK_SECRET` (MS8 -> n8n) y `MS8_INTERNAL_SECRET` (n8n -> `/internal/**` de MS8). Placeholders en `.env.example`.
 - `NOTIF_SENDER=simulated` es solo un doble de pruebas; `scripts/e2e-saga.sh` lo usa para no depender de n8n.
 - Las plantillas (en `plantillas.ts`) no llevan datos clinicos; Telegram, aun menos contenido que el correo.
+
+## Modelo de datos (docs/datos/)
+
+Mapa, ER, patrones de DynamoDB, validador de Mongo y diccionario en `docs/datos/README.md`. Reglas:
+
+- **Una base por servicio, sin claves foraneas entre bases ni servicios:** se referencia por id (UUID) y la consistencia es eventual por eventos. Cada referencia esta en la tabla de `docs/datos/README.md`.
+- **Migraciones aditivas e inmutables:** Flyway `V<n>` en MS2/MS4 (ya existe hasta `V3`), archivos nuevos en `services/ms6-facturacion/database/migrations/`, `NNNN_*.sql` en `services/ms7-inteligencia/api/migrations/`.
+  Nunca edites una aplicada. Comprueba siempre: base vacia -> esquema final, y base con las migraciones anteriores + datos -> actualizacion sin perdida. Funciones SQL con `CREATE OR REPLACE` (`migrate:fresh` no las borra).
+- **Datos sensibles:** marcalos con `COMMENT ON COLUMN ... IS 'SENSIBLE: <categoria>'` en la migracion; `make datos-docs` los lleva al diccionario. Nada clinico en eventos, notificaciones, logs ni prompts.
+- **Dinero** `numeric(12,2)` + moneda; **fechas** `timestamptz`; tablas de solo anadir (`evoluciones`, `auditoria_accesos`, `factura_movimientos`) protegidas con trigger.
+- **DynamoDB:** nunca `Scan` en caminos de peticion (solo en migraciones de datos como el relleno de indices de `dynamodb-init`). Cursores validados contra la particion. La expiracion de reservas se comprueba al leer, no con el TTL.
+- **MongoDB:** el validador `$jsonSchema` e indices viven en `scripts/mongo-init/esquema.mjs` (fuente de verdad); `make mongo-init` los aplica y las pruebas de MS5 corren con el validador activo.
+
+| Comando | Para que |
+|---|---|
+| `make seed` / `make seed-reset` | Datos semilla ficticios y coherentes entre servicios (ids fijos; solo desarrollo local, se niega con `SIGEC_ENV=prod` o hosts remotos). Ver `scripts/seed/README.md` |
+| `make mongo-init` | Coleccion `imagenes` con validador e indices (repetible) |
+| `make datos-docs` | Regenera `docs/datos/diccionario-generado.md` y `erd-generado.md` desde las bases reales |
+| `make datos-explain` | `EXPLAIN` de las 5 consultas principales -> `docs/datos/explain.md` |
+| `make db-purge` | `purgar_tecnico()` en ms2/ms4/ms6 (outbox publicado > 7 dias, idempotencia y mensajes procesados vencidos) |
+| `make db-backup` | `pg_dump -Fc` de las bases de SIGEC en `backups/` |
+
+Puertos del host alternativos cuando otro proyecto ocupa los habituales: `POSTGRES_HOST_PORT`, `MONGO_HOST_PORT`, `DYNAMODB_HOST_PORT` (ajusta tambien `POSTGRES_PORT`/`DB_PORT`/`DB_URL` de los servicios Spring, `MONGO_URL` y `DYNAMODB_ENDPOINT`).
+Los scripts de datos (`seed`, `mongo-init`, `datos-*`) y `e2e-saga.sh` leen `.env` **sin pisar** lo ya exportado, asi que `POSTGRES_PORT=5440 DYNAMODB_ENDPOINT=http://localhost:8040 make seed` funciona.
+Los servicios Spring usan `DB_URL`: con otro puerto, `DB_URL=jdbc:postgresql://localhost:5440/ms2_pacientes scripts/dev-services.sh start ms2` (por defecto apuntan al 5432).
 
 ## Trampas conocidas
 

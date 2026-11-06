@@ -9,7 +9,10 @@ repositorios y scripts del repo; lo nuevo esta marcado como **[nuevo]** y lo no 
 | [postgresql.md](postgresql.md) | Diagramas ER (ms2, ms4, ms6, ms7), restricciones, indices, tipos, outbox/idempotencia, pgvector |
 | [dynamodb.md](dynamodb.md) | Patrones de acceso, claves pk/sk, GSI, TTL, condiciones de escritura (MS3, MS5, MS8) |
 | [mongodb.md](mongodb.md) | Coleccion `imagenes`: validador `$jsonSchema`, indices, justificacion |
-| [diccionario.md](diccionario.md) | Diccionario de datos con columna **sensible** y tratamiento (generado desde las bases reales + notas) |
+| [diccionario.md](diccionario.md) | Politica de datos sensibles: categorias, tratamiento, cifrado, retencion |
+| [diccionario-generado.md](diccionario-generado.md) | Diccionario por tabla/coleccion **generado desde las bases reales** (`make datos-docs`) con columna *sensible* |
+| [erd-generado.md](erd-generado.md) | ER por base relacional **generado desde las bases reales** |
+| [explain.md](explain.md) | `EXPLAIN` de las 5 consultas principales (`make datos-explain`) |
 | [operacion.md](operacion.md) | Migraciones, datos semilla, copias de seguridad, retencion y limpieza |
 
 ## Mapa de bases por servicio

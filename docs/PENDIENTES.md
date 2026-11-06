@@ -187,3 +187,21 @@ valores extremos (> Q3 + 3*IQR) se excluyen del ajuste y se informan en `atipico
 - El dashboard no tiene paginacion ni filtros de fecha configurables (ventana fija: 90 dias atras y 30 adelante).
 - K-means con datos de MS3: MS3 solo guarda citas futuras (se siembran de los proximos meses), asi que la "demanda" es la agenda reservada, no demanda historica.
 - Las respuestas GraphQL de error no pasan por el gateway con 401 si no hay token: lo rechaza el gateway (HTTP 401 sin cuerpo GraphQL).
+
+## Datos (auditoria y modelo de datos, `docs/datos/`)
+
+Hecho: migraciones ms2 V3, ms4 V3, ms6 (`2026_11_06_000001`), ms7 `0002`; `GET /api/citas/disponibilidad` (Query); TTL en `citas`; `scripts/mongo-init`; `make seed`/`seed-reset`;
+`make datos-docs`, `datos-explain`, `db-purge`, `db-backup`. Verificado: Spring `EsquemaDatosIntegrationTest` en ms2 (4) y ms4 (4) + suites completas de ambos; MS6 66 pruebas (incl. tarifas, ledger, purga) y camino
+`migrate -> rollback -> migrate` con datos; ms3 54 y ms5 36 (con el validador de Mongo activo); ms7 87 + migracion 0002 aplicada por la app sobre una base con datos del RAG;
+`make e2e-saga` 66/66; EXPLAIN de 5 consultas con el indice previsto (`docs/datos/explain.md`).
+
+**Lo que NO se verifico / limites**
+- No se ejecutaron `e2e-ms7.sh`, `e2e-notificaciones.sh` ni `e2e-imagenes.sh` (los dos primeros necesitan servicios Python/n8n; el tercero ya estaba pendiente). Los cambios de MS7 (auditoria en PostgreSQL) y MS6 (tarifa desde tabla) solo tienen pruebas unitarias/de integracion.
+- La entrega de `edad/beca/seguro/asistencia` a MS7 esta **diseñada, no implementada**: los datos existen (MS2 `pacientes`, MS3 `asistencia`) pero MS7 sigue usando valores neutros. No hay endpoint para registrar la asistencia (solo la semilla la escribe).
+- MS4 tiene las tablas nuevas (antecedentes, evoluciones, consentimientos, auditoria de accesos) pero **ninguna API**: nadie las escribe aun.
+- `facturas.created_at/updated_at` siguen siendo `timestamp without time zone` (Laravel); `pagos` no existe (la SAGA no cobra definitivo).
+- Diseñados, no implementados: `paciente.actualizado`, paginacion de `GET /api/pacientes`, particion mensual de `gsi4`, particionado del outbox, cifrado a nivel de campo, TTL de `outbox`/notificaciones.
+- La semilla escribe directo en las bases (sin eventos) y las imagenes sembradas no tienen objeto en S3. `paciente-demo.sh` queda redundante.
+- Encargo vs. realidad: el `Scan` de `GET /api/citas` ya se habia reemplazado en el bloque 0; no habia nada que migrar en el codigo de acceso.
+- Incidente: un primer `make mongo-init` leyo `.env` y creo la coleccion `imagenes` vacia en el MongoDB del puerto 27017, que es de **otro proyecto**; se elimino esa coleccion vacia y se corrigio el script (ya no pisa variables). Nada mas se toco alli.
+- Entorno: 5432, 27017 y 8000 estan ocupados por otros proyectos; se verifico con `POSTGRES_HOST_PORT=5440 MONGO_HOST_PORT=27040 DYNAMODB_HOST_PORT=8040`.

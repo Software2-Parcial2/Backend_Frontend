@@ -41,6 +41,11 @@ El `sk` del horario es ISO 8601 UTC normalizado (`2026-11-20T14:00:00.000Z`): or
 No se usan LSI: los LSI exigen definirse al crear la tabla, limitan la particion a 10 GB y aqui ningun patron necesita otro orden sobre la misma `pk`.
 `Scan`: **ninguno en el codigo de acceso** (el bloque 0 ya los reemplazo por `Query`). Solo `dynamodb-init` hace un `Scan` unico de relleno de indices para citas anteriores; es una migracion de datos, no un camino de peticion.
 
+**API del patron 8:** `GET /api/citas/disponibilidad?medicoId=<uuid>&desde=<ISO>&hasta=<ISO>[&soloLibres=true][&limite=1..200][&cursor=...]` ->
+`{ items: [{fechaHora, estado: LIBRE|RESERVADO|OCUPADO}], siguiente }`. No expone `citaId` ni datos de pacientes. Con `soloLibres` el filtro corre en DynamoDB
+despues de leer la pagina (el `Limit` cuenta items evaluados), asi que el repositorio repite la consulta (maximo 10 veces) hasta llenar `limite`; un cursor de otro medico responde `400`.
+Es una **adicion** (los endpoints existentes no cambian).
+
 ### Condiciones de escritura (doble reserva)
 
 | Operacion | Condicion | Efecto si falla |

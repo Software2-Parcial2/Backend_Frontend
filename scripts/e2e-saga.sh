@@ -15,7 +15,11 @@
 set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
-set -a; source .env; set +a
+# Variables del .env; las ya definidas en el entorno (p. ej. DYNAMODB_ENDPOINT/POSTGRES_PORT con puertos alternativos) NO se pisan.
+while IFS='=' read -r k v; do
+  [[ "$k" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] || continue
+  [ -z "${!k+x}" ] && export "$k=$v"
+done <.env
 DEV="$ROOT/scripts/dev-services.sh"
 GW="${GATEWAY_URL:-http://localhost:8090}"
 KC="http://localhost:8080/realms/sigec/protocol/openid-connect/token"
