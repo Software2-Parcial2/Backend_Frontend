@@ -1,0 +1,25 @@
+# Contexto de construccion de Docker (raiz del repo): solo codigo fuente, nunca dependencias ni secretos.
+.git
+.claude
+.env
+.env.*
+!.env.example
+**/node_modules
+**/dist
+**/target
+**/vendor
+**/.venv
+**/.venv-tfjs
+**/__pycache__
+**/.angular
+**/.expo
+apps/mobile
+ml/**/models
+ml/**/data
+docs
+!docs/rag
+**/*.log
+**/storage/logs/*
+**/storage/framework/cache/*
+**/storage/framework/sessions/*
+**/storage/framework/views/*

@@ -2,7 +2,7 @@
 SHELL := /bin/bash
 ENV_FILE := .env
 
-.PHONY: infra-up dynamodb-init rabbitmq-declare e2e-saga dlq-replay n8n-import n8n-export s3-init mongo-init seed seed-reset datos-docs datos-explain db-purge db-backup
+.PHONY: up-all up-core down-all ps-all infra-up dynamodb-init rabbitmq-declare e2e-saga dlq-replay n8n-import n8n-export s3-init mongo-init seed seed-reset datos-docs datos-explain db-purge db-backup
 
 infra-up:
 	docker compose up -d
@@ -71,3 +71,20 @@ db-purge:
 db-backup:
 	@mkdir -p backups; set -a; source $(ENV_FILE); set +a; for db in ms2_pacientes ms4_historias ms6_facturacion ms7_inteligencia; do \
 	  docker compose exec -T postgres pg_dump -U $$POSTGRES_USER -Fc $$db > backups/$$db-$$(date +%Y%m%d-%H%M%S).dump && echo "backups: $$db"; done
+
+# --- Pila completa en contenedores (docker-compose.full.yml) ---
+COMPOSE_FULL := docker compose -f docker-compose.yml -f docker-compose.full.yml
+
+# Todo: infraestructura + microservicios + frontends + ML (imagenes grandes: TensorFlow, Whisper, embeddings).
+up-all:
+	$(COMPOSE_FULL) --profile ml --profile inferencia up -d --build
+
+# Sin los servicios de ML pesados (el agente de MS7 y la inferencia de radiografias quedan degradados).
+up-core:
+	$(COMPOSE_FULL) up -d --build
+
+down-all:
+	$(COMPOSE_FULL) --profile ml --profile inferencia down
+
+ps-all:
+	$(COMPOSE_FULL) --profile ml --profile inferencia ps

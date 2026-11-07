@@ -1,0 +1,349 @@
+# SIGEC - pila COMPLETA en contenedores: infraestructura + microservicios + frontends.
+# Se usa SUPERPUESTO al compose de infraestructura (no lo reemplaza):
+#
+#   docker compose -f docker-compose.yml -f docker-compose.full.yml --profile ml --profile inferencia up -d --build
+#   (o simplemente:  make up-all   |   make up-core  = sin los servicios de ML pesados)
+#
+# Puertos del host = puertos de desarrollo (los frontends del navegador usan http://localhost:<puerto>):
+#   shell 5173 | pwa 5174 | remote-vue 5175 | remote-angular 4201 | gateway 8090 | keycloak 8080
+# Si el 5432/27017/8000 estan ocupados en tu maquina define POSTGRES_HOST_PORT / MONGO_HOST_PORT / DYNAMODB_HOST_PORT en .env
+# (dentro de la red de Docker los servicios siempre usan los puertos normales).
+#
+# Los secretos salen del .env de la raiz (copia .env.example). Nada de esto es para produccion.
+
+x-keycloak: &keycloak
+  # El token lo emite Keycloak para el navegador (iss = localhost:8080); los servicios validan ese issuer
+  # pero descargan las claves por la red interna de Docker.
+  KEYCLOAK_ISSUER: http://localhost:8080/realms/sigec
+  KEYCLOAK_JWKS_URL: http://keycloak:8080/realms/sigec/protocol/openid-connect/certs
+
+x-rabbit: &rabbit
+  RABBITMQ_HOST: rabbitmq
+  RABBITMQ_PORT: "5672"
+  RABBITMQ_USER: ${RABBITMQ_USER}
+  RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+
+x-dynamo: &dynamo
+  DYNAMODB_ENDPOINT: http://dynamodb:8000
+  AWS_REGION: ${AWS_REGION:-sa-east-1}
+  AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-local}
+  AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-local}
+
+x-spring: &spring
+  <<: *rabbit
+  KEYCLOAK_ISSUER: http://localhost:8080/realms/sigec
+  # Con jwk-set-uri Spring no hace "discovery" contra localhost (que dentro del contenedor no es Keycloak).
+  SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/realms/sigec/protocol/openid-connect/certs
+
+x-spring-db: &spring-db
+  DB_USER: ${POSTGRES_USER}
+  DB_PASSWORD: ${POSTGRES_PASSWORD}
+
+x-healthy-node: &node-health
+  interval: 10s
+  timeout: 5s
+  retries: 12
+  start_period: 20s
+
+services:
+  # ---------------------------------------------------------------- infraestructura: healthchecks y ajustes
+  rabbitmq:
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 10s
+      retries: 20
+  mongo:
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 5s
+      timeout: 10s
+      retries: 20
+  n8n:
+    environment:
+      # En el compose completo MS8 es un contenedor de la red (en el de infraestructura estaba en el host).
+      MS8_URL: http://ms8:3008
+
+  # ---------------------------------------------------------------- inicializacion unica
+  init:
+    build:
+      context: .
+      dockerfile: infra/docker/init.Dockerfile
+    restart: "no"
+    environment:
+      <<: [*dynamo, *rabbit]
+      MONGO_URL: mongodb://mongo:27017/sigec_imagenes
+      S3_ENDPOINT: http://s3:8333
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+      S3_SECRET_KEY: ${S3_SECRET_KEY}
+      S3_BUCKET_RADIOGRAFIAS: ${S3_BUCKET_RADIOGRAFIAS:-radiografias}
+    depends_on:
+      rabbitmq: { condition: service_healthy }
+      mongo: { condition: service_healthy }
+      dynamodb: { condition: service_started }
+      s3: { condition: service_started }
+
+  # Publica el outbox de DynamoDB (MS3/MS8) en RabbitMQ. En AWS lo reemplaza la Lambda.
+  outbox-poller:
+    build:
+      context: .
+      dockerfile: infra/docker/lambda-outbox.Dockerfile
+    restart: unless-stopped
+    environment:
+      <<: [*dynamo, *rabbit]
+    volumes:
+      - outbox_poller:/data
+    depends_on:
+      init: { condition: service_completed_successfully }
+
+  # ---------------------------------------------------------------- microservicios
+  gateway:
+    build:
+      context: services/gateway
+      dockerfile: ../../infra/docker/spring.Dockerfile
+    restart: unless-stopped
+    environment:
+      PORT: "8090"
+      KEYCLOAK_ISSUER: http://localhost:8080/realms/sigec
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/realms/sigec/protocol/openid-connect/certs
+      MS2_URL: http://ms2:8082
+      MS3_URL: http://ms3:3003
+      MS4_URL: http://ms4:8084
+      MS5_URL: http://ms5-api:3005
+      MS6_URL: http://ms6:8006
+      MS7_URL: http://ms7-api:3007
+      MS8_URL: http://ms8:3008
+    ports: ["8090:8090"]
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/localhost/8090'"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+    depends_on: [keycloak]
+
+  ms2:
+    build:
+      context: services/ms2-pacientes
+      dockerfile: ../../infra/docker/spring.Dockerfile
+    restart: unless-stopped
+    environment:
+      <<: [*spring, *spring-db]
+      PORT: "8082"
+      DB_URL: jdbc:postgresql://postgres:5432/ms2_pacientes
+    ports: ["8082:8082"]
+    depends_on:
+      postgres: { condition: service_healthy }
+      init: { condition: service_completed_successfully }
+
+  ms4:
+    build:
+      context: services/ms4-historias
+      dockerfile: ../../infra/docker/spring.Dockerfile
+    restart: unless-stopped
+    environment:
+      <<: [*spring, *spring-db]
+      PORT: "8084"
+      DB_URL: jdbc:postgresql://postgres:5432/ms4_historias
+    ports: ["8084:8084"]
+    depends_on:
+      postgres: { condition: service_healthy }
+      init: { condition: service_completed_successfully }
+
+  ms3:
+    build:
+      context: .
+      dockerfile: infra/docker/nest.Dockerfile
+      args: { SERVICE_DIR: services/ms3-citas, SERVICE_PKG: ms3-citas }
+    restart: unless-stopped
+    environment:
+      <<: [*keycloak, *rabbit, *dynamo]
+      PORT: "3003"
+    ports: ["3003:3003"]
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3003/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      <<: *node-health
+    depends_on:
+      init: { condition: service_completed_successfully }
+
+  ms5-api:
+    build:
+      context: .
+      dockerfile: infra/docker/nest.Dockerfile
+      args: { SERVICE_DIR: services/ms5-imagenes/api, SERVICE_PKG: ms5-api }
+    restart: unless-stopped
+    environment:
+      <<: [*keycloak, *rabbit, *dynamo]
+      PORT: "3005"
+      MONGO_URL: mongodb://mongo:27017/sigec_imagenes
+      S3_ENDPOINT: http://s3:8333
+      # Las URL prefirmadas las abre el navegador: deben apuntar al puerto publicado en el host.
+      S3_PUBLIC_ENDPOINT: http://localhost:9000
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+      S3_SECRET_KEY: ${S3_SECRET_KEY}
+      S3_BUCKET_RADIOGRAFIAS: ${S3_BUCKET_RADIOGRAFIAS:-radiografias}
+      MS2_URL: http://ms2:8082
+    ports: ["3005:3005"]
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3005/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      <<: *node-health
+    depends_on:
+      init: { condition: service_completed_successfully }
+
+  ms6:
+    build:
+      context: services/ms6-facturacion
+    restart: unless-stopped
+    environment: &ms6-env
+      <<: [*rabbit]
+      APP_ENV: local
+      APP_DEBUG: "false"
+      APP_URL: http://localhost:8006
+      LOG_CHANNEL: stderr
+      PORT: "8006"
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_DATABASE: ms6_facturacion
+      DB_USERNAME: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      SESSION_DRIVER: array
+      CACHE_STORE: array
+      QUEUE_CONNECTION: rabbitmq
+      RABBITMQ_VHOST: /
+      RABBITMQ_QUEUE: ms6_facturacion
+      KEYCLOAK_ISSUER: http://localhost:8080/realms/sigec
+      KEYCLOAK_JWKS_URL: http://keycloak:8080/realms/sigec/protocol/openid-connect/certs
+      APP_KEY: ${MS6_APP_KEY:-}
+      # La topologia vive en el monorepo (fuente unica), no dentro de la imagen de MS6: se monta como volumen.
+      SIGEC_TOPOLOGY_FILE: /contracts/topology.json
+    ports: ["8006:8006"]
+    volumes:
+      - ./contracts/events/topology.json:/contracts/topology.json:ro,z
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8006/api/facturacion/health >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+    depends_on:
+      postgres: { condition: service_healthy }
+      init: { condition: service_completed_successfully }
+
+  # Procesos de fondo de MS6: relay del outbox y consumidor de comandos de la SAGA (esperan a que ms6 migre la base).
+  ms6-outbox-relay:
+    build: { context: services/ms6-facturacion }
+    restart: unless-stopped
+    command: ["relay"]
+    environment: *ms6-env
+    volumes:
+      - ./contracts/events/topology.json:/contracts/topology.json:ro,z
+    depends_on:
+      ms6: { condition: service_healthy }
+  ms6-saga-consumer:
+    build: { context: services/ms6-facturacion }
+    restart: unless-stopped
+    command: ["consume"]
+    environment: *ms6-env
+    volumes:
+      - ./contracts/events/topology.json:/contracts/topology.json:ro,z
+    depends_on:
+      ms6: { condition: service_healthy }
+
+  ms7-api:
+    build:
+      context: .
+      dockerfile: infra/docker/nest.Dockerfile
+      args: { SERVICE_DIR: services/ms7-inteligencia/api, SERVICE_PKG: ms7-api }
+    restart: unless-stopped
+    environment:
+      <<: *keycloak
+      PORT: "3007"
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      MS3_URL: http://ms3:3003
+      MS6_URL: http://ms6:8006
+      ML_URL: http://ms7-ml:8007
+      ML_API_KEY: ${ML_API_KEY:-}
+      EMBEDDINGS_URL: http://ms7-embeddings:8027
+      EMBEDDINGS_API_KEY: ${EMBEDDINGS_API_KEY:-}
+      WHISPER_URL: http://ms7-whisper:8017
+      WHISPER_API_KEY: ${WHISPER_API_KEY:-}
+      LLM_PROVIDER: ${LLM_PROVIDER:-simulated}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      CLAUDE_MODEL: ${CLAUDE_MODEL:-claude-sonnet-5-5}
+      RAG_AUTO_MIGRATE: "true"
+      RAG_DOCS_DIR: /repo/docs/rag
+    ports: ["3007:3007"]
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3007/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      <<: *node-health
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  ms8:
+    build:
+      context: .
+      dockerfile: infra/docker/nest.Dockerfile
+      args: { SERVICE_DIR: services/ms8-notificaciones, SERVICE_PKG: ms8-notificaciones }
+    restart: unless-stopped
+    environment:
+      <<: [*keycloak, *rabbit, *dynamo]
+      PORT: "3008"
+      NOTIF_SENDER: ${NOTIF_SENDER:-n8n}
+      N8N_BASE_URL: http://n8n:5678
+      N8N_WEBHOOK_SECRET: ${N8N_WEBHOOK_SECRET:-}
+      MS8_INTERNAL_SECRET: ${MS8_INTERNAL_SECRET:-}
+      TELEGRAM_BOT_USERNAME: ${TELEGRAM_BOT_USERNAME:-}
+    ports: ["3008:3008"]
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3008/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      <<: *node-health
+    depends_on:
+      init: { condition: service_completed_successfully }
+
+  # ---------------------------------------------------------------- frontends (build de produccion servido con nginx)
+  shell:
+    build:
+      context: .
+      dockerfile: infra/docker/web.Dockerfile
+      args: { APP_DIR: apps/shell, APP_PKG: shell, OUT_DIR: dist }
+    restart: unless-stopped
+    ports: ["5173:80"]
+  pwa-paciente:
+    build:
+      context: .
+      dockerfile: infra/docker/web.Dockerfile
+      args: { APP_DIR: apps/pwa-paciente, APP_PKG: pwa-paciente, OUT_DIR: dist }
+    restart: unless-stopped
+    ports: ["5174:80"]
+  remote-vue:
+    build:
+      context: .
+      dockerfile: infra/docker/web.Dockerfile
+      args: { APP_DIR: apps/remote-vue, APP_PKG: remote-vue, OUT_DIR: dist }
+    restart: unless-stopped
+    ports: ["5175:80"]
+  remote-angular:
+    build:
+      context: .
+      dockerfile: infra/docker/angular.Dockerfile
+    restart: unless-stopped
+    ports: ["4201:80"]
+
+  # ---------------------------------------------------------------- ML (perfiles ml / inferencia, definidos en docker-compose.yml)
+  ms7-ml:
+    restart: unless-stopped
+  ms7-embeddings:
+    restart: unless-stopped
+  ms7-whisper:
+    restart: unless-stopped
+  ms5-inference:
+    restart: unless-stopped
+
+volumes:
+  outbox_poller:

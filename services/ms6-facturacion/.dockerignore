@@ -1,0 +1,13 @@
+# Contexto de construccion de MS6: nada de dependencias, secretos ni caches generadas en el host.
+vendor
+.env
+.env.*
+!.env.example
+node_modules
+bootstrap/cache/*.php
+storage/logs/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+tests
+.phpunit.cache
