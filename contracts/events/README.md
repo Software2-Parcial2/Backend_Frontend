@@ -98,7 +98,7 @@ la copia se publica en `sigec.dlx` → `<q>.dlq`. Un mensaje que no es JSON vali
 | `ms6.eventos` | MS6 | `paciente.creado`, `paciente.actualizado` (nombres de paciente en los listados de caja) |
 | `ms5.inferencia.comandos` | MS5 inferencia (Python) | `imagenes.analisis.solicitar` |
 | `ms5.api.respuestas` | MS5 API | `imagenes.analisis.completado`, `.fallido` |
-| `ms8.eventos` | MS8 | `cita.confirmada`, `paciente.creado` (contacto del paciente y recordatorios) |
+| `ms8.eventos` | MS8 | `cita.confirmada`, `cita.cancelada`, `cita.reprogramada` (recordatorios y aviso de reprogramacion), `paciente.creado`, `paciente.actualizado` (contacto), `imagen.informe-validado` (aviso «tu estudio tiene informe», solo los VALIDADOS) |
 
 Cada servicio declara sus colas al arrancar (idempotente; si los argumentos difieren RabbitMQ responde `406
 PRECONDITION_FAILED`, lo que sirve de comprobacion de consistencia). `make rabbitmq-declare` declara **toda** la

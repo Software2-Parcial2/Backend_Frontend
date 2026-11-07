@@ -102,7 +102,7 @@ check "saga COMPLETADA" COMPLETADA "$(cita_field "$A" saga.estado)"
 check "notificacion ENVIADA" ENVIADA "$(cita_field "$A" notificacion)"
 check "factura PROVISIONAL en MS6" PROVISIONAL "$(facturas_cita "$A")"
 check "el horario queda CONFIRMADO" CONFIRMADO "$(horario "$M" "$H")"
-check "MS8 registro la notificacion (via API, ENVIADA)" ENVIADA "$(curl -s "$GW/api/notificaciones?citaId=$A" -H "Authorization: Bearer $TR" | python3 -c 'import sys,json;d=json.load(sys.stdin);print(d[0]["estado"] if d else "")')"
+check "MS8 registro la notificacion (via API, ENVIADA)" ENVIADA "$(curl -s "$GW/api/notificaciones?citaId=$A" -H "Authorization: Bearer $TR" | python3 -c 'import sys,json;d=json.load(sys.stdin)["items"];print(d[0]["estado"] if d else "")')"
 check "GET /api/citas/{id} muestra los pasos" ok "$(eventos "$A" | grep -q COBRO_REGISTRADO && echo ok || echo no)"
 
 # ---------------------------------------------------------------------------------------------------

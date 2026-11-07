@@ -49,6 +49,24 @@ export function renderizar(tipo: NotificacionTipo, canal: Canal, datos: DatosPla
       cuerpo: `Te recordamos que tienes una cita ${cuandoTxt}.`,
       telegram: `Recordatorio: tienes una cita ${c ? `${c.fecha}, ${c.hora}` : 'proximamente'}.`,
     },
+    CITA_REPROGRAMADA: {
+      plantilla: 'cita-reprogramada',
+      asunto: 'Tu cita fue reprogramada',
+      cuerpo: `Tu cita fue reprogramada para ${cuandoTxt}.`,
+      telegram: `Cita reprogramada: ${c ? `${c.fecha}, ${c.hora}` : 'revisa SIGEC'}.`,
+    },
+    RECORDATORIO_REFUERZO: {
+      plantilla: 'recordatorio-cita-refuerzo',
+      asunto: 'Recordatorio importante de tu cita',
+      cuerpo: `Es importante que asistas: tienes una cita ${cuandoTxt}. Si no puedes venir, avisa a recepcion.`,
+      telegram: `Importante: tienes una cita ${c ? `${c.fecha}, ${c.hora}` : 'proximamente'}. Si no puedes, avisa a recepcion.`,
+    },
+    ESTUDIO_VALIDADO: {
+      plantilla: 'estudio-validado',
+      asunto: 'Tu estudio ya tiene informe',
+      cuerpo: 'El informe de tu estudio ya esta disponible en SIGEC.',
+      telegram: 'Tu estudio ya tiene informe en SIGEC.',
+    },
     CITA_CANCELADA: {
       plantilla: 'cita-cancelada',
       asunto: 'Tu cita no pudo confirmarse',
@@ -64,5 +82,61 @@ export function renderizar(tipo: NotificacionTipo, canal: Canal, datos: DatosPla
     asunto: b.asunto,
     texto,
     html: `<p>${escapar(saludo + b.cuerpo)}</p><p style="color:#666">SIGEC - Sistema Integral de Gestion de Clinicas</p>`,
+  };
+}
+
+// --- plantillas editables -------------------------------------------------------------------------------
+
+/** Variables que una plantilla puede usar. Ninguna lleva datos clinicos. */
+export const VARIABLES_PERMITIDAS = ['nombre', 'fecha', 'hora', 'cuando'] as const;
+const CLINICO = /diagn[oó]stic|tratamient|receta|medicament|enfermedad|patolog|especialidad|neumon|c[aá]ncer|\bdosis\b|\d+\s?mg\b/i;
+const REQUIEREN_FECHA = new Set<NotificacionTipo>(['CITA_CONFIRMADA', 'CITA_REPROGRAMADA', 'RECORDATORIO', 'RECORDATORIO_REFUERZO']);
+export const MAX_CUERPO: Record<Canal, number> = { EMAIL: 1500, TELEGRAM: 300 };
+
+export class PlantillaInvalida extends Error {
+  constructor(
+    readonly code: string,
+    message: string,
+  ) {
+    super(message);
+  }
+}
+
+/** Valida una plantilla propuesta. Lanza PlantillaInvalida con un codigo estable. */
+export function validarPlantilla(tipo: NotificacionTipo, canal: Canal, asunto: string, cuerpo: string): void {
+  if (!asunto.trim() || asunto.length > 150) throw new PlantillaInvalida('PLANTILLA_INVALIDA', 'El asunto debe tener entre 1 y 150 caracteres');
+  if (!cuerpo.trim()) throw new PlantillaInvalida('PLANTILLA_INVALIDA', 'El cuerpo no puede estar vacio');
+  if (cuerpo.length > MAX_CUERPO[canal]) throw new PlantillaInvalida('PLANTILLA_INVALIDA', `El cuerpo de ${canal} admite hasta ${MAX_CUERPO[canal]} caracteres`);
+  const texto = `${asunto}\n${cuerpo}`;
+  const abiertas = (texto.match(/\{\{/g) ?? []).length;
+  const usadas = [...texto.matchAll(/\{\{\s*([a-zA-Z]+)\s*\}\}/g)].map((m) => m[1]);
+  if (abiertas !== usadas.length) throw new PlantillaInvalida('PLANTILLA_VARIABLE_INVALIDA', 'Hay una variable mal escrita; usa {{nombre}}, {{fecha}}, {{hora}} o {{cuando}}');
+  const desconocidas = [...new Set(usadas.filter((v) => !(VARIABLES_PERMITIDAS as readonly string[]).includes(v)))];
+  if (desconocidas.length) throw new PlantillaInvalida('PLANTILLA_VARIABLE_INVALIDA', `Variables no permitidas: ${desconocidas.join(', ')}. Permitidas: ${VARIABLES_PERMITIDAS.join(', ')}`);
+  if (CLINICO.test(texto)) throw new PlantillaInvalida('PLANTILLA_CONTENIDO_CLINICO', 'Las plantillas no pueden mencionar datos clinicos (diagnostico, tratamiento, medicamentos, especialidad...)');
+  if (REQUIEREN_FECHA.has(tipo) && !usadas.some((v) => v === 'cuando' || v === 'fecha')) {
+    throw new PlantillaInvalida('PLANTILLA_SIN_FECHA', 'Este aviso debe incluir {{cuando}} o {{fecha}} para que el paciente sepa la fecha de su cita');
+  }
+}
+
+/** Sustituye las variables de una plantilla propia. Lo que falta se deja en blanco. */
+export function renderizarPlantilla(p: { tipo: NotificacionTipo; asunto: string; cuerpo: string }, canal: Canal, datos: DatosPlantilla): Mensaje {
+  const c = cuando(datos.fechaHora);
+  const valores: Record<string, string> = {
+    nombre: datos.nombre ?? '',
+    fecha: c?.fecha ?? '',
+    hora: c?.hora ?? '',
+    cuando: c ? `el ${c.fecha} a las ${c.hora} (hora de La Paz)` : 'en la fecha acordada',
+  };
+  const sub = (t: string) => t.replace(/\{\{\s*([a-zA-Z]+)\s*\}\}/g, (_, v: string) => valores[v] ?? '');
+  const asunto = sub(p.asunto).trim();
+  const cuerpo = sub(p.cuerpo).trim();
+  const plantilla = `personalizada-${p.tipo.toLowerCase().replace(/_/g, '-')}`;
+  if (canal === 'TELEGRAM') return { plantilla, asunto, texto: cuerpo };
+  return {
+    plantilla,
+    asunto,
+    texto: `${cuerpo}\n\nSIGEC - Sistema Integral de Gestion de Clinicas`,
+    html: `<p>${escapar(cuerpo).replace(/\n/g, '<br>')}</p><p style="color:#666">SIGEC - Sistema Integral de Gestion de Clinicas</p>`,
   };
 }

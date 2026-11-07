@@ -79,7 +79,7 @@ check "notificacion ENVIADA" ENVIADA "$(esperar "cita_campo $C1 notificacion" 30
 check "el correo llego al email del paciente" "$EMAIL" "$(mocklog | python3 -c "import sys,json;e=[x for x in json.load(sys.stdin) if x['kind']=='email'];print(e[0]['to'] if e else '')")"
 check "asunto y saludo en espanol con el nombre" "Tu cita esta confirmada|Hola Ana Prueba" "$(mocklog | python3 -c "import sys,json;e=[x for x in json.load(sys.stdin) if x['kind']=='email'][0];print(e['subject']+'|'+e['text'][:15])")"
 check "el correo NO incluye especialidad ni medico" ok "$(mocklog | python3 -c "import sys,json;e=[x for x in json.load(sys.stdin) if x['kind']=='email'][0];t=(e['text']+e['html']).lower();print('ok' if 'general' not in t and 'medico' not in t and '$MED' not in t else 'no')")"
-check "MS8 registro la notificacion ENVIADA (API)" ENVIADA "$(api GET "/api/notificaciones?citaId=$C1" "$TR" >/dev/null; python3 -c "import json;d=json.load(open('/tmp/e2en.body'));print(d[0]['estado'] if d else '')")"
+check "MS8 registro la notificacion ENVIADA (API)" ENVIADA "$(api GET "/api/notificaciones?citaId=$C1" "$TR" >/dev/null; python3 -c "import json;d=json.load(open('/tmp/e2en.body'))['items'];print(d[0]['estado'] if d else '')")"
 
 # ---------------------------------------------------------------------------------------------------------------
 section "Parte 1.2 - Vinculacion de Telegram con codigo de un solo uso"
@@ -113,8 +113,8 @@ curl -s -X DELETE "$MOCK/__mock/log" -o /dev/null
 curl -s -X POST "$MOCK/__mock/fail" -d '{"email":true}' -o /dev/null
 check "POST /api/citas -> 202" 202 "$(api POST /api/citas "$TR" "{\"pacienteId\":\"$PAC\",\"medicoId\":\"$MED\",\"especialidad\":\"general\",\"fechaHora\":\"$(fecha 3)\"}")"
 C3=$(jget citaId)
-check "MS8 reintenta y termina FALLIDA (3 intentos)" FALLIDA "$(esperar "api GET '/api/notificaciones?citaId=$C3' $TR >/dev/null; python3 -c \"import json;d=json.load(open('/tmp/e2en.body'));print(d[0]['estado'] if d else '')\"" 60 FALLIDA && echo FALLIDA || echo no)"
-check "...con 3 intentos" 3 "$(api GET "/api/notificaciones?citaId=$C3" "$TR" >/dev/null; python3 -c "import json;print(json.load(open('/tmp/e2en.body'))[0]['intentos'])")"
+check "MS8 reintenta y termina FALLIDA (3 intentos)" FALLIDA "$(esperar "api GET '/api/notificaciones?citaId=$C3' $TR >/dev/null; python3 -c \"import json;d=json.load(open('/tmp/e2en.body'))['items'];print(d[0]['estado'] if d else '')\"" 60 FALLIDA && echo FALLIDA || echo no)"
+check "...con 3 intentos" 3 "$(api GET "/api/notificaciones?citaId=$C3" "$TR" >/dev/null; python3 -c "import json;print(json.load(open('/tmp/e2en.body'))['items'][0]['intentos'])")"
 check "la cita queda CONFIRMADA (un fallo de notificacion no la anula)" ok "$(esperar "cita_campo $C3 estado" 60 CONFIRMADA && echo ok || cita_campo "$C3" estado)"
 check "su notificacion figura PENDIENTE en la cita" PENDIENTE "$(esperar "cita_campo $C3 notificacion" 30 PENDIENTE && echo PENDIENTE || cita_campo "$C3" notificacion)"
 check "se disparo la alerta interna al chat de administradores" ok "$(esperar "mockcount \"e['kind']=='telegram' and e['chat_id']=='-1001' and 'FALLIDA' in e['text']\"" 20 1 && echo ok || echo no)"

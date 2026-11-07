@@ -1,10 +1,10 @@
 import { randomUUID } from 'node:crypto';
-import type { Canal, CitaRecordable, Contacto, Notificacion, NotificacionTipo, RespuestaSaga } from '../domain/notificacion.js';
-import { PreferenciasInvalidasError, VinculoInvalidoError } from '../domain/notificacion.js';
+import type { Canal, CitaRecordable, Contacto, Notificacion, Plantilla, PreferenciasPersonal, RespuestaSaga } from '../domain/notificacion.js';
+import { claveDe, PreferenciasInvalidasError, ReglaNotificacionError, VinculoInvalidoError } from '../domain/notificacion.js';
 import { NotificacionesService } from './notificaciones.service.js';
 import type { ContactoRepository, NotificacionRepository, NotificationSender, RecordatorioRepository } from './ports.js';
 
-class Repos implements NotificacionRepository, ContactoRepository, RecordatorioRepository {
+class Repos {
   notifs = new Map<string, Notificacion>();
   respuestas: RespuestaSaga[] = [];
   contactos = new Map<string, Contacto>();
@@ -16,12 +16,12 @@ class Repos implements NotificacionRepository, ContactoRepository, RecordatorioR
   }
   async guardar(n: Notificacion | Contacto, r?: RespuestaSaga | null): Promise<void> {
     if ('tipo' in n) {
-      this.notifs.set(this.k(n.citaId, n.tipo), structuredClone(n));
+      this.notifs.set(this.k(n.citaId, claveDe(n.tipo, n.fechaHora)), structuredClone(n));
       if (r) this.respuestas.push(r);
     } else this.contactos.set(n.pacienteId, structuredClone(n));
   }
   async vencidas(now: number) {
-    return [...this.notifs.values()].filter((n) => n.estado === 'PENDIENTE' && (n.proximoIntento ?? Infinity) <= now).map((n) => ({ citaId: n.citaId, tipo: n.tipo as NotificacionTipo }));
+    return [...this.notifs.values()].filter((n) => n.estado === 'PENDIENTE' && (n.proximoIntento ?? Infinity) <= now).map((n) => ({ citaId: n.citaId, tipo: claveDe(n.tipo, n.fechaHora) }));
   }
   async porCita(c: string) {
     return [...this.notifs.values()].filter((n) => n.citaId === c);
@@ -44,14 +44,39 @@ class Repos implements NotificacionRepository, ContactoRepository, RecordatorioR
   async marcar(c: string) {
     this.citas.get(c)!.marcado = true;
   }
+  async cancelar(c: string) {
+    if (this.citas.has(c)) this.citas.get(c)!.marcado = true;
+  }
+  async reprogramar(c: CitaRecordable) {
+    this.citas.set(c.citaId, { ...c, marcado: false });
+  }
+  plantillas = new Map<string, Plantilla>();
+  personal = new Map<string, PreferenciasPersonal>();
 }
 // El mismo objeto implementa varios puertos con `obtener` distinto: se separan en fachadas.
 function setup(opts: { fallos?: Record<string, number>; requiereDestinatario?: boolean } = {}) {
   const repos = new Repos();
-  const notificaciones: NotificacionRepository = { obtener: (c, t) => repos.obtener(c, t) as never, guardar: (n, r) => repos.guardar(n, r), vencidas: (n) => repos.vencidas(n), porCita: (c) => repos.porCita(c) };
+  const todas = () => [...repos.notifs.values()];
+  const notificaciones: NotificacionRepository = {
+    obtener: (c, t) => repos.obtener(c, t) as never,
+    guardar: (n, r) => repos.guardar(n, r),
+    vencidas: (n) => repos.vencidas(n),
+    porCita: (c) => repos.porCita(c),
+    obtenerPorId: async (id) => todas().find((n) => n.id === id) ?? null,
+    historial: async (f, limite) => ({ items: todas().filter((n) => n.pacienteId === f.pacienteId && (!f.estado || n.estado === f.estado) && (!f.tipo || n.tipo === f.tipo)).slice(0, limite), siguiente: null }),
+    entreFechas: async (d, h) => todas().filter((n) => Date.parse(n.creadaEn) >= d && Date.parse(n.creadaEn) < h),
+    marcarLeida: async (id, ahora, pac) => {
+      const n = todas().find((x) => x.id === id);
+      if (!n || (pac && n.pacienteId !== pac)) return null;
+      n.leida = true;
+      n.leidaEn = ahora;
+      return n;
+    },
+  };
   const contactos: ContactoRepository = {
     obtener: async (p) => repos.contactos.get(p) ?? null,
     guardar: (c) => repos.guardar(c),
+    desvincularTelegram: async (p) => void delete repos.contactos.get(p)!.telegramChatId,
     crearVinculo: (a, b, c) => repos.crearVinculo(a, b, c),
     consumirVinculo: (a, b) => repos.consumirVinculo(a, b),
   };
@@ -60,6 +85,8 @@ function setup(opts: { fallos?: Record<string, number>; requiereDestinatario?: b
     pendientes: (d, h) => repos.pendientes(d, h),
     obtener: async (c) => repos.citas.get(c) ?? null,
     marcar: (c) => repos.marcar(c),
+    cancelar: (c) => repos.cancelar(c),
+    reprogramar: (c) => repos.reprogramar(c),
   };
   const enviados: { canal: Canal; destinatario: string; asunto: string; texto: string }[] = [];
   const fallos = { ...(opts.fallos ?? {}) } as Record<string, number>;
@@ -81,6 +108,11 @@ function setup(opts: { fallos?: Record<string, number>; requiereDestinatario?: b
     notificaciones,
     contactos,
     recordatorios,
+    plantillas: {
+      vigente: async (t, c) => repos.plantillas.get(`${t}|${c}`) ?? null,
+      guardar: async (p) => void repos.plantillas.set(`${p.tipo}|${p.canal}`, p),
+    },
+    personal: { obtener: async (u) => repos.personal.get(u) ?? null, guardar: async (p) => void repos.personal.set(p.usuarioId, p) },
     newId: randomUUID,
     now: () => now,
     config: { maxIntentos: 3, backoffBaseMs: 1000 },
@@ -262,6 +294,156 @@ describe('NotificacionesService', () => {
       await t.service.enviarRecordatorio(dentro); // repetido: no reenvia
       expect(t.enviados).toHaveLength(1);
       expect(await t.service.enviarRecordatorio(randomUUID())).toBeNull();
+    });
+  });
+
+  describe('Fase 6: eventos, historial y gestion', () => {
+    const cita = (t: ReturnType<typeof setup>, horas: number) => ({ citaId: randomUUID(), pacienteId: PAC, fechaHora: new Date(t.ahora() + horas * 3_600_000).toISOString() });
+
+    it('cita.reprogramada recuerda la nueva fecha y avisa una sola vez por fecha; cita.cancelada deja de recordar', async () => {
+      const t = setup();
+      await t.service.registrarContacto({ pacienteId: PAC, email: 'a@x.com' });
+      const c = cita(t, 30);
+      await t.service.registrarCitaConfirmada(c);
+      const nueva = { ...c, fechaHora: new Date(t.ahora() + 5 * 3_600_000).toISOString() };
+      const n = await t.service.citaReprogramada(nueva);
+      expect(n).toMatchObject({ tipo: 'CITA_REPROGRAMADA', estado: 'ENVIADA' });
+      expect(t.enviados[0].asunto).toBe('Tu cita fue reprogramada');
+      await t.service.citaReprogramada(nueva); // reentrega
+      expect(t.enviados).toHaveLength(1);
+      expect((await t.service.recordatoriosPendientes()).map((x) => x.citaId)).toEqual([c.citaId]); // ahora cae dentro de 24 h
+      await t.service.citaReprogramada({ ...c, fechaHora: new Date(t.ahora() + 6 * 3_600_000).toISOString() }); // otra fecha: otro aviso
+      expect(t.enviados).toHaveLength(2);
+      await t.service.citaCancelada(c.citaId);
+      expect(await t.service.recordatoriosPendientes()).toEqual([]);
+    });
+
+    it('el paciente fija antelacion y tipos de aviso; los recordatorios se adaptan', async () => {
+      const t = setup();
+      await t.service.registrarContacto({ pacienteId: PAC, email: 'a@x.com' });
+      const c = cita(t, 10);
+      await t.service.registrarCitaConfirmada(c);
+      await t.service.guardarPreferencias(PAC, undefined, { antelacionHoras: 6 });
+      expect(await t.service.recordatoriosPendientes()).toEqual([]); // faltan 10 h y pidio 6
+      t.avanzar(5 * 3_600_000);
+      expect((await t.service.recordatoriosPendientes()).map((x) => x.citaId)).toEqual([c.citaId]);
+      await t.service.guardarPreferencias(PAC, undefined, { tiposAviso: ['ESTUDIO_VALIDADO'] }); // apaga recordatorios
+      expect(await t.service.recordatoriosPendientes()).toEqual([]);
+      expect(await t.service.enviarRecordatorio(c.citaId)).toBe('OMITIDO');
+      expect(t.enviados).toHaveLength(0);
+      await expect(t.service.guardarPreferencias(PAC, undefined, { antelacionHoras: 5 })).rejects.toBeInstanceOf(PreferenciasInvalidasError);
+      await expect(t.service.guardarPreferencias(PAC, undefined, { tiposAviso: ['CITA_CONFIRMADA'] })).rejects.toBeInstanceOf(PreferenciasInvalidasError);
+    });
+
+    it('estudio validado avisa sin datos clinicos y no se repite; reforzar es uno por cita', async () => {
+      const t = setup();
+      await t.service.registrarContacto({ pacienteId: PAC, email: 'a@x.com' });
+      const imagenId = randomUUID();
+      expect(await t.service.estudioValidado({ imagenId, pacienteId: PAC })).toMatchObject({ tipo: 'ESTUDIO_VALIDADO', estado: 'ENVIADA' });
+      await t.service.estudioValidado({ imagenId, pacienteId: PAC });
+      expect(t.enviados).toHaveLength(1);
+      expect(t.enviados[0].texto).not.toMatch(/neumon|diagn|resultado/i);
+      const c = cita(t, 3);
+      await t.service.registrarCitaConfirmada(c);
+      expect(await t.service.reforzarRecordatorio(c.citaId)).toMatchObject({ tipo: 'RECORDATORIO_REFUERZO' });
+      await t.service.reforzarRecordatorio(c.citaId);
+      expect(t.enviados.filter((e) => e.asunto.includes('importante'))).toHaveLength(1);
+      expect(await t.service.reforzarRecordatorio(randomUUID())).toBeNull();
+    });
+
+    it('reenviar solo sirve para FALLIDAS y no responde otra vez a la SAGA', async () => {
+      const t = setup({ fallos: { EMAIL: 3 } });
+      await t.service.registrarContacto({ pacienteId: PAC, email: 'a@x.com' });
+      const n = await t.service.recibirComando(cmd());
+      await expect(t.service.reenviar(n.id)).rejects.toMatchObject({ code: 'NOTIFICACION_NO_REENVIABLE', status: 409 }); // aun PENDIENTE
+      t.avanzar(1000);
+      await t.service.reintentarPendientes();
+      t.avanzar(2000);
+      await t.service.reintentarPendientes();
+      expect((await t.service.porCita(n.citaId))[0].estado).toBe('FALLIDA');
+      expect(t.repos.respuestas).toHaveLength(1); // ...fallida
+      const r = await t.service.reenviar(n.id);
+      expect(r.estado).toBe('ENVIADA');
+      expect(t.repos.respuestas).toHaveLength(1); // no se publica otra respuesta
+      await expect(t.service.reenviar(randomUUID())).rejects.toMatchObject({ code: 'NOTIFICACION_NO_ENCONTRADA', status: 404 });
+    });
+
+    it('marcar leidas solo afecta a las propias', async () => {
+      const t = setup();
+      await t.service.registrarContacto({ pacienteId: PAC, email: 'a@x.com' });
+      const n = await t.service.recibirComando(cmd());
+      expect(await t.service.marcarLeidas([n.id], randomUUID())).toEqual({ marcadas: 0 });
+      expect(await t.service.marcarLeidas([n.id, n.id], PAC)).toEqual({ marcadas: 1 });
+      expect((await t.service.porCita(n.citaId))[0]).toMatchObject({ leida: true });
+    });
+
+    it('resumen del dia en hora de la clinica', async () => {
+      const t = setup({ fallos: { EMAIL: 3 } });
+      await t.service.registrarContacto({ pacienteId: PAC, email: 'a@x.com' });
+      await t.service.recibirComando(cmd()); // pendiente
+      const r = await t.service.resumen('2026-12-01');
+      expect(r).toMatchObject({ fecha: '2026-12-01', total: 1, pendientes: 1, enviadas: 0, fallidas: 0, tasaEntrega: null, porTipo: { CITA_CONFIRMADA: 1 } });
+      expect((await t.service.resumen('2026-12-02')).total).toBe(0);
+      await expect(t.service.resumen('ayer')).rejects.toMatchObject({ code: 'FECHA_INVALIDA' });
+    });
+
+    it('desvincular Telegram quita el chat y deja EMAIL si era el unico canal', async () => {
+      const t = setup();
+      await t.service.registrarContacto({ pacienteId: PAC, email: 'a@x.com' });
+      await expect(t.service.desvincularTelegram(PAC)).rejects.toMatchObject({ code: 'TELEGRAM_NO_VINCULADO', status: 404 });
+      await t.service.generarCodigoVinculo(PAC, 'DESV0001');
+      await t.service.vincularTelegram('DESV0001', '9');
+      await t.service.guardarPreferencias(PAC, ['TELEGRAM']);
+      const c = await t.service.desvincularTelegram(PAC);
+      expect(c.canales).toEqual(['EMAIL']);
+      expect(c.telegramChatId).toBeUndefined();
+    });
+
+    it('preferencias del personal: por defecto todo activo y se pueden cambiar', async () => {
+      const t = setup();
+      expect((await t.service.obtenerPreferenciasPersonal('u1')).alertas).toEqual({ sagaCompensada: true, notificacionFallida: true, colaDeErrores: true });
+      await t.service.guardarPreferenciasPersonal('u1', { sagaCompensada: false, notificacionFallida: true, colaDeErrores: false });
+      expect((await t.service.obtenerPreferenciasPersonal('u1')).alertas.sagaCompensada).toBe(false);
+    });
+
+    describe('plantillas editables', () => {
+      const asunto = 'Tu cita';
+      it('muestra la de fabrica (version 0), guarda versiones y las usa al enviar', async () => {
+        const t = setup();
+        await t.service.registrarContacto({ pacienteId: PAC, nombre: 'Ana', email: 'a@x.com' });
+        const f = await t.service.plantilla('CITA_CONFIRMADA', 'EMAIL');
+        expect(f).toMatchObject({ version: 0, deFabrica: true });
+        expect(f.cuerpo).toContain('{{cuando}}');
+        const v1 = await t.service.guardarPlantilla('CITA_CONFIRMADA', 'EMAIL', asunto, 'Hola {{nombre}}, te esperamos {{cuando}}.', 0, 'admin');
+        expect(v1.version).toBe(1);
+        await t.service.recibirComando(cmd());
+        expect(t.enviados[0]).toMatchObject({ asunto: 'Tu cita' });
+        expect(t.enviados[0].texto).toMatch(/Hola Ana, te esperamos el .*2 de diciembre a las 10:30/);
+        await expect(t.service.guardarPlantilla('CITA_CONFIRMADA', 'EMAIL', asunto, 'Otra {{cuando}}', 0, 'otro')).rejects.toMatchObject({ code: 'VERSION_CONFLICTO', status: 409, extras: { versionVigente: 1 } });
+        expect((await t.service.guardarPlantilla('CITA_CONFIRMADA', 'EMAIL', asunto, 'Otra {{cuando}}', 1, 'admin')).version).toBe(2);
+        expect((await t.service.listarPlantillas()).filter((p) => p.tipo === 'CITA_CONFIRMADA' && p.canal === 'EMAIL')[0].version).toBe(2);
+      });
+
+      it('valida variables, contenido clinico, fecha obligatoria y largo en Telegram', async () => {
+        const t = setup();
+        const ok = (cuerpo: string, tipo: Parameters<typeof t.service.guardarPlantilla>[0] = 'ESTUDIO_VALIDADO', canal: Canal = 'EMAIL') => t.service.guardarPlantilla(tipo, canal, asunto, cuerpo, 0, 'a');
+        await expect(ok('Hola {{apellido}}')).rejects.toMatchObject({ code: 'PLANTILLA_VARIABLE_INVALIDA', status: 422 });
+        await expect(ok('Hola {{nombre')).rejects.toMatchObject({ code: 'PLANTILLA_VARIABLE_INVALIDA' });
+        await expect(ok('Tu diagnostico esta listo')).rejects.toMatchObject({ code: 'PLANTILLA_CONTENIDO_CLINICO' });
+        await expect(ok('Toma 500 mg cada 8 horas')).rejects.toMatchObject({ code: 'PLANTILLA_CONTENIDO_CLINICO' });
+        await expect(ok('Sin fecha', 'RECORDATORIO')).rejects.toMatchObject({ code: 'PLANTILLA_SIN_FECHA' });
+        await expect(ok('x'.repeat(301), 'ESTUDIO_VALIDADO', 'TELEGRAM')).rejects.toMatchObject({ code: 'PLANTILLA_INVALIDA' });
+        await expect(t.service.guardarPlantilla('NADA' as never, 'EMAIL', asunto, 'x', 0, 'a')).rejects.toBeInstanceOf(ReglaNotificacionError);
+        expect((await ok('Tu informe ya esta listo, {{nombre}}.')).version).toBe(1);
+      });
+
+      it('la vista previa renderiza sin guardar', async () => {
+        const t = setup();
+        const m = t.service.vistaPrevia('RECORDATORIO', 'EMAIL', 'Recordatorio', 'Hola {{nombre}}: {{cuando}}');
+        expect(m.texto).toContain('Hola Ana: el ');
+        expect((await t.service.plantilla('RECORDATORIO', 'EMAIL')).version).toBe(0);
+        expect(() => t.service.vistaPrevia('RECORDATORIO', 'EMAIL', 'x', 'sin fecha')).toThrow(ReglaNotificacionError);
+      });
     });
   });
 });

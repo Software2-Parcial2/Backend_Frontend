@@ -10,7 +10,7 @@ import { NotificacionesController } from './http/notificaciones.controller.js';
 import { DlqMonitor } from './messaging/dlq-monitor.js';
 import { LogAlerta, N8nAlerta, N8nSender, type N8nOptions } from './messaging/n8n-sender.js';
 import { SimulatedSender } from './messaging/simulated-sender.js';
-import { DynamoContactoRepository, DynamoNotificacionRepository, DynamoRecordatorioRepository } from './persistence/dynamo-notificaciones.repositories.js';
+import { DynamoContactoRepository, DynamoNotificacionRepository, DynamoPlantillaRepository, DynamoPreferenciasPersonalRepository, DynamoRecordatorioRepository } from './persistence/dynamo-notificaciones.repositories.js';
 
 const QUEUE_COMANDOS = 'ms8.saga.comandos';
 const QUEUE_EVENTOS = 'ms8.eventos';
@@ -73,8 +73,15 @@ class NotificacionesWorkers implements OnApplicationBootstrap, OnApplicationShut
           const p = env.payload;
           if (env.type === 'cita.confirmada') {
             await this.service.registrarCitaConfirmada({ citaId: String(p.citaId), pacienteId: String(p.pacienteId), fechaHora: String(p.fechaHora) });
-          } else if (env.type === 'paciente.creado') {
+          } else if (env.type === 'paciente.creado' || env.type === 'paciente.actualizado') {
             await this.service.registrarContacto({ pacienteId: String(p.pacienteId), nombre: p.nombre ? String(p.nombre) : undefined, email: (p.email as string | null | undefined) ?? null });
+          } else if (env.type === 'cita.cancelada') {
+            await this.service.citaCancelada(String(p.citaId));
+          } else if (env.type === 'cita.reprogramada') {
+            await this.service.citaReprogramada({ citaId: String(p.citaId), pacienteId: String(p.pacienteId), fechaHora: String(p.fechaHora) });
+          } else if (env.type === 'imagen.informe-validado') {
+            // Un estudio descartado no genera aviso: no hay informe que ofrecer.
+            if (p.validacion === 'VALIDADO') await this.service.estudioValidado({ imagenId: String(p.imagenId), pacienteId: String(p.pacienteId) });
           }
         },
       }),
@@ -139,6 +146,8 @@ class NotificacionesWorkers implements OnApplicationBootstrap, OnApplicationShut
           notificaciones: new DynamoNotificacionRepository(doc, tablas),
           contactos: new DynamoContactoRepository(doc, tablas),
           recordatorios: new DynamoRecordatorioRepository(doc, tablas),
+          plantillas: new DynamoPlantillaRepository(doc, tablas),
+          personal: new DynamoPreferenciasPersonalRepository(doc, tablas),
           newId: randomUUID,
           log: (m) => log.warn(m),
           config: {

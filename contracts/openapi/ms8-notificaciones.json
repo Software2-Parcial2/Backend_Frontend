@@ -1,11 +1,27 @@
 {
   "components": {
     "schemas": {
+      "LeidasDto": {
+        "properties": {},
+        "type": "object"
+      },
+      "PlantillaDto": {
+        "properties": {},
+        "type": "object"
+      },
       "PreferenciasDto": {
         "properties": {},
         "type": "object"
       },
+      "PreferenciasPersonalDto": {
+        "properties": {},
+        "type": "object"
+      },
       "VinculoDto": {
+        "properties": {},
+        "type": "object"
+      },
+      "VistaPreviaDto": {
         "properties": {},
         "type": "object"
       }
@@ -29,16 +45,255 @@
     "/api/notificaciones": {
       "get": {
         "operationId": "NotificacionesController_listar",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "notificaciones"
+        ]
+      }
+    },
+    "/api/notificaciones/{id}/leida": {
+      "patch": {
+        "operationId": "NotificacionesController_leida",
         "parameters": [
           {
-            "in": "query",
-            "name": "citaId",
-            "required": false,
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
             "schema": {
               "type": "string"
             }
           }
         ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "notificaciones"
+        ]
+      }
+    },
+    "/api/notificaciones/{id}/reenviar": {
+      "post": {
+        "operationId": "NotificacionesController_reenviar",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "notificaciones"
+        ]
+      }
+    },
+    "/api/notificaciones/leidas": {
+      "post": {
+        "operationId": "NotificacionesController_leidas",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LeidasDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "notificaciones"
+        ]
+      }
+    },
+    "/api/notificaciones/plantillas": {
+      "get": {
+        "operationId": "NotificacionesController_plantillas",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "notificaciones"
+        ]
+      }
+    },
+    "/api/notificaciones/plantillas/{tipo}": {
+      "get": {
+        "operationId": "NotificacionesController_plantilla",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tipo",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "notificaciones"
+        ]
+      },
+      "put": {
+        "operationId": "NotificacionesController_guardarPlantilla",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tipo",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Version vigente que se esta editando",
+            "in": "header",
+            "name": "If-Match",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlantillaDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "notificaciones"
+        ]
+      }
+    },
+    "/api/notificaciones/plantillas/{tipo}/vista-previa": {
+      "post": {
+        "operationId": "NotificacionesController_vistaPrevia",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tipo",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VistaPreviaDto"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "200": {
             "description": ""
@@ -126,7 +381,98 @@
         ]
       }
     },
+    "/api/notificaciones/preferencias/personal/me": {
+      "get": {
+        "operationId": "NotificacionesController_preferenciasPersonal",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "notificaciones"
+        ]
+      },
+      "put": {
+        "operationId": "NotificacionesController_guardarPreferenciasPersonal",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreferenciasPersonalDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "notificaciones"
+        ]
+      }
+    },
+    "/api/notificaciones/resumen": {
+      "get": {
+        "operationId": "NotificacionesController_resumen",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "notificaciones"
+        ]
+      }
+    },
     "/api/notificaciones/telegram/vinculo": {
+      "delete": {
+        "operationId": "NotificacionesController_desvincular",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "notificaciones"
+        ]
+      },
       "post": {
         "operationId": "NotificacionesController_vinculo",
         "parameters": [

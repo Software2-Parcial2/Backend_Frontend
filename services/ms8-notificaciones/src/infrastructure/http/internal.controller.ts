@@ -37,6 +37,17 @@ export class InternalController {
   async enviar(@Param('citaId', new ParseUUIDPipe()) citaId: string) {
     const n = await this.service.enviarRecordatorio(citaId);
     if (!n) throw new NotFoundException({ ok: false, error: 'cita desconocida' });
+    if (n === 'OMITIDO') return { ok: true, estado: 'OMITIDO', intentos: 0 };
+    return { ok: true, estado: n.estado, intentos: n.intentos };
+  }
+
+  /** Recordatorio extra para una cita (p. ej. MS7 ante un riesgo alto de inasistencia). Uno por cita: repetirlo no reenvia. */
+  @Post('recordatorios/:citaId/reforzar')
+  @HttpCode(200)
+  async reforzar(@Param('citaId', new ParseUUIDPipe()) citaId: string) {
+    const n = await this.service.reforzarRecordatorio(citaId);
+    if (!n) throw new NotFoundException({ ok: false, error: 'cita desconocida' });
+    if (n === 'OMITIDO') return { ok: true, estado: 'OMITIDO', intentos: 0 };
     return { ok: true, estado: n.estado, intentos: n.intentos };
   }
 }

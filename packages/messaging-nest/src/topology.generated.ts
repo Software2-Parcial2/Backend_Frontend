@@ -110,7 +110,11 @@ export const TOPOLOGY = {
           "exchange": "sigec.eventos",
           "routingKeys": [
             "cita.confirmada",
-            "paciente.creado"
+            "cita.cancelada",
+            "cita.reprogramada",
+            "paciente.creado",
+            "paciente.actualizado",
+            "imagen.informe-validado"
           ]
         }
       ]
