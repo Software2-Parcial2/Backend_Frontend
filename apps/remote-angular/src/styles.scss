@@ -1,1 +1,2 @@
-/* You can add global styles to this file, and also import other style files */
+/* Solo para el modo independiente (ng serve en 4201). Cuando lo monta el shell, los estilos viajan en App (ver app.ts). */
+body { margin: 0; background: #F2F5F6; }

@@ -23,7 +23,7 @@
           "options": {
             "cacheExternalArtifacts": true,
             "tsConfig": "tsconfig.federation.json",
-            "styles": ["src/material-theme.scss"]
+            "styles": []
           },
           "configurations": {
             "production": {
@@ -76,8 +76,8 @@
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "4kB",
-                  "maximumError": "8kB"
+                  "maximumWarning": "16kB",
+                  "maximumError": "24kB"
                 }
               ],
               "outputHashing": "all"

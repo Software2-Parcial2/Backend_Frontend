@@ -1,7 +1,7 @@
 import type { MfeModule } from '@sigec/mfe-contract';
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from 'react-oidc-context';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { toMfeContext } from '../auth/sigecUser';
 import { loadMicrofrontend, type RemoteName } from '../remotes/loader';
 
@@ -23,6 +23,7 @@ interface Props {
 export function RemoteContainer({ remote, title }: Props) {
   const auth = useAuth();
   const navigate = useNavigate();
+  const { hash } = useLocation();
   const hostRef = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [error, setError] = useState('');
@@ -76,6 +77,14 @@ export function RemoteContainer({ remote, title }: Props) {
       });
     };
   }, [remote, attempt, navigate]);
+
+  // El menu del shell navega con history.pushState (Link), que no dispara 'hashchange'. Los remotos enrutan por
+  // hash (/clinica#/agenda), asi que se les avisa del cambio para que lean location.hash.
+  const firstHash = useRef(hash);
+  useEffect(() => {
+    if (hash !== firstHash.current) window.dispatchEvent(new HashChangeEvent('hashchange'));
+    firstHash.current = hash;
+  }, [hash]);
 
   // Renovacion del token: se avisa al remoto sin remontarlo.
   const firstToken = useRef(token);
