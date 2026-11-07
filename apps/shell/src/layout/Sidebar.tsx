@@ -19,11 +19,11 @@ export function Sidebar({ roles, onSignOut }: Props) {
       </div>
       <div className="clin">Clínica Médica Santa Cruz</div>
       <nav aria-label="Principal" style={{ display: 'contents' }}>
-        {groups.map((g, i) => (
+        {groups.map((g) => (
           <div key={g.heading} style={{ display: 'contents' }}>
             <div className="nh">{g.heading}</div>
             {g.items
-              .filter((it) => i === 0 || it.to !== '/')
+              
               .map((it) => (
                 <Link key={g.heading + it.to} className={isOn(it.to) ? 'nav on' : 'nav'} to={it.to} aria-current={isOn(it.to) ? 'page' : undefined}>
                   {it.label}

@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useAuth } from 'react-oidc-context';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { toMfeContext } from '../auth/sigecUser';
+import { ServicioNoDisponible } from '../pages/Estados';
 import { loadMicrofrontend, type RemoteName } from '../remotes/loader';
 
 // mount/unmount de un mismo remoto se serializan: StrictMode y la navegacion rapida
@@ -107,18 +108,10 @@ export function RemoteContainer({ remote, title }: Props) {
         </div>
       )}
       {status === 'error' && (
-        <div className="page">
-          <div className="banner err" role="alert">
-            <div>
-              <b>Servicio no disponible</b>
-              <span>No se pudo cargar {title}: {error}</span>
-            </div>
-            <span className="sp" />
-            <button type="button" className="btn s" onClick={() => setAttempt((n) => n + 1)}>
-              Reintentar
-            </button>
-          </div>
-        </div>
+        <>
+          <ServicioNoDisponible onRetry={() => setAttempt((n) => n + 1)} />
+          <p className="sm muted" style={{ textAlign: 'center' }} role="status">Detalle técnico: no se pudo cargar {title}: {error}</p>
+        </>
       )}
       <div ref={hostRef} data-remote={remote} />
     </section>
