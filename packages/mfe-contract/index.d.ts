@@ -18,6 +18,8 @@ export interface MfeContext {
   token: string;
   user: MfeUser;
   roles: string[];
+  /** Base del gateway (p. ej. http://localhost:8090, sin barra final). El remoto NO debe fijar la suya: usa esta. */
+  apiUrl: string;
 }
 
 /** Monta el remoto dentro de `el`. Puede ser asincrona (p. ej. Angular). */

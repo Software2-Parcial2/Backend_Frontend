@@ -31,7 +31,10 @@ export function toMfeUser(user: User): MfeUser {
   };
 }
 
+/** Base del gateway (PUBLIC_API_URL en .env / entorno de build; por defecto el gateway local). */
+export const API_URL: string = (import.meta.env.PUBLIC_API_URL ?? 'http://localhost:8090').replace(/\/+$/, '');
+
 export function toMfeContext(user: User): MfeContext {
   const mfeUser = toMfeUser(user);
-  return { token: user.access_token, user: mfeUser, roles: mfeUser.roles };
+  return { token: user.access_token, user: mfeUser, roles: mfeUser.roles, apiUrl: API_URL };
 }

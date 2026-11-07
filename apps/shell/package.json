@@ -6,10 +6,13 @@
   "scripts": {
     "build": "rsbuild build",
     "dev": "rsbuild",
-    "preview": "rsbuild preview"
+    "preview": "rsbuild preview",
+    "predev": "pnpm --filter @sigec/api-client build && pnpm install --offline --silent",
+    "prebuild": "pnpm --filter @sigec/api-client build && pnpm install --offline --silent"
   },
   "dependencies": {
     "@module-federation/enhanced": "^2.9.2",
+    "@sigec/api-client": "workspace:*",
     "@sigec/design-tokens": "workspace:*",
     "@sigec/mfe-contract": "workspace:*",
     "@softarc/native-federation-orchestrator": "^4.9.0",
