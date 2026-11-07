@@ -236,6 +236,11 @@ class Fase4IntegrationTest {
 		assertThat(cuerpo(ejecutar(get("/api/historias/" + hid + "/consultas").with(paciente(pacienteId)))).get("items").size()).isEqualTo(1);
 		assertThat(ejecutar(get("/api/historias/consultas/" + cid).with(paciente(UUID.randomUUID()))).getStatus()).isEqualTo(404);
 
+		// la asistencia llega como la publica MS3 (ASISTIO) y se proyecta como ATENDIDA
+		enviar("cita.asistencia-registrada", UUID.randomUUID(), "{\"citaId\":\"" + citaId + "\",\"pacienteId\":\"" + pacienteId + "\",\"medicoId\":\"" + medicoId
+				+ "\",\"fechaHora\":\"" + Instant.now().plusSeconds(3600) + "\",\"asistencia\":\"ASISTIO\"}");
+		esperar(() -> "ATENDIDA".equals(jdbc.queryForObject("SELECT estado FROM citas_proyeccion WHERE cita_id = ?", String.class, citaId)));
+
 		// la cancelacion posterior de la cita bloquea nuevas consultas
 		UUID cita2 = UUID.randomUUID();
 		enviar("cita.cancelada", UUID.randomUUID(), "{\"citaId\":\"" + cita2 + "\",\"pacienteId\":\"" + pacienteId + "\",\"medicoId\":\"" + medicoId

@@ -33,6 +33,7 @@ Los problemas y limites conocidos por bloque estan en `docs/PENDIENTES.md`. Este
 | **Datos** | Auditoria y modelo de datos (`docs/datos/`): migraciones ms2/ms4/ms6/ms7, disponibilidad de horarios (Query), `mongo-init`, semilla, EXPLAIN, diccionario generado | Hecho; ver `docs/PENDIENTES.md` (bloque Datos) |
 | **Docker** | Pila completa en contenedores (`docker-compose.full.yml`, `make up-core`/`up-all`, `docs/docker.md`) | Hecho y verificado con `up-core`; **ML (`up-all`) y navegador sin verificar** |
 | **Diseno** | Diseno visual trasladado a los frontends: `packages/design-tokens`, `design.md` por app, pantallas clave con datos de ejemplo | Hecho: todas las pantallas del diseno; shell+remotos verificados en Chromium con Keycloak; PWA/movil solo compilados (ver `docs/PENDIENTES.md`) |
+| **Backend limpio** | Plan de 10 fases (docs/api.md): convenciones comunes (problem+json, cursor, camelCase, OpenAPI + api-types), MS2 catalogo y edicion, MS3 cancelar/reprogramar/horarios/asistencia, MS6 pagos y caja, MS4 historias clinicas, MS5 validacion de estudios, MS8 historial/plantillas, MS7 alertas, nuevo `ms1-identidad` | Hecho; **`scripts/e2e-flujos.sh` 88/88**; ver `docs/PENDIENTES.md` (Fases 0-9). Los frontends siguen con datos de ejemplo |
 | **L5** | MS7: voz (Whisper), dashboard Vue, `scripts/e2e-ms7.sh` | Hecho; **E2E 37/37 en stack real** (ver `docs/inteligencia.md`) |
 
 ## Donde estamos
@@ -43,9 +44,13 @@ Bloques 0-L terminados en el repo (commits locales, sin push). **Pendiente de ve
 3. Probar Gemini y Claude reales (`GEMINI_API_KEY` / `ANTHROPIC_API_KEY`, `LLM_PROVIDER`) y el microfono real en el navegador.
 4. Mailtrap y Telegram reales (bloque J).
 
+## Al actualizar el repo (backend)
+
+Ejecutar en este orden: `make dynamodb-init rabbitmq-declare mongo-init`, definir `MS1_CLIENT_SECRET`/`MS7_CLIENT_SECRET` en `.env` y `make keycloak-aplicar`, y **volver a iniciar sesion** (los tokens ahora llevan `sub` y los servicios Nest lo exigen).
+
 ## Siguientes fases (inferidas, no hay plan escrito)
 
-- **MS4 Historias clinicas:** solo esqueleto; falta dominio y casos de uso (y vincular resultados de MS5).
+- **Frontends:** conectar las pantallas a las APIs ya listas (contratos en `contracts/openapi`, tipos en `@sigec/api-types`, mapa en `docs/api.md`).
 - **MS7:** mensajeria/idempotencia (no las usa), registrar asistencia en MS3 para entrenar el modelo de inasistencia con datos propios, pantalla integrada en el shell.
 - **Frontends:** conectar las pantallas (hoy con datos de ejemplo) a las APIs, PWA offline de datos, iconos PNG, `expo prebuild --clean`, lint de la PWA (TS 7), validador local TFLite/TF.js.
 - **AWS:** desplegar y probar la Lambda `lambda-outbox`.

@@ -37,7 +37,7 @@ y con **publisher confirms**. Los consumidores usan **ack manual**.
 | `notificaciones.cita-confirmada.enviada` | respuesta | MS8 → MS3 | `sigec.saga` | citaId, notificacionId, canal |
 | `notificaciones.cita-confirmada.fallida` | respuesta | MS8 → MS3 | `sigec.saga` | citaId, motivo |
 | `imagenes.analisis.solicitar` | comando | MS5 API → MS5 inferencia | `sigec.saga` | imagenId, pacienteId, bucket, objectKey, mime, hashSha256 |
-| `imagenes.analisis.completado` | respuesta | MS5 inferencia → MS5 API | `sigec.saga` | imagenId, probabilidad_neumonia, clase, version_modelo, modelo, aviso |
+| `imagenes.analisis.completado` | respuesta | MS5 inferencia → MS5 API | `sigec.saga` | imagenId, probabilidad_neumonia, clase, version_modelo, modelo, aviso, gradcamKey? |
 | `imagenes.analisis.fallido` | respuesta | MS5 inferencia → MS5 API | `sigec.saga` | imagenId, motivo |
 | `paciente.creado` | evento de dominio | MS2 → varios | `sigec.eventos` | pacienteId, numeroHistoria, nombre, documento, email? |
 | `paciente.actualizado` | evento de dominio | MS2 → varios | `sigec.eventos` | pacienteId, numeroHistoria, nombre, documento, email?, telefono?, version |
@@ -48,7 +48,7 @@ y con **publisher confirms**. Los consumidores usan **ack manual**.
 | `cita.confirmada` | evento de dominio | MS3 → varios | `sigec.eventos` | citaId, pacienteId, medicoId, fechaHora |
 | `cita.cancelada` | evento de dominio | MS3 → varios | `sigec.eventos` | citaId, pacienteId, medicoId, fechaHora, motivo |
 | `cita.reprogramada` | evento de dominio | MS3 → varios | `sigec.eventos` | citaId, pacienteId, medicoId, fechaHora, fechaHoraAnterior |
-| `cita.asistencia-registrada` | evento de dominio | MS3 → varios | `sigec.eventos` | citaId, pacienteId, medicoId, fechaHora, asistencia (LLEGO\|ASISTIO\|NO_ASISTIO) |
+| `cita.asistencia-registrada` | evento de dominio | MS3 → varios | `sigec.eventos` | citaId, pacienteId, medicoId, fechaHora, asistencia (LLEGO\|ASISTIO\|NO_ASISTIO); los consumidores (MS4, MS7) guardan ASISTIO como ATENDIDA |
 | `factura.creada` | evento de dominio | MS6 → varios | `sigec.eventos` | facturaId, citaId, pacienteId, monto, estado |
 | `pago.registrado` | evento de dominio | MS6 → varios | `sigec.eventos` | pagoId, facturaId, citaId, pacienteId, monto (string), metodo, comprobante |
 | `factura.anulada` | evento de dominio | MS6 → varios | `sigec.eventos` | facturaId, citaId, pacienteId, monto (string), motivo, estabaPagada |

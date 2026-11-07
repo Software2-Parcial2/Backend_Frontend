@@ -91,7 +91,8 @@ public class EventosConsumer {
 					texto(p, "nombre"));
 			case "cita.confirmada" -> proyecciones.citaConfirmada(uuid(p, "citaId"), uuid(p, "pacienteId"), uuid(p, "medicoId"), instante(p));
 			case "cita.cancelada" -> cambio(p, "CANCELADA");
-			case "cita.asistencia-registrada" -> cambio(p, requerido(p, "asistencia"));
+			// MS3 publica LLEGO | ASISTIO | NO_ASISTIO (contracts/events); la proyeccion usa ATENDIDA para ASISTIO.
+			case "cita.asistencia-registrada" -> cambio(p, "ASISTIO".equals(requerido(p, "asistencia")) ? "ATENDIDA" : requerido(p, "asistencia"));
 			case "imagen.informe-validado" -> proyecciones.estudioValidado(new EstudioValidado(uuid(p, "imagenId"), uuid(p, "pacienteId"),
 					requerido(p, "estudio"), requerido(p, "decision"), requerido(p, "validacion"),
 					texto(p, "medicoId") == null ? null : UUID.fromString(texto(p, "medicoId")), Instant.parse(requerido(p, "validadoEn")),

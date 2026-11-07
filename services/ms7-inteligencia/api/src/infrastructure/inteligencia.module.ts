@@ -63,7 +63,8 @@ class MonitoreoWorkers implements OnApplicationBootstrap, OnApplicationShutdown 
           pacienteId: String(p.pacienteId),
           medicoId: p.medicoId ? String(p.medicoId) : null,
           fechaHora: String(p.fechaHora),
-          asistencia: p.asistencia as 'LLEGO' | 'ATENDIDA' | 'NO_ASISTIO',
+          // MS3 publica LLEGO | ASISTIO | NO_ASISTIO; la tabla usa ATENDIDA para ASISTIO.
+          asistencia: p.asistencia === 'ASISTIO' ? 'ATENDIDA' : (p.asistencia as 'LLEGO' | 'NO_ASISTIO'),
         });
       },
     });
