@@ -128,7 +128,8 @@ public class IdempotencyFilter extends OncePerRequestFilter {
 		if (retryAfter != null) {
 			response.setHeader("Retry-After", retryAfter);
 		}
-		String json = mapper.writeValueAsString(Map.of("type", "about:blank", "title", title, "status", status, "detail", detail));
+		String code = status == 400 ? "IDEMPOTENCY_KEY_INVALIDA" : status == 422 ? "IDEMPOTENCY_KEY_REUTILIZADA" : "PETICION_EN_PROCESO";
+		String json = mapper.writeValueAsString(Map.of("type", "about:blank", "title", title, "status", status, "detail", detail, "code", code));
 		response.getOutputStream().write(json.getBytes(StandardCharsets.UTF_8));
 	}
 

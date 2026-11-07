@@ -12,6 +12,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.intercept.AuthorizationFilter;
 import org.springframework.beans.factory.annotation.Value;
 
+import com.sigec.ms4_historias.infrastructure.adapter.in.web.problem.ProblemJsonSecurityHandlers;
 import com.sigec.ms4_historias.infrastructure.idempotency.IdempotencyFilter;
 import com.sigec.ms4_historias.infrastructure.idempotency.IdempotencyStore;
 
@@ -29,6 +30,7 @@ public class SecurityConfig {
 			@Value("${sigec.idempotency.ttl-hours:24}") long ttlHours) throws Exception {
 		JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
 		converter.setJwtGrantedAuthoritiesConverter(new KeycloakRealmRoleConverter());
+		ProblemJsonSecurityHandlers problemas = new ProblemJsonSecurityHandlers(mapper);
 		return http
 				.csrf(AbstractHttpConfigurer::disable)
 				.sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -38,7 +40,10 @@ public class SecurityConfig {
 						.anyRequest().authenticated())
 				// Despues de autenticar y autorizar: solo se reservan claves de usuarios con acceso.
 				.addFilterAfter(new IdempotencyFilter(idempotencyStore, mapper, Duration.ofHours(ttlHours)), AuthorizationFilter.class)
-				.oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(converter)))
+				.exceptionHandling(e -> e.authenticationEntryPoint(problemas).accessDeniedHandler(problemas))
+				.oauth2ResourceServer(oauth2 -> oauth2
+						.authenticationEntryPoint(problemas).accessDeniedHandler(problemas)
+						.jwt(jwt -> jwt.jwtAuthenticationConverter(converter)))
 				.build();
 	}
 }
