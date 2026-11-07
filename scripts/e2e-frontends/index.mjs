@@ -12,6 +12,7 @@ try {
 }
 const escenarios = {
   shell: () => import('./shell.mjs').then((m) => m.shell()),
+  angular: () => import('./angular.mjs').then((m) => m.angular()),
 };
 const pedidos = process.argv.slice(2);
 const cuales = pedidos.length ? pedidos : Object.keys(escenarios);

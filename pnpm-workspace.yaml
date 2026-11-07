@@ -1,6 +1,7 @@
 packages:
   - "apps/shell"
   - "apps/remote-vue"
+  - "apps/remote-angular"
   - "apps/pwa-paciente"
   - "packages/*"
   - "scripts"

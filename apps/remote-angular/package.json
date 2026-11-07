@@ -6,7 +6,10 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "prebuild": "pnpm --filter @sigec/api-client build && pnpm install --offline --silent",
+    "prestart": "pnpm --filter @sigec/api-client build && pnpm install --offline --silent",
+    "pretest": "pnpm --filter @sigec/api-client build && pnpm install --offline --silent"
   },
   "private": true,
   "packageManager": "pnpm@12.16.1",
@@ -20,6 +23,7 @@
     "@angular/material": "^22.2.5",
     "@angular/platform-browser": "^22.2.0",
     "@angular/router": "^22.2.0",
+    "@sigec/api-client": "workspace:*",
     "es-module-shims": "^2.8.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"

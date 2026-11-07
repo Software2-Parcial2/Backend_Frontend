@@ -1,38 +1,67 @@
 import { Component, signal } from '@angular/core';
+import { Cargando, ErrorApi } from '../api/estado';
+import { FORMATOS } from '../api/formato';
+import { accion, lista } from '../api/recurso';
+import type { Solicitud } from '../api/tipos';
 
-interface Sol { paciente: string; dato: string; actual: string; propuesto: string; cuando: string; mono: boolean; estado?: 'aprobada' | 'rechazada' }
+const CAMPO = { TELEFONO: 'Teléfono', EMAIL: 'Correo', DIRECCION: 'Dirección' } as const;
 
 @Component({
   selector: 'app-solicitudes',
+  imports: [Cargando, ErrorApi, ...FORMATOS],
   template: `
 <div class="page">
   <div class="ph"><div><h1 class="h1">Solicitudes de actualización</h1><p class="sub">Cambios de contacto pedidos por pacientes desde su portal</p></div></div>
+  @if (solicitudes.error(); as e) { <sigec-error [error]="e" (reintentar)="solicitudes.recargar()" /> }
+  @else if (solicitudes.cargando()) { <sigec-cargando [filas]="3" etiqueta="Cargando solicitudes…" /> }
+  @else {
   <div class="card flush"><div class="scroll"><table class="tbl">
     <thead><tr><th>Paciente</th><th>Dato</th><th>Actual</th><th>Propuesto</th><th>Solicitado</th><th></th></tr></thead>
     <tbody>
-      @for (s of filas(); track s.paciente; let i = $index) {
-        <tr>
-          <td class="b">{{ s.paciente }}</td><td>{{ s.dato }}</td>
-          <td [class.mono]="s.mono">{{ s.actual }}</td><td [class.mono]="s.mono">{{ s.propuesto }}</td><td>{{ s.cuando }}</td>
+      @for (s of solicitudes.items(); track s.id) {
+        <tr data-testid="fila-solicitud">
+          <td class="b">{{ s.pacienteNombre || 'Paciente' }}</td><td>{{ campo(s.campo) }}</td>
+          <td [class.mono]="s.campo === 'TELEFONO'">{{ s.valorActual || '—' }}</td><td [class.mono]="s.campo === 'TELEFONO'">{{ s.valorPropuesto }}</td><td>{{ s.solicitadaEn | hace }}</td>
           <td class="tr">
-            @if (s.estado === 'aprobada') {<span class="chip ok">Aprobada</span>}
-            @else if (s.estado === 'rechazada') {<span class="chip err">Rechazada</span>}
-            @else {<button type="button" class="btn s" (click)="resolver(i, 'rechazada')">Rechazar</button> <button type="button" class="btn s pri" (click)="resolver(i, 'aprobada')">Aprobar</button>}
+            @if (resueltas()[s.id] === 'APROBADA') {<span class="chip ok">Aprobada</span>}
+            @else if (resueltas()[s.id] === 'RECHAZADA') {<span class="chip err">Rechazada</span>}
+            @else if (rechazando() === s.id) {<span class="fx"><input class="in" aria-label="Motivo del rechazo" placeholder="Motivo (opcional)" [value]="motivo()" (input)="motivo.set($any($event.target).value)" style="width:200px"><button type="button" class="btn s" (click)="rechazando.set(null)">Volver</button><button type="button" class="btn s dng" [disabled]="resolver.enCurso()" (click)="rechazar(s)">Confirmar rechazo</button></span>}
+            @else {<button type="button" class="btn s" [disabled]="resolver.enCurso()" (click)="rechazando.set(s.id)">Rechazar</button> <button type="button" class="btn s pri" [disabled]="resolver.enCurso()" (click)="aprobar(s)">Aprobar</button>}
           </td>
         </tr>
+      } @empty {
+        <tr><td colspan="6" class="muted" style="text-align:center;padding:28px" data-testid="vacio">No hay solicitudes pendientes.</td></tr>
       }
     </tbody>
-  </table></div></div>
+  </table></div>
+  @if (solicitudes.hayMas()) { <div class="ch" style="justify-content:center"><button type="button" class="btn s" (click)="solicitudes.cargarMas()">Cargar más</button></div> }
+  </div>
+  }
+  @if (resolver.error(); as e) { <sigec-error [error]="e" [reintentable]="false" /> }
   <div class="banner"><div><b>Datos protegidos</b><span>Nombre y documento de identidad no se cambian desde el portal; se corrigen en ventanilla.</span></div></div>
 </div>`,
 })
 export class Solicitudes {
-  readonly filas = signal<Sol[]>([
-    { paciente: 'Carla Rojas Vaca', dato: 'Teléfono', actual: '7 1234567', propuesto: '7 7654321', cuando: 'Hoy 09:12', mono: true },
-    { paciente: 'Ernesto Parada', dato: 'Correo', actual: 'e.parada&#64;mail.example'.replace('&#64;', '@'), propuesto: 'eparada@correo.example', cuando: 'Ayer 17:40', mono: false },
-    { paciente: 'Lucía Vargas', dato: 'Dirección', actual: 'Av. Banzer 3er anillo', propuesto: 'Calle Los Pinos 120', cuando: 'Ayer 11:05', mono: false },
-  ]);
-  resolver(i: number, estado: 'aprobada' | 'rechazada') {
-    this.filas.update((l) => l.map((s, n) => (n === i ? { ...s, estado } : s)));
+  readonly solicitudes = lista<Solicitud>(() => ({ ruta: '/api/pacientes/solicitudes', query: { estado: 'PENDIENTE' } }));
+  readonly resueltas = signal<Record<string, 'APROBADA' | 'RECHAZADA'>>({});
+  campo = (c: Solicitud['campo']) => CAMPO[c];
+
+  readonly resolver = accion((api, id: string, que: 'aprobar' | 'rechazar', motivo?: string) =>
+    api.post(`/api/pacientes/solicitudes/${id}/${que}`, que === 'rechazar' ? { motivo } : undefined));
+
+  readonly rechazando = signal<string | null>(null);
+  readonly motivo = signal('');
+
+  async aprobar(s: Solicitud) {
+    await this.resolver.ejecutar(s.id, 'aprobar');
+    if (!this.resolver.error()) this.resueltas.update((r) => ({ ...r, [s.id]: 'APROBADA' }));
+  }
+  async rechazar(s: Solicitud) {
+    await this.resolver.ejecutar(s.id, 'rechazar', this.motivo().trim() || undefined);
+    if (!this.resolver.error()) {
+      this.resueltas.update((r) => ({ ...r, [s.id]: 'RECHAZADA' }));
+      this.rechazando.set(null);
+      this.motivo.set('');
+    }
   }
 }
