@@ -1,0 +1,7 @@
+@import '@sigec/design-tokens/sigec.css';
+
+body { margin: 0; background: var(--bg); }
+.center { min-height: 100vh; display: grid; place-items: center; padding: 24px; }
+.sigec .day { flex: 1; min-width: 84px; padding: 10px; border: 1px solid var(--bd); border-radius: 8px; background: #fff; text-align: center; font-weight: 600; cursor: pointer; color: var(--ink); min-height: 44px; }
+.sigec .day.on { background: var(--pri); border-color: var(--pri); color: #fff; }
+.sigec .day small { display: block; font-weight: 400; font-size: 12px; }
