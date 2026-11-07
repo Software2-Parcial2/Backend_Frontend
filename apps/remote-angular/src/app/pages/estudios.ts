@@ -4,7 +4,7 @@ import { Component } from '@angular/core';
   selector: 'app-estudios',
   template: `
 <div class="page">
-  <div class="ph"><div><h1 class="h1">Estudios radiológicos</h1><p class="sub">Radiografías de tórax cargadas, con el análisis de apoyo de IA</p></div><span class="sp"></span><button type="button" class="btn pri">Cargar radiografía</button></div>
+  <div class="ph"><div><h1 class="h1">Estudios radiológicos</h1><p class="sub">Radiografías de tórax cargadas, con el análisis de apoyo de IA</p></div><span class="sp"></span><a class="btn pri" href="#/estudios/cargar">Cargar radiografía</a></div>
   <div class="fx wrap">
     <label class="search"><span class="muted">Buscar</span><input type="text" placeholder="Paciente o N.° de historia" aria-label="Buscar estudio"></label>
     <div class="seg"><button type="button" class="on">Todos</button><button type="button">Por validar</button><button type="button">Validados</button></div>
@@ -18,7 +18,7 @@ import { Component } from '@angular/core';
             <tr [class.sel]="e.sel">
               <td class="mono">{{ e.fecha }}</td><td class="b">{{ e.paciente }}</td><td>{{ e.estudio }}</td><td>{{ e.por }}</td>
               <td><span [class]="'chip ' + e.tono">{{ e.estado }}</span></td>
-              <td class="tr">@if (e.accion) {<a [class]="e.pri ? 'btn s pri' : 'btn s'" href="#/resultado">{{ e.accion }}</a>} @else {<span class="muted">—</span>}</td>
+              <td class="tr">@if (e.accion) {<a [class]="e.pri ? 'btn s pri' : 'btn s'" [attr.href]="e.accion === 'Volver a cargar' ? '#/estudios/cargar' : '#/resultado'">{{ e.accion }}</a>} @else {<span class="muted">—</span>}</td>
             </tr>
           }
         </tbody>

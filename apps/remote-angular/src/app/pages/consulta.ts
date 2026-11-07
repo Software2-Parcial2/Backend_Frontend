@@ -32,7 +32,7 @@ import { Component } from '@angular/core';
         <div class="scroll"><table class="tbl" style="min-width:520px"><thead><tr><th>Indicación</th><th>Dosis</th><th>Frecuencia</th><th>Duración</th></tr></thead>
           <tbody><tr><td class="b">Reposo relativo y evitar esfuerzos intensos</td><td class="muted">—</td><td class="muted">—</td><td>7 días</td></tr></tbody></table></div>
         <hr class="hr" style="margin:12px 0">
-        <div class="fx wrap"><span class="b">Estudios asociados</span><span class="tag">Electrocardiograma</span><a class="btn s" href="#/estudios">Asociar radiografía</a></div>
+        <div class="fx wrap"><span class="b">Estudios asociados</span><span class="tag">Electrocardiograma</span><a class="btn s" href="#/estudios/cargar">Asociar radiografía</a></div>
       </div>
     </div>
     <div class="col" style="flex:1 1 280px;max-width:340px;gap:16px">
@@ -43,7 +43,7 @@ import { Component } from '@angular/core';
         <button type="button" class="btn">Guardar borrador</button>
         <a class="btn pri" href="#/historia" style="height:46px">Firmar y cerrar consulta</a>
       </div>
-      <div class="banner"><div><b>Edición protegida</b><span>Requiere conexión. Si otro profesional modifica el registro, se le avisará en lugar de sobrescribir.</span></div></div>
+      <div class="banner"><div><b>Edición protegida</b><span>Requiere conexión. Si otro profesional modifica el registro, se le avisará en lugar de sobrescribir. <a href="#/consulta/conflicto">Ver ejemplo</a></span></div></div>
     </div>
   </div>
 </div>`,

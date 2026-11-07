@@ -11,7 +11,7 @@ import { Component } from '@angular/core';
     <span class="chip warn">Alergia: penicilina</span>
     <a class="btn pri" href="#/consulta">Nueva consulta</a>
   </div>
-  <div class="tabs"><span class="tab on">Consultas</span><span class="tab">Antecedentes</span><span class="tab">Estudios</span><span class="tab">Indicaciones</span><span class="tab">Auditoría</span></div>
+  <div class="tabs"><span class="tab on">Consultas</span><a class="tab" href="#/historia/detalle">Antecedentes</a><a class="tab" href="#/historia/detalle">Estudios</a><a class="tab" href="#/historia/detalle">Indicaciones</a><a class="tab" href="#/historia/auditoria">Auditoría</a></div>
   <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start">
     <div class="card" style="flex:999 1 560px;min-width:0">
       <div class="ch"><div class="ct">Historial de atención</div><span class="sp"></span><span class="sm muted">Más reciente primero</span></div>
