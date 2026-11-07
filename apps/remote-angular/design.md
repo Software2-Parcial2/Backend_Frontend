@@ -14,22 +14,26 @@ Cubre MS2 pacientes, MS3 agenda/citas, MS4 historias, MS5 estudios, MS6 caja y M
   el shell reenvia `hashchange` cuando su menu cambia el fragmento (`RemoteContainer.tsx`). Entrada por rol: `app.routes.ts` (`entradaPorRol`).
 - El contexto (`token`, roles) llega por `mount()` y se guarda en `ContextStore`.
 
-## Pantallas
-| Diseno | Ruta | Componente | Estado |
-|---|---|---|---|
-| ms2-pacientes | `#/pacientes` | `pages/pacientes.ts` | hecho (datos de ejemplo) |
-| ms2-nuevo / ms2-guardado | `#/pacientes/nuevo` | `paciente-nuevo.ts` | hecho / guardado: fase 2 |
-| ms2-ficha | `#/pacientes/ficha` | `paciente-ficha.ts` | hecho |
-| ms3-agenda | `#/agenda` | `agenda.ts` | hecho |
-| ms3-reservar | `#/reservar` | `reservar.ts` | hecho (dia y hora seleccionables) |
-| ms3-detalle | `#/cita` | `cita-detalle.ts` (SAGA con `.tl`) | hecho |
-| ms4-historia / ms4-consulta | `#/historia`, `#/consulta` | `historia.ts`, `consulta.ts` | hecho |
-| ms5-estudios / ms5-resultado | `#/estudios`, `#/resultado` | `estudios.ts`, `resultado.ts` (Grad-CAM) | hecho |
-| ms6-caja / ms6-cobro | `#/caja`, `#/cobro` | `caja.ts`, `cobro.ts` | hecho |
-| ms8-historial | `#/historial` | `historial.ts` | hecho |
-| Fase 2 | — | ms2-solicitudes, ms3-horarios/medico/compensacion/reprogramar/cancelar, ms4-auditoria/conflicto/pestanas/receta, ms5-cargar/rechazada, ms6-tarifario/movimientos/tarifa-form/anular, ms8-plantillas/preferencias | pendiente |
+## Pantallas (todas las del diseno para este remoto)
+| Diseno | Ruta | Componente (`src/app/pages/`) |
+|---|---|---|
+| ms2-pacientes (+ estado vacio) | `#/pacientes` | `pacientes.ts` (busqueda funcional, tolera h/j y tildes) |
+| ms2-nuevo / ms2-guardado | `#/pacientes/nuevo`, `#/pacientes/guardado` | `paciente-nuevo.ts`, `paciente-guardado.ts` |
+| ms2-ficha / ms2-solicitudes | `#/pacientes/ficha`, `#/pacientes/solicitudes` | `paciente-ficha.ts`, `solicitudes.ts` |
+| ms3-agenda / ms3-reservar | `#/agenda`, `#/reservar` | `agenda.ts`, `reservar.ts` |
+| ms3-detalle / compensacion / reprogramar / cancelar | `#/cita`, `#/cita/compensacion`, `#/cita/reprogramar`, `#/cita/cancelar` | `cita-detalle.ts`, `cita-compensacion.ts`, `cita-reprogramar.ts`, `cita-cancelar.ts` (los dos ultimos son dialogos `.modal`) |
+| ms3-horarios / ms3-medico | `#/horarios`, `#/agenda-medico` | `horarios.ts`, `agenda-medico.ts` |
+| ms4-historia / consulta / conflicto | `#/historia`, `#/consulta`, `#/consulta/conflicto` | `historia.ts`, `consulta.ts`, `consulta-conflicto.ts` |
+| ms4-pestanas / auditoria / receta | `#/historia/detalle`, `#/historia/auditoria`, `#/historia/receta` | `historia-detalle.ts`, `auditoria.ts`, `receta.ts` |
+| ms5-estudios / resultado | `#/estudios`, `#/resultado` | `estudios.ts`, `resultado.ts` |
+| ms5-cargar / rechazada | `#/estudios/cargar`, `#/estudios/rechazada` | `estudio-cargar.ts`, `estudio-rechazada.ts` |
+| ms6-caja / cobro / movimientos / anular | `#/caja`, `#/cobro`, `#/movimientos`, `#/caja/anular` | `caja.ts`, `cobro.ts`, `movimientos.ts`, `caja-anular.ts` |
+| ms6-tarifario / tarifa-form | `#/tarifario`, `#/tarifario/nueva` | `tarifario.ts`, `tarifa-nueva.ts` |
+| ms8-historial / plantillas / preferencias-personal | `#/historial`, `#/historial/plantillas`, `#/historial/preferencias` | `historial.ts`, `plantillas.ts`, `preferencias-personal.ts` |
 
 ## Reglas
+- Montaje: `mount.ts` llama a `Router.initialNavigation()` a mano (con `createApplication` + `createComponent` no hay bootstrap y el router no navegaba). El router de Angular solo reacciona a `popstate`: el shell emite `popstate` y `hashchange` al cambiar el fragmento.
+- El build de produccion no incrusta fuentes de Google (`optimization.fonts.inline=false`): fallaba sin red.
 - Datos de ejemplo del diseno; conectar a MS2/MS3/... despues (el token esta en `ContextStore`).
 - Componentes standalone con plantilla en linea; `@` en plantillas se escribe `&#64;`; los `{`/`}` literales se evitan.
 - Acciones = `button`/`a` reales; tablas dentro de `.scroll`; ningun estado depende solo del color.

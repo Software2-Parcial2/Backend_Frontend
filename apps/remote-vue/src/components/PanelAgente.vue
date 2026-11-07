@@ -7,6 +7,7 @@ import {
 import { formatearCelda, opcionGrafico } from '../lib/graficos'
 import { detectarEntorno, elegirEstrategia, ERRORES_WEB_SPEECH_RECUPERABLES, tipoGrabacion } from '../lib/voz'
 import Grafico from './Grafico.vue'
+import VistaVoz from './VistaVoz.vue'
 
 const props = defineProps<{ token: () => string }>()
 
@@ -116,6 +117,13 @@ async function iniciarGrabacion() {
   temporizador = setTimeout(detener, 30_000) // el servidor rechaza audios de mas de 60 s
 }
 
+function terminar() {
+  const hablado = estrategia.value === 'web-speech'
+  detener()
+  // Con Web Speech el texto final llega en onend; con grabadora, onstop ya consulta al servidor.
+  if (hablado) setTimeout(() => { if (texto.value.trim().length >= 3) void enviarTexto() }, 700)
+}
+
 // --- Exportacion -----------------------------------------------------------------------------
 async function exportar(formato: FormatoExportacion) {
   if (!respuesta.value?.reporte) return
@@ -133,7 +141,8 @@ async function exportar(formato: FormatoExportacion) {
 </script>
 
 <template>
-  <section aria-labelledby="t-asistente" class="col" style="gap: 20px">
+  <VistaVoz v-if="escuchando" :texto="texto" @cancelar="detener" @terminar="terminar" />
+  <section v-else aria-labelledby="t-asistente" class="col" style="gap: 20px">
     <div class="ph">
       <div><h1 id="t-asistente" class="h1">Asistente de reportes</h1><p class="sub">Pida un reporte escribiendo o hablando. Consulta datos agregados de citas, ingresos, demanda y políticas; no accede a información clínica.</p></div>
       <span class="sp"></span>
@@ -157,7 +166,7 @@ async function exportar(formato: FormatoExportacion) {
           <span class="sm muted" v-else-if="estrategia === 'whisper'">Voz: se grabará el audio y se transcribirá en el servidor{{ enLinea ? '' : ' (sin conexión a internet)' }}</span>
           <span class="sm muted" v-else>Voz no disponible en este navegador</span>
         </div>
-        <div class="sm muted">El agente solo recibe cifras agregadas, nunca nombres ni identificadores de pacientes.</div>
+        <div class="sm muted">El agente solo recibe cifras agregadas, nunca nombres ni identificadores de pacientes. <a href="#/asistente/voz">Ver pantalla de dictado de ejemplo</a></div>
       </form>
     </div>
 
@@ -181,7 +190,7 @@ async function exportar(formato: FormatoExportacion) {
 
       <div v-if="respuesta.reporte" class="card col" style="gap: 14px">
         <div class="fx wrap">
-          <div><div class="ct">{{ respuesta.reporte.titulo }}</div><div v-if="respuesta.reporte.nota" class="sm muted">{{ respuesta.reporte.nota }}</div></div>
+          <div><div class="ct">{{ respuesta.reporte.titulo }}</div><a class="sm" href="#/asistente/pdf">Ver ejemplo de PDF exportado</a><div v-if="respuesta.reporte.nota" class="sm muted">{{ respuesta.reporte.nota }}</div></div>
           <span class="sp"></span>
           <button v-for="f in (['xlsx', 'csv', 'pdf'] as const)" :key="f" type="button" class="btn s" :class="{ pri: f === 'pdf' }" :disabled="exportando !== null" @click="exportar(f)">
             {{ exportando === f ? 'Generando…' : f === 'xlsx' ? 'Excel' : f.toUpperCase() }}

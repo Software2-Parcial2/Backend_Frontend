@@ -11,15 +11,16 @@ Dashboard de MS7 bajo `/gestion` del shell.
   cuando su menu cambia el fragmento. Las pestanas internas son `<a href="#/...">`.
 - ECharts no lee variables CSS: `PALETA` y `TEXTO` en `src/lib/graficos.ts` replican los tokens (`--pri`, etc.).
 
-## Pantallas
-| Diseno | Vista | Componente | Estado |
-|---|---|---|---|
-| ms7-dashboard | `#/` | `ResumenGestion.vue` (datos reales via GraphQL de MS7) | hecho |
-| ms7-asistente, ms7-voz | `#/asistente` | `PanelAgente.vue` (texto, voz, exportar xlsx/csv/pdf) | hecho |
-| ms7-ml | `#/ml` | `VistaMl.vue` | hecho (datos de ejemplo) |
-| ms7-alertas | `#/alertas` | `VistaAlertas.vue` | hecho (datos de ejemplo) |
-| ms7-politicas | `#/politicas` | `VistaPoliticas.vue` | hecho (texto de ejemplo con marcadores `[...]`) |
-| ms7-alerta-detalle, ms7-reporte-pdf | — | — | fase 2 |
+## Pantallas (todas las del diseno para este remoto)
+| Diseno | Vista | Componente |
+|---|---|---|
+| ms7-dashboard | `#/` | `ResumenGestion.vue` (datos reales via GraphQL de MS7) |
+| ms7-asistente | `#/asistente` | `PanelAgente.vue` (texto, voz, exportar xlsx/csv/pdf) |
+| ms7-voz | `#/asistente/voz` y, en vivo, mientras el asistente escucha | `VistaVoz.vue` (la usa `PanelAgente` al dictar; la ruta es la version de ejemplo) |
+| ms7-reporte-pdf | `#/asistente/pdf` | `VistaReportePdf.vue` (vista previa de ejemplo) |
+| ms7-ml | `#/ml` | `VistaMl.vue` (ejemplo) |
+| ms7-alertas / alerta-detalle | `#/alertas`, `#/alertas/detalle` | `VistaAlertas.vue`, `VistaAlertaDetalle.vue` (ejemplo) |
+| ms7-politicas | `#/politicas` | `VistaPoliticas.vue` (texto de ejemplo con marcadores `[...]`) |
 
 ## Reglas
 - La logica (`lib/api.ts`, `consultas.ts`, `voz.ts`) no cambia; solo la capa visual.

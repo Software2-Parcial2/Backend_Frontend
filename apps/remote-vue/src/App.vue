@@ -3,9 +3,12 @@ import type { MfeContext } from '@sigec/mfe-contract'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import PanelAgente from './components/PanelAgente.vue'
 import ResumenGestion from './components/ResumenGestion.vue'
+import VistaAlertaDetalle from './components/VistaAlertaDetalle.vue'
 import VistaAlertas from './components/VistaAlertas.vue'
 import VistaMl from './components/VistaMl.vue'
 import VistaPoliticas from './components/VistaPoliticas.vue'
+import VistaReportePdf from './components/VistaReportePdf.vue'
+import VistaVoz from './components/VistaVoz.vue'
 import { crearCliente } from './lib/api'
 
 // `state.ctx` lo entrega el shell; en modo standalone (puerto 5175) no hay contexto ni token.
@@ -20,12 +23,15 @@ const autorizado = computed(() => !!ctx.value && ctx.value.roles.some((r) => rol
 const VISTAS = ['dashboard', 'ml', 'asistente', 'alertas', 'politicas'] as const
 type Vista = (typeof VISTAS)[number]
 const TITULOS: Record<Vista, string> = { dashboard: 'Dashboard', ml: 'Machine Learning', asistente: 'Asistente de reportes', alertas: 'Alertas', politicas: 'Políticas' }
-const leer = (): Vista => {
-  const v = window.location.hash.replace(/^#\/?/, '').split('/')[0] as Vista
-  return VISTAS.includes(v) ? v : 'dashboard'
+const leer = (): { vista: Vista; sub: string } => {
+  const [v, sub = ''] = window.location.hash.replace(/^#\/?/, '').split('/')
+  return { vista: VISTAS.includes(v as Vista) ? (v as Vista) : 'dashboard', sub }
 }
-const vista = ref<Vista>(leer())
-const alCambiar = () => { vista.value = leer() }
+const actual = ref(leer())
+const vista = computed(() => actual.value.vista)
+const sub = computed(() => actual.value.sub)
+const volverAsistente = () => { window.location.hash = '#/asistente' }
+const alCambiar = () => { actual.value = leer() }
 onMounted(() => { window.addEventListener('hashchange', alCambiar); window.addEventListener('popstate', alCambiar) })
 onBeforeUnmount(() => { window.removeEventListener('hashchange', alCambiar); window.removeEventListener('popstate', alCambiar) })
 </script>
@@ -46,7 +52,10 @@ onBeforeUnmount(() => { window.removeEventListener('hashchange', alCambiar); win
         </nav>
         <ResumenGestion v-if="vista === 'dashboard'" :cliente="cliente" :roles="ctx!.roles" />
         <VistaMl v-else-if="vista === 'ml'" />
+        <VistaVoz v-else-if="vista === 'asistente' && sub === 'voz'" demo @cancelar="volverAsistente" @terminar="volverAsistente" />
+        <VistaReportePdf v-else-if="vista === 'asistente' && sub === 'pdf'" />
         <PanelAgente v-else-if="vista === 'asistente'" :token="token" />
+        <VistaAlertaDetalle v-else-if="vista === 'alertas' && sub === 'detalle'" />
         <VistaAlertas v-else-if="vista === 'alertas'" />
         <VistaPoliticas v-else />
       </template>

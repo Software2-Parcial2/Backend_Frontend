@@ -8,15 +8,19 @@ Actor: personal de la clinica (recepcion, medico, caja, direccion). Sistema visu
 - Navegacion a los remotos con **hash**: `/clinica#/pacientes`, `/gestion#/ml`. El remoto lee `location.hash`; el shell no cambia el contrato `mount/unmount`.
 - Menu por rol en `src/layout/menu.ts` (claim `realm_access.roles`). Un usuario con varios roles ve la union de sus grupos.
 
-## Pantallas
-| Diseno | Ruta / componente | Estado |
+## Pantallas (todas las del diseno para el shell)
+| Diseno | Ruta / componente | Nota |
 |---|---|---|
-| m1-login, estado-sesion | `pages/Login.tsx` (sesion expirada con `expirada`) | hecho |
-| shell-recepcion / medico / caja / direccion | `pages/Home.tsx` (datos de ejemplo por rol) | hecho |
-| estado-403, estado-vacio, pagina 404 | `pages/Estados.tsx` (`SinPermiso`, `NoEncontrada`) | hecho |
-| estado-error-red (503) | `RemoteContainer.tsx` (banner de error + Reintentar) | hecho |
-| m1-usuarios, m1-seguridad, m1-perfil, m1-usuario-nuevo, m1-recuperar | — | fase 2 |
-| sys-servicios, web-sin-conexion | — | fase 2 |
+| m1-login, estado-sesion | `pages/Login.tsx` (`expirada`) | con enlace a recuperar contrasena |
+| m1-recuperar | `/recuperar` · `pages/Recuperar.tsx` | publica (sin sidebar); el envio real lo haria Keycloak |
+| shell-recepcion / medico / caja / direccion | `/` · `pages/Home.tsx` | datos de ejemplo por rol |
+| m1-usuarios / m1-usuario-nuevo | `/admin/usuarios`, `/admin/usuarios/nuevo` · `pages/admin/` | solo rol `administrador`; datos de ejemplo |
+| m1-seguridad | `/admin/seguridad` · `pages/admin/Seguridad.tsx` | revocar sesiones y filtrar eventos (en memoria) |
+| sys-servicios | `/admin/servicios` · `pages/admin/Servicios.tsx` | datos de ejemplo |
+| m1-perfil | `/perfil` · `pages/Perfil.tsx` | usuario/rol/correo reales del token; la contrasena se cambia en Keycloak |
+| estado-403, estado-error-red (503), 404 | `pages/Estados.tsx` | 503 se muestra cuando falla la carga de un remoto |
+| web-sin-conexion | aviso global en `App.tsx` (`useOnline`) | banner cuando el navegador queda sin red |
+| estado-vacio | en el remoto Angular (`pacientes.ts`) | |
 
 ## Reglas
 - Estilos del shell: `src/App.css` (solo `body` y utilidades de pantalla completa); lo demas viene de `@sigec/design-tokens/sigec.css`.

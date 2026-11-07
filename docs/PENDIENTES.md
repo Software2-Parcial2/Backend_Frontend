@@ -190,21 +190,21 @@ valores extremos (> Q3 + 3*IQR) se excluyen del ajuste y se informan en `atipico
 
 ## Diseno visual en los frontends (`design.md` por app)
 
-Origen: diseno "Mapa de pantallas SIGEC" (Claude Design, ~90 artboards). Tokens y estilos en `packages/design-tokens`; cada app tiene su `design.md`.
+Origen: diseno "Mapa de pantallas SIGEC" (Claude Design, ~90 artboards). Tokens y estilos en `packages/design-tokens`; cada app tiene su `design.md` con el mapa artboard -> ruta.
 
-- **Hecho:** shell (sidebar por rol, inicio por rol, login SSO, 403/404/503), Angular clinica (13 pantallas), Vue gestion (dashboard, asistente, ML, alertas, politicas),
-  PWA (9 pantallas + acceso) y movil (9 pantallas). Datos de ejemplo del diseno; no hay conexion a APIs nuevas.
-- **Sin verificar en navegador:** solo se comprobaron `build`, `tsc`/`vue-tsc` y las pruebas unitarias existentes. Falta abrir el shell con Keycloak y comprobar visualmente:
-  que el CSS de cada remoto se inyecta al montarlo (Vue: chunk CSS de Module Federation; Angular: estilos en el JS del componente), que el menu del shell cambia de
-  pantalla dentro del remoto (el shell reenvia `hashchange`, `RemoteContainer.tsx`) y el aspecto frente al diseno.
-- **Fase 2 (artboards sin trasladar):** shell (usuarios y roles, seguridad, perfil, estado de servicios, web sin conexion); Angular (ms2-guardado/solicitudes, ms3-horarios/medico/
-  compensacion/reprogramar/cancelar, ms4-auditoria/conflicto/pestanas/receta, ms5-cargar/rechazada, ms6-tarifario/movimientos/tarifa-form/anular, ms8-plantillas/preferencias);
-  Vue (ms7-alerta-detalle, ms7-reporte-pdf).
+- **Hecho:** todas las pantallas del diseno estan trasladadas: shell (acceso, recuperar, inicio por rol, administracion, perfil, estados), Angular clinica (36 rutas), Vue gestion (8 vistas), PWA (9 + acceso) y movil (9). Datos de ejemplo del diseno; no hay conexion a APIs nuevas.
+- **Verificado en Chromium (headless, Keycloak real, builds de produccion servidos con `rsbuild preview` / `vite preview` / servidor estatico):** login de recepcion, medico, caja y administrador; carga de ambos remotos dentro del shell con sus estilos;
+  navegacion del menu dentro de un mismo remoto; cambio de remoto (desmontaje limpio); 403 para un rol sin permiso; recuperar contrasena sin sesion; estado vacio de pacientes; sin errores en consola.
+  Esa verificacion encontro y corrigio dos fallos reales: el router de Angular no navegaba al montarse (falta `initialNavigation`) y el menu del shell no cambiaba de pantalla dentro de un remoto (`popstate`/`hashchange`).
+- **Sin verificar:** PWA y app movil en navegador/dispositivo (solo `build` y `tsc`); microfono real y descarga de archivos del asistente; Firefox/Safari; teclado y lector de pantalla; el dashboard Vue con el backend levantado (en la prueba el gateway no estaba, asi que mostro el aviso de error);
+  el aviso "sin conexion" del shell (la logica es `navigator.onLine`, no se simulo).
 - **Fuentes:** Public Sans e IBM Plex Mono se cargan de Google Fonts (dependencia externa; sin conexion cae a `system-ui`, incluso en la PWA). Alternativa: `@fontsource` en el paquete de tokens.
 - **Tokens duplicados a mano:** `packages/design-tokens/{sigec.css,tokens.js}` y `apps/mobile/src/theme.ts` (movil usa npm). Un cambio de color toca los tres.
-- **Angular:** se retiro el tema global de Material (pisaba `html`/`body` del shell); Material sigue instalado sin uso. Presupuesto `anyComponentStyle` subido a 16/24 kB.
-- **Rutas por hash** (`/clinica#/...`, `/gestion#/...`) en lugar de rutas de ruta: el shell sigue siendo dueno de la URL y el contrato `mount/unmount` no cambia.
+- **Angular:** se retiro el tema global de Material (pisaba `html`/`body` del shell); Material sigue instalado sin uso. Presupuesto `anyComponentStyle` 16/24 kB; build sin inlining de fuentes (no depende de la red).
+- **Rutas por hash** (`/clinica#/...`, `/gestion#/...`): el shell sigue siendo dueno de la URL y el contrato `mount/unmount` no cambia.
+- **Menu duplicado en Vue:** el remoto Vue conserva sus pestanas internas (sirven en modo independiente) ademas del menu del shell.
 - **Movil:** login es una maqueta (no llama a Keycloak); navegacion por pila propia sin React Navigation; iconos de la barra son glifos de texto.
+- **Todo con datos de ejemplo:** las pantallas no llaman a las APIs de MS2/MS3/MS4/MS5/MS6/MS8 (salvo el dashboard y el asistente de MS7 que ya las usaban). Conectarlas es el siguiente paso.
 
 ## Datos (auditoria y modelo de datos, `docs/datos/`)
 
