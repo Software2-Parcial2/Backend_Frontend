@@ -1,5 +1,6 @@
 import { ApplicationRef, ComponentRef, createComponent } from '@angular/core';
 import { createApplication } from '@angular/platform-browser';
+import { Router } from '@angular/router';
 import { App, MfeContext } from './app/app';
 import { appConfig } from './app/app.config';
 
@@ -25,6 +26,8 @@ export async function mount(el: HTMLElement, ctx: MfeContext): Promise<void> {
   componentRef = createComponent(App, { environmentInjector: appRef.injector, hostElement: target });
   componentRef.setInput('ctx', ctx);
   appRef.attachView(componentRef.hostView);
+  // Con createApplication + createComponent no hay bootstrap: la navegacion inicial (y la escucha de hashchange) se lanza a mano.
+  await appRef.injector.get(Router).initialNavigation();
   el.addEventListener('sigec:token-refreshed', onTokenRefreshed);
 }
 

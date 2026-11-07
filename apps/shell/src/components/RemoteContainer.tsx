@@ -78,11 +78,15 @@ export function RemoteContainer({ remote, title }: Props) {
     };
   }, [remote, attempt, navigate]);
 
-  // El menu del shell navega con history.pushState (Link), que no dispara 'hashchange'. Los remotos enrutan por
+  // El menu del shell navega con history.pushState (Link), que no dispara 'hashchange' ni 'popstate'. Los remotos enrutan por
   // hash (/clinica#/agenda), asi que se les avisa del cambio para que lean location.hash.
   const firstHash = useRef(hash);
   useEffect(() => {
-    if (hash !== firstHash.current) window.dispatchEvent(new HashChangeEvent('hashchange'));
+    if (hash !== firstHash.current) {
+      // Angular enruta con 'popstate'; Vue y otros leen 'hashchange'. Se emiten ambos.
+      window.dispatchEvent(new PopStateEvent('popstate', { state: window.history.state }));
+      window.dispatchEvent(new HashChangeEvent('hashchange'));
+    }
     firstHash.current = hash;
   }, [hash]);
 
