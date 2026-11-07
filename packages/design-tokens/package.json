@@ -1,0 +1,13 @@
+{
+  "name": "@sigec/design-tokens",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Tokens y estilos compartidos del diseno SIGEC (CSS custom properties + componentes bajo .sigec)",
+  "type": "module",
+  "types": "tokens.d.ts",
+  "exports": {
+    ".": { "types": "./tokens.d.ts", "default": "./tokens.js" },
+    "./sigec.css": "./sigec.css"
+  },
+  "files": ["sigec.css", "tokens.js", "tokens.d.ts"]
+}
