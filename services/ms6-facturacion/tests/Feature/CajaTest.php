@@ -193,6 +193,8 @@ describe('listado con filtros', function () {
         pagar($c, ['metodo' => 'EFECTIVO', 'recibido' => 180]);
         $ids = fn ($qs) => collect(test()->getJson("/api/facturacion/facturas?$qs", authHeaders())->assertOk()->json('items'))->pluck('id')->all();
         expect($ids('porCobrar=1'))->toEqualCanonicalizing([$a, $b])
+            ->and($ids('porCobrar=true'))->toEqualCanonicalizing([$a, $b])
+            ->and($ids('porCobrar=false'))->toEqualCanonicalizing([$a, $b, $c])
             ->and($ids('estado=PAGADA'))->toBe([$c])
             ->and($ids('estado=PROVISIONAL,CONFIRMADA'))->toEqualCanonicalizing([$a, $b])
             ->and($ids('q=wilma'))->toBe([$a])

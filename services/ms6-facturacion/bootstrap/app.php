@@ -13,6 +13,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // CORS solo en el gateway: si MS6 tambien lo anade, el navegador recibe dos Access-Control-Allow-Origin y rechaza la respuesta.
+        $middleware->remove(\Illuminate\Http\Middleware\HandleCors::class);
         $middleware->api(prepend: [\App\Http\Middleware\Correlation::class]);
         $middleware->alias([
             'keycloak.jwt' => \App\Http\Middleware\VerifyKeycloakJwt::class,

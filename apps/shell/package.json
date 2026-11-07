@@ -8,7 +8,8 @@
     "dev": "rsbuild",
     "preview": "rsbuild preview",
     "predev": "pnpm --filter @sigec/api-client build && pnpm install --offline --silent",
-    "prebuild": "pnpm --filter @sigec/api-client build && pnpm install --offline --silent"
+    "prebuild": "pnpm --filter @sigec/api-client build && pnpm install --offline --silent",
+    "test": "vitest run"
   },
   "dependencies": {
     "@module-federation/enhanced": "^2.9.2",
@@ -28,9 +29,13 @@
     "@module-federation/rsbuild-plugin": "^2.9.2",
     "@rsbuild/core": "^2.3.0",
     "@rsbuild/plugin-react": "^2.1.1",
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/react": "^16.3.3",
     "@types/node": "^24.19.2",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
-    "typescript": "^7.0.2"
+    "happy-dom": "^21.0.4",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.12"
   }
 }

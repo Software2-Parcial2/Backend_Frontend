@@ -1,6 +1,7 @@
 import { AuthProvider, useAuth } from 'react-oidc-context';
 import { BrowserRouter, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import type { ReactNode } from 'react';
+import { ApiProvider } from './api/ApiProvider';
 import { oidcConfig } from './auth/oidc';
 import { rolesFromToken } from './auth/sigecUser';
 import { RemoteContainer } from './components/RemoteContainer';
@@ -123,7 +124,9 @@ function AuthWithRouter() {
         navigate(returnTo, { replace: true });
       }}
     >
-      <Layout />
+      <ApiProvider>
+        <Layout />
+      </ApiProvider>
     </AuthProvider>
   );
 }

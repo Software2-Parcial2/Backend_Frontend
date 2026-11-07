@@ -65,7 +65,7 @@ export const MENU_BY_ROLE: Record<string, MenuGroup[]> = {
         { label: 'Dashboard', to: '/gestion' },
         { label: 'Machine Learning', to: '/gestion#/ml' },
         { label: 'Asistente de reportes', to: '/gestion#/asistente' },
-        { label: 'Alertas', to: '/gestion#/alertas', badge: '3' },
+        { label: 'Alertas', to: '/gestion#/alertas', badge: 'alertas' },
         { label: 'Políticas', to: '/gestion#/politicas' },
       ],
     },

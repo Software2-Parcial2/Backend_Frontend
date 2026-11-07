@@ -12,6 +12,15 @@ class ListarFacturasRequest extends FormRequest
         return true;
     }
 
+    /** Los clientes mandan `porCobrar=true|false` (docs/api.md); la regla `boolean` de Laravel solo entiende true/false reales y 1/0. */
+    protected function prepareForValidation(): void
+    {
+        $v = $this->query('porCobrar');
+        if (is_string($v) && in_array(strtolower($v), ['true', 'false'], true)) {
+            $this->merge(['porCobrar' => strtolower($v) === 'true']);
+        }
+    }
+
     public function rules(): array
     {
         return [
