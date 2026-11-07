@@ -44,6 +44,8 @@ DDD + Arquitectura Hexagonal + Clean Architecture en cada servicio.
 | `@sigec/auth-nest` | guard JWT de Keycloak (`jose`), `@Public()`, `@Roles()`, `@CurrentUser()` |
 | `@sigec/messaging-nest` | sobre de mensajes, publicador con confirms, consumidor con reintentos/DLQ, `buildOutboxItem` |
 | `@sigec/idempotency-nest` | `@Idempotent()` (interceptor), almacen DynamoDB, deduplicador de consumidores |
+| `@sigec/http-nest` | convenciones HTTP de los servicios Nest: `aplicarConvenciones(app)` (errores problem+json, `X-Correlation-Id`, validación), `Pagina<T>`/cursor, `verificarContratoOpenApi` |
+| `@sigec/api-types` | tipos TypeScript generados desde `contracts/openapi` (para los frontends) |
 | `@sigec/mfe-contract` | tipos del contrato `mount/unmount` de los microfrontends |
 | `@sigec/design-tokens` | tokens y estilos del diseno (CSS bajo `.sigec`); cada frontend tiene su `design.md` |
 
@@ -109,6 +111,7 @@ Formato `tipo(ámbito): descripción en imperativo`, en minúsculas y sin punto 
 - **SAGA de citas:** orquestada por MS3 (`docs/saga-citas.md`). La maquina de estados (`application/saga/saga-machine.ts`) es pura y sin framework;
   la persistencia aplica cada transicion en una sola transaccion (cita + saga + horario + outbox).
 - **CORS solo en el gateway.** Ningun otro servicio lo activa.
+- **Convenciones HTTP y contratos REST:** errores problem+json, listas `{items, siguiente}`, camelCase, `X-Correlation-Id` (`docs/api.md`). Un cambio de endpoint = regenerar `contracts/openapi` con `make openapi-update` y comprobar con `make openapi-check`.
 
 ## Pruebas
 

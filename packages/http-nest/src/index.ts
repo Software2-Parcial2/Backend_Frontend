@@ -5,3 +5,5 @@ export type { ProblemDetails, ErrorCampo } from './problem.js';
 export { correlationMiddleware, CORRELATION_HEADER } from './correlation.js';
 export { CursorDto, LIMITE_POR_DEFECTO, codificarCursor, decodificarCursor, pagina } from './pagination.js';
 export type { Pagina } from './pagination.js';
+export { verificarContratoOpenApi, normalizarOpenApi, carpetaContratos } from './openapi.js';
+export type { ResultadoContrato } from './openapi.js';

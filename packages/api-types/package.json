@@ -1,17 +1,21 @@
 {
-  "name": "api-types",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "name": "@sigec/api-types",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Tipos TypeScript generados desde contracts/openapi (un archivo por servicio). Los frontends los importaran al conectarse a los servicios.",
   "type": "module",
+  "types": "src/index.d.ts",
+  "exports": {
+    ".": { "types": "./src/index.d.ts" },
+    "./*": { "types": "./src/*.d.ts" }
+  },
+  "files": ["src"],
+  "scripts": {
+    "generate": "node scripts/generate.mjs",
+    "check": "node scripts/generate.mjs --check"
+  },
   "devDependencies": {
     "openapi-typescript": "^7.13.0",
-    "typescript": "^7.0.2"
+    "typescript": "~6.0.3"
   }
 }

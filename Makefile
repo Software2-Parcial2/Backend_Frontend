@@ -2,7 +2,7 @@
 SHELL := /bin/bash
 ENV_FILE := .env
 
-.PHONY: up-all up-core down-all ps-all infra-up dynamodb-init rabbitmq-declare e2e-saga dlq-replay n8n-import n8n-export s3-init mongo-init seed seed-reset datos-docs datos-explain db-purge db-backup
+.PHONY: up-all up-core down-all ps-all infra-up dynamodb-init rabbitmq-declare e2e-saga dlq-replay n8n-import n8n-export s3-init mongo-init seed seed-reset datos-docs datos-explain db-purge db-backup openapi-check openapi-update
 
 infra-up:
 	docker compose up -d
@@ -88,3 +88,21 @@ down-all:
 
 ps-all:
 	$(COMPOSE_FULL) --profile ml --profile inferencia ps
+
+# --- Contratos REST (contracts/openapi/*.json + packages/api-types) ---
+# Los tests de cada servicio comparan el contrato versionado con el que genera su codigo (MS6: rutas contra un archivo escrito a mano).
+OPENAPI_NEST := ms3-citas ms5-api ms7-api ms8-notificaciones
+OPENAPI_SPRING := ms2-pacientes ms4-historias
+
+# Falla si algun servicio se desvio de su contrato o si api-types esta desactualizado.
+openapi-check:
+	@set -e; for s in $(OPENAPI_NEST); do pnpm --filter $$s test:e2e; done
+	@set -e; for s in $(OPENAPI_SPRING); do (cd services/$$s && ./mvnw -q test -Dtest=OpenApiContratoTest); done
+	@cd services/ms6-facturacion && php artisan test --filter=OpenApiContrato
+	@pnpm --filter @sigec/api-types check
+
+# Regenera los contratos desde el codigo y los tipos. Revisa el diff antes de commitear (un cambio de contrato es un cambio de API).
+openapi-update:
+	@set -e; for s in $(OPENAPI_NEST); do OPENAPI_UPDATE=1 pnpm --filter $$s test:e2e; done
+	@set -e; for s in $(OPENAPI_SPRING); do (cd services/$$s && OPENAPI_UPDATE=1 ./mvnw -q test -Dtest=OpenApiContratoTest); done
+	@pnpm --filter @sigec/api-types generate

@@ -86,3 +86,10 @@ describe('convenciones HTTP', () => {
     expect(decodificarCursor(undefined)).toBeUndefined();
   });
 });
+
+describe('contrato OpenAPI', () => {
+  it('normaliza el orden de las claves', async () => {
+    const { normalizarOpenApi } = await import('../src/index.js');
+    expect(JSON.stringify(normalizarOpenApi({ b: 1, a: { d: 1, c: [{ z: 1, y: 2 }] } }))).toBe('{"a":{"c":[{"y":2,"z":1}],"d":1},"b":1}');
+  });
+});

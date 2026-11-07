@@ -188,6 +188,15 @@ valores extremos (> Q3 + 3*IQR) se excluyen del ajuste y se informan en `atipico
 - K-means con datos de MS3: MS3 solo guarda citas futuras (se siembran de los proximos meses), asi que la "demanda" es la agenda reservada, no demanda historica.
 - Las respuestas GraphQL de error no pasan por el gateway con 401 si no hay token: lo rechaza el gateway (HTTP 401 sin cuerpo GraphQL).
 
+## Backend: flujos y endpoints entre servicios (plan por fases)
+
+Objetivo: dejar los servicios listos para conectar los frontends (que hoy usan datos de ejemplo) sin tocar `apps/`. Convenciones y rutas en `docs/api.md`.
+
+- **Fase 0 (hecha):** `@sigec/http-nest` (problem+json, correlacion, paginacion) en MS3/MS5/MS7/MS8; `ProblemaBase` y 401/403 problem+json en MS2/MS4; MS6 en camelCase, dinero como string y paginacion por cursor; gateway con problem+json, `X-Correlation-Id`, CORS ampliado y rutas de catalogo/identidad (con pruebas); contratos OpenAPI versionados y `make openapi-check`; `@sigec/api-types`.
+- **Contratos:** los servicios FastAPI (ML, embeddings, Whisper, inferencia) no tienen OpenAPI versionado (importar TensorFlow en un test es pesado; son internos). MS6 se escribe a mano. Los contratos son JSON (no YAML) para no agregar dependencias.
+- **Cambios de contrato ya hechos (rompen a quien los use):** MS6 ahora recibe `citaId`/`pacienteId` (antes snake_case), lista `{items, siguiente}` (antes un arreglo), `monto` y `confirmado/provisional` como string, validacion 400 (antes 422). MS7 y los scripts E2E ya se adaptaron.
+- **Fases 1-9 pendientes:** ver el plan (MS2 catalogo y edicion, MS3 cancelar/reprogramar/horarios/asistencia, MS6 pagos/caja/tarifas, MS4 API completa, MS5 validacion medica, MS8 historial/plantillas, MS7 alertas, `ms1-identidad`, E2E de flujos).
+
 ## Diseno visual en los frontends (`design.md` por app)
 
 Origen: diseno "Mapa de pantallas SIGEC" (Claude Design, ~90 artboards). Tokens y estilos en `packages/design-tokens`; cada app tiene su `design.md` con el mapa artboard -> ruta.
