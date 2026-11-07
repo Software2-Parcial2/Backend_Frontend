@@ -16,7 +16,7 @@ class IngresosRequest extends FormRequest
         return [
             'desde' => ['required', 'date_format:Y-m-d'],
             'hasta' => ['required', 'date_format:Y-m-d', 'after_or_equal:desde'],
-            'agrupar' => ['sometimes', 'in:dia,mes'],
+            'agrupar' => ['sometimes', 'in:dia,mes,especialidad'],
         ];
     }
 }

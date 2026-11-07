@@ -10,6 +10,7 @@ import { AgenteService, OPCIONES_AGENTE } from '../src/application/agente/agente
 import { AuditoriaEnMemoria } from '../src/application/agente/auditoria.js';
 import { AUDITORIA_PORT, LLM_PORT, POLITICAS_PORT } from '../src/application/agente/ports.js';
 import { GestionService } from '../src/application/gestion.service.js';
+import { ASISTENCIA_REPO } from '../src/application/alertas/ports.js';
 import { CITAS_GATEWAY, FACTURACION_GATEWAY, ML_GATEWAY } from '../src/application/ports.js';
 import { AudioRechazadoError, TRANSCRIPCION_PORT, type TranscripcionPort } from '../src/application/voz/ports.js';
 import { VozService } from '../src/application/voz/voz.service.js';
@@ -24,6 +25,22 @@ const citas = [
   { citaId: 'c2', estado: 'CANCELADA', pacienteId: 'p2', medicoId: 'm1', especialidad: 'Cardiologia', fechaHora: new Date(Date.now() - 2 * 86_400_000).toISOString(), notificacion: 'ENVIADA', creadaEn: new Date(Date.now() - 8 * 86_400_000).toISOString() },
   { citaId: 'c3', estado: 'CONFIRMADA', pacienteId: 'p1', medicoId: 'm2', especialidad: 'Pediatria', fechaHora: futuro, notificacion: 'PENDIENTE', creadaEn: new Date().toISOString() },
 ];
+
+
+/** Imita a MS3 `GET /api/citas/resumen`: agrupa las citas de prueba segun el criterio pedido. */
+const resumenDe = (cs: { estado: string; especialidad: string; medicoId: string; fechaHora: string }[]) => async (_id: unknown, q: { desde: string; hasta: string; agruparPor: string }) => {
+  const clave = (c: (typeof cs)[number]) => (q.agruparPor === 'ESPECIALIDAD' ? c.especialidad : q.agruparPor === 'MEDICO' ? c.medicoId : q.agruparPor === 'ESTADO' ? c.estado : c.fechaHora.slice(0, 7));
+  const g = new Map<string, { clave: string; total: number; confirmadas: number; canceladas: number }>();
+  for (const c of cs) {
+    const x = g.get(clave(c)) ?? { clave: clave(c), total: 0, confirmadas: 0, canceladas: 0 };
+    x.total++;
+    if (c.estado === 'CONFIRMADA') x.confirmadas++;
+    if (['CANCELADA', 'ANULADA'].includes(c.estado)) x.canceladas++;
+    g.set(x.clave, x);
+  }
+  return { desde: q.desde, hasta: q.hasta, agrupadoPor: q.agruparPor, total: cs.length, truncado: false, grupos: [...g.values()].sort((a, b) => b.total - a.total || a.clave.localeCompare(b.clave)) };
+};
+const sinAsistencia = { registrar: async () => undefined, inasistenciasPrevias: async () => new Map<string, number>() };
 
 describe('Agente y reportes por HTTP (JWT firmados, proveedor simulado)', () => {
   let app: INestApplication;
@@ -44,7 +61,8 @@ describe('Agente y reportes por HTTP (JWT firmados, proveedor simulado)', () => 
       imports: [AuthModule.forRoot({ issuer: ISSUER, jwksUri: `http://localhost:${(jwks.address() as { port: number }).port}/` })],
       controllers: [AgenteController],
       providers: [
-        { provide: CITAS_GATEWAY, useValue: { listar: async () => ({ items: citas, siguiente: null }) } },
+        { provide: CITAS_GATEWAY, useValue: { listar: async () => ({ items: citas, siguiente: null }), resumen: resumenDe(citas) } },
+        { provide: ASISTENCIA_REPO, useValue: sinAsistencia },
         { provide: FACTURACION_GATEWAY, useValue: { ingresos: vi.fn(async () => [{ periodo: '2026-05', confirmado: 100, provisional: 0, facturas: 2 }]) } },
         { provide: ML_GATEWAY, useValue: {
           demanda: async () => ({ k: 2, silueta: 0.4, fuente: 'test', sintetico: false, segmentos: [], especialidades: [{ especialidad: 'Pediatria', segmento: 0, etiqueta: 'Demanda alta', citasPorSemana: 30, citasTotal: 360 }] }),

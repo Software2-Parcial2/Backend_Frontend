@@ -95,6 +95,7 @@ la copia se publica en `sigec.dlx` → `<q>.dlq`. Un mensaje que no es JSON vali
 | `ms3.saga.respuestas` | MS3 | las cinco respuestas |
 | `ms3.eventos` | MS3 | `paciente.creado`, `paciente.actualizado`, `medico.creado`, `medico.actualizado` (proyecciones de nombres para la agenda) |
 | `ms4.eventos` | MS4 | `paciente.creado`, `paciente.actualizado` (crea/actualiza la historia), `cita.confirmada`, `cita.cancelada`, `cita.asistencia-registrada` (citas que habilitan una consulta), `imagen.informe-validado` (estudios de la historia) |
+| `ms7.eventos` | MS7 | `cita.asistencia-registrada` (inasistencias previas reales del modelo de riesgo) |
 | `ms6.eventos` | MS6 | `paciente.creado`, `paciente.actualizado` (nombres de paciente en los listados de caja) |
 | `ms5.inferencia.comandos` | MS5 inferencia (Python) | `imagenes.analisis.solicitar` |
 | `ms5.api.respuestas` | MS5 API | `imagenes.analisis.completado`, `.fallido` |

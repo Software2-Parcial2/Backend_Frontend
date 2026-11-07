@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { AtributosNoShow, MlGateway, PrediccionNoShow } from '../../application/ports.js';
-import type { DemandaEspecialidades } from '../../domain/gestion.js';
+import type { DemandaEspecialidades, ModeloInfo } from '../../domain/gestion.js';
 import { getJson, postJson, type OpcionesHttp } from './http-json.js';
 
 interface SegmentosMl {
@@ -45,6 +45,26 @@ export class MlHttpClient implements MlGateway {
         citasPorSemana: s.demanda_por_especialidad[especialidad]?.citas_por_semana ?? 0,
         citasTotal: s.demanda_por_especialidad[especialidad]?.citas_total ?? 0,
       })),
+    };
+  }
+
+  async modelo(): Promise<ModeloInfo> {
+    const r = await getJson<{ no_show?: Record<string, unknown>; aviso?: string }>(this.op, '/model/info', {}, this.cab);
+    const m = r.no_show ?? {};
+    const imp = (m.importancias ?? {}) as Record<string, number>;
+    return {
+      version: (m.version as string | undefined) ?? null,
+      umbral: typeof m.umbral === 'number' ? m.umbral : null,
+      metricas: (m.metricas as Record<string, unknown> | undefined) ?? {},
+      features: (m.features as string[] | undefined) ?? [],
+      entrenadoEn: (m.entrenado_en as string | null | undefined) ?? null,
+      dataset: (m.dataset as string | null | undefined) ?? null,
+      sintetico: m.sintetico === true,
+      importancias: Object.entries(imp)
+        .map(([variable, importancia]) => ({ variable, importancia: Math.round(Number(importancia) * 1000) / 1000 }))
+        .sort((a, b) => b.importancia - a.importancia),
+      parametros: (m.parametros as Record<string, unknown> | undefined) ?? {},
+      aviso: (m.aviso as string | undefined) ?? r.aviso ?? '',
     };
   }
 }

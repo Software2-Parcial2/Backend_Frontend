@@ -110,6 +110,20 @@ describe('ingresos agregados', function () {
         expect($res)->toHaveCount(1)->and($res[0]['periodo'])->toBe('2026-03-01')->and($res[0]['confirmado'])->toBe('25.00');
     });
 
+    it('agrupa por especialidad (las facturas sin ella van a SIN_ESPECIALIDAD)', function () {
+        DB::table('facturas')->insert([
+            ['id' => (string) Str::uuid(), 'cita_id' => (string) Str::uuid(), 'paciente_id' => (string) Str::uuid(), 'monto' => 80, 'estado' => 'CONFIRMADA', 'especialidad' => 'pediatria', 'created_at' => '2026-04-01 10:00:00', 'updated_at' => '2026-04-01 10:00:00'],
+            ['id' => (string) Str::uuid(), 'cita_id' => (string) Str::uuid(), 'paciente_id' => (string) Str::uuid(), 'monto' => 20, 'estado' => 'PROVISIONAL', 'especialidad' => 'pediatria', 'created_at' => '2026-04-02 10:00:00', 'updated_at' => '2026-04-02 10:00:00'],
+            ['id' => (string) Str::uuid(), 'cita_id' => (string) Str::uuid(), 'paciente_id' => (string) Str::uuid(), 'monto' => 50, 'estado' => 'CONFIRMADA', 'especialidad' => null, 'created_at' => '2026-04-03 10:00:00', 'updated_at' => '2026-04-03 10:00:00'],
+        ]);
+        $res = $this->getJson('/api/facturacion/facturas/ingresos?desde=2026-04-01&hasta=2026-04-30&agrupar=especialidad', authHeaders())->assertOk()->json();
+        usort($res, fn ($a, $b) => strcmp($a['periodo'], $b['periodo'])); // el orden depende de la colacion de la base
+        expect($res)->toEqual([
+            ['periodo' => 'SIN_ESPECIALIDAD', 'confirmado' => '50.00', 'provisional' => '0.00', 'moneda' => 'BOB', 'facturas' => 1],
+            ['periodo' => 'pediatria', 'confirmado' => '80.00', 'provisional' => '20.00', 'moneda' => 'BOB', 'facturas' => 2],
+        ]);
+    });
+
     it('valida parametros y rango maximo', function () {
         $this->getJson('/api/facturacion/facturas/ingresos', authHeaders())->assertStatus(400)->assertJsonPath('code', 'VALIDACION');
         $this->getJson('/api/facturacion/facturas/ingresos?desde=2026-02-01&hasta=2026-01-01', authHeaders())->assertStatus(400);

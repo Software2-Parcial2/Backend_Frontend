@@ -5,21 +5,25 @@ import {
   type CitaResumen,
   ConsultaInvalidaError,
   type DemandaEspecialidades,
-  type GrupoCitas,
   type Identidad,
   type IngresoPeriodo,
+  type ModeloInfo,
   type Pagina,
   type ResumenCitas,
   type RiesgoInasistencia,
 } from '../domain/gestion.js';
+import { ASISTENCIA_REPO, type AsistenciaRepository } from './alertas/ports.js';
 import { CITAS_GATEWAY, FACTURACION_GATEWAY, ML_GATEWAY, type AtributosNoShow, type CitasGateway, type FacturacionGateway, type MlGateway } from './ports.js';
 
 /** Maximo de citas que se leen para un resumen (protege a MS3). */
 export const MAX_CITAS_LEIDAS = 5000;
 const POR_PAGINA = 100;
 const CANCELADAS = new Set(['CANCELADA', 'ANULADA']);
-/** Atributos del modelo que SIGEC no registra todavia: se envian valores neutros y se avisa en la respuesta. */
-export const ATRIBUTOS_ESTIMADOS = ['edad', 'beca', 'inasistencias_previas'];
+/**
+ * Atributos del modelo que SIGEC aun no tiene en MS7: se envian valores neutros y se avisa en la respuesta.
+ * `inasistencias_previas` ya sale de la asistencia real (evento cita.asistencia-registrada de MS3).
+ */
+export const ATRIBUTOS_ESTIMADOS = ['edad', 'beca'];
 const EDAD_NEUTRA = 35;
 const DIA_MS = 86_400_000;
 
@@ -32,6 +36,7 @@ export class GestionService {
     @Inject(CITAS_GATEWAY) private readonly citas: CitasGateway,
     @Inject(FACTURACION_GATEWAY) private readonly facturacion: FacturacionGateway,
     @Inject(ML_GATEWAY) private readonly ml: MlGateway,
+    @Inject(ASISTENCIA_REPO) private readonly asistencia: AsistenciaRepository,
   ) {}
 
   /** Reloj (sustituible en pruebas). */
@@ -41,32 +46,13 @@ export class GestionService {
     return this.citas.listar(id, { limite, cursor });
   }
 
+  /** MS3 calcula el conteo (ya no se pagina todo el listado); aqui solo se valida el rango. */
   async resumenCitas(id: Identidad, desde: string, hasta: string, agruparPor: AgruparCitasPor): Promise<ResumenCitas> {
-    const [d, h] = this.rango(desde, hasta);
-    const { items, truncado } = await this.leerCitas(id, (c) => {
-      const t = Date.parse(c.fechaHora);
-      return t >= d && t <= h;
-    });
-    const grupos = new Map<string, GrupoCitas>();
-    for (const c of items) {
-      const clave = this.claveDe(c, agruparPor);
-      const g = grupos.get(clave) ?? { clave, total: 0, confirmadas: 0, canceladas: 0 };
-      g.total++;
-      if (c.estado === 'CONFIRMADA') g.confirmadas++;
-      if (CANCELADAS.has(c.estado)) g.canceladas++;
-      grupos.set(clave, g);
-    }
-    return {
-      desde,
-      hasta,
-      agrupadoPor: agruparPor,
-      total: items.length,
-      grupos: [...grupos.values()].sort((a, b) => b.total - a.total || a.clave.localeCompare(b.clave)),
-      truncado,
-    };
+    this.rango(desde, hasta);
+    return this.citas.resumen(id, { desde, hasta, agruparPor });
   }
 
-  ingresos(id: Identidad, desde: string, hasta: string, agrupar: 'dia' | 'mes'): Promise<IngresoPeriodo[]> {
+  ingresos(id: Identidad, desde: string, hasta: string, agrupar: 'dia' | 'mes' | 'especialidad'): Promise<IngresoPeriodo[]> {
     this.rango(desde, hasta);
     return this.facturacion.ingresos(id, { desde: desde.slice(0, 10), hasta: hasta.slice(0, 10), agrupar });
   }
@@ -75,10 +61,15 @@ export class GestionService {
     return this.ml.demanda();
   }
 
+  modeloInfo(): Promise<ModeloInfo> {
+    return this.ml.modelo();
+  }
+
   /** Riesgo de inasistencia de un lote de citas (una sola llamada al servicio de ML). Es lo que usa el DataLoader. */
   async riesgoDeCitas(citas: CitaResumen[]): Promise<RiesgoInasistencia[]> {
     if (citas.length === 0) return [];
-    const resultado = await this.ml.predecirNoShow(citas.map((c, _i, todas) => this.atributos(c, todas)));
+    const previas = await this.asistencia.inasistenciasPrevias([...new Set(citas.map((c) => c.pacienteId))]).catch(() => new Map<string, number>());
+    const resultado = await this.ml.predecirNoShow(citas.map((c, _i, todas) => this.atributos(c, todas, previas.get(c.pacienteId) ?? 0)));
     return resultado.predicciones.map((p) => ({
       probabilidad: p.probabilidad_inasistencia,
       riesgo: p.riesgo,
@@ -93,10 +84,14 @@ export class GestionService {
     if (!Number.isInteger(dias) || dias < 1 || dias > 60) throw new ConsultaInvalidaError('dias debe estar entre 1 y 60');
     const ahora = this.ahora();
     const tope = ahora + dias * DIA_MS;
-    const { items } = await this.leerCitas(id, (c) => {
-      const t = Date.parse(c.fechaHora);
-      return t > ahora && t <= tope && !CANCELADAS.has(c.estado);
-    });
+    const { items } = await this.leerCitas(
+      id,
+      (c) => {
+        const t = Date.parse(c.fechaHora);
+        return t > ahora && t <= tope && !CANCELADAS.has(c.estado);
+      },
+      { desde: new Date(ahora).toISOString(), hasta: new Date(tope).toISOString() },
+    );
     const riesgos = await this.riesgoDeCitas(items);
     return items
       .map((c, i) => ({ ...c, riesgo: riesgos[i] ?? null }))
@@ -106,7 +101,7 @@ export class GestionService {
 
   // --- internos -------------------------------------------------------------------------------
 
-  private atributos(c: CitaResumen, todas: CitaResumen[]): AtributosNoShow {
+  private atributos(c: CitaResumen, todas: CitaResumen[], inasistenciasPrevias: number): AtributosNoShow {
     const fecha = new Date(c.fechaHora);
     const creada = Date.parse(c.creadaEn);
     return {
@@ -116,7 +111,7 @@ export class GestionService {
       edad: EDAD_NEUTRA,
       beca: false,
       sms_recibido: c.notificacion === 'ENVIADA',
-      inasistencias_previas: 0,
+      inasistencias_previas: Math.min(1000, inasistenciasPrevias),
       citas_previas: Math.min(1000, todas.filter((o) => o.pacienteId === c.pacienteId && Date.parse(o.creadaEn) < creada).length),
     };
   }
@@ -140,12 +135,12 @@ export class GestionService {
     }
   }
 
-  private async leerCitas(id: Identidad, filtro: (c: CitaResumen) => boolean): Promise<{ items: CitaResumen[]; truncado: boolean }> {
+  private async leerCitas(id: Identidad, filtro: (c: CitaResumen) => boolean, rango: { desde?: string; hasta?: string } = {}): Promise<{ items: CitaResumen[]; truncado: boolean }> {
     const items: CitaResumen[] = [];
     let leidas = 0;
     let cursor: string | undefined;
     do {
-      const pagina = await this.citas.listar(id, { limite: POR_PAGINA, cursor });
+      const pagina = await this.citas.listar(id, { limite: POR_PAGINA, cursor, ...rango });
       leidas += pagina.items.length;
       items.push(...pagina.items.filter(filtro));
       cursor = pagina.siguiente ?? undefined;

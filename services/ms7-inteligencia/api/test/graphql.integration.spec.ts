@@ -7,6 +7,7 @@ import { createServer, type Server } from 'node:http';
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { GestionService } from '../src/application/gestion.service.js';
+import { ASISTENCIA_REPO } from '../src/application/alertas/ports.js';
 import { CITAS_GATEWAY, FACTURACION_GATEWAY, ML_GATEWAY } from '../src/application/ports.js';
 import { graphqlConfig } from '../src/infrastructure/graphql/graphql.config.js';
 import { GestionResolver } from '../src/infrastructure/graphql/gestion.resolver.js';
@@ -17,6 +18,22 @@ const citas = Array.from({ length: 30 }, (_, i) => ({
   citaId: `c${i}`, estado: 'CONFIRMADA', pacienteId: `p${i % 5}`, medicoId: 'm1', especialidad: i % 2 ? 'Pediatria' : 'Cardiologia',
   fechaHora: manana, notificacion: 'ENVIADA', creadaEn: new Date().toISOString(),
 }));
+
+
+/** Imita a MS3 `GET /api/citas/resumen`: agrupa las citas de prueba segun el criterio pedido. */
+const resumenDe = (cs: { estado: string; especialidad: string; medicoId: string; fechaHora: string }[]) => async (_id: unknown, q: { desde: string; hasta: string; agruparPor: string }) => {
+  const clave = (c: (typeof cs)[number]) => (q.agruparPor === 'ESPECIALIDAD' ? c.especialidad : q.agruparPor === 'MEDICO' ? c.medicoId : q.agruparPor === 'ESTADO' ? c.estado : c.fechaHora.slice(0, 7));
+  const g = new Map<string, { clave: string; total: number; confirmadas: number; canceladas: number }>();
+  for (const c of cs) {
+    const x = g.get(clave(c)) ?? { clave: clave(c), total: 0, confirmadas: 0, canceladas: 0 };
+    x.total++;
+    if (c.estado === 'CONFIRMADA') x.confirmadas++;
+    if (['CANCELADA', 'ANULADA'].includes(c.estado)) x.canceladas++;
+    g.set(x.clave, x);
+  }
+  return { desde: q.desde, hasta: q.hasta, agrupadoPor: q.agruparPor, total: cs.length, truncado: false, grupos: [...g.values()].sort((a, b) => b.total - a.total || a.clave.localeCompare(b.clave)) };
+};
+const sinAsistencia = { registrar: async () => undefined, inasistenciasPrevias: async () => new Map<string, number>() };
 
 describe('GraphQL /graphql (integracion con JWT firmados)', () => {
   let app: INestApplication;
@@ -47,7 +64,8 @@ describe('GraphQL /graphql (integracion con JWT firmados)', () => {
     const mod = await Test.createTestingModule({
       imports: [AuthModule.forRoot({ issuer: ISSUER, jwksUri: `http://localhost:${puerto}/` }), GraphQLModule.forRoot(graphqlConfig({ NODE_ENV: 'test', GRAPHQL_MAX_DEPTH: '4' }))],
       providers: [
-        { provide: CITAS_GATEWAY, useValue: { listar } },
+        { provide: CITAS_GATEWAY, useValue: { listar, resumen: resumenDe(citas) } },
+        { provide: ASISTENCIA_REPO, useValue: sinAsistencia },
         { provide: FACTURACION_GATEWAY, useValue: { ingresos } },
         { provide: ML_GATEWAY, useValue: { predecirNoShow: predecir, demanda: vi.fn() } },
         GestionService, GestionResolver,

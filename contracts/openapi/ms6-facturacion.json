@@ -1070,7 +1070,8 @@
               "default": "mes",
               "enum": [
                 "dia",
-                "mes"
+                "mes",
+                "especialidad"
               ],
               "type": "string"
             }

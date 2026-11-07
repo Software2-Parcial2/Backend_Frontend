@@ -1,6 +1,14 @@
 {
   "components": {
     "schemas": {
+      "ActualizarAgenteDto": {
+        "properties": {},
+        "type": "object"
+      },
+      "AtenderDto": {
+        "properties": {},
+        "type": "object"
+      },
       "ConsultaAgenteDto": {
         "properties": {},
         "type": "object"
@@ -99,6 +107,203 @@
         "parameters": [],
         "responses": {
           "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "inteligencia"
+        ]
+      }
+    },
+    "/api/inteligencia/agentes": {
+      "get": {
+        "operationId": "AlertasController_agentes",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "inteligencia"
+        ]
+      }
+    },
+    "/api/inteligencia/agentes/{id}": {
+      "put": {
+        "operationId": "AlertasController_actualizarAgente",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarAgenteDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "inteligencia"
+        ]
+      }
+    },
+    "/api/inteligencia/agentes/{id}/ejecutar": {
+      "post": {
+        "operationId": "AlertasController_ejecutar",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "inteligencia"
+        ]
+      }
+    },
+    "/api/inteligencia/alertas": {
+      "get": {
+        "operationId": "AlertasController_listar",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "inteligencia"
+        ]
+      }
+    },
+    "/api/inteligencia/alertas/{id}": {
+      "get": {
+        "operationId": "AlertasController_obtener",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "inteligencia"
+        ]
+      }
+    },
+    "/api/inteligencia/alertas/{id}/atender": {
+      "post": {
+        "operationId": "AlertasController_atender",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtenderDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "inteligencia"
+        ]
+      }
+    },
+    "/api/inteligencia/ml/modelo": {
+      "get": {
+        "operationId": "AlertasController_modelo",
+        "parameters": [],
+        "responses": {
+          "200": {
             "description": ""
           }
         },

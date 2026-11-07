@@ -299,7 +299,7 @@ class FacturaController extends Controller
     }
 
     /**
-     * Ingresos agregados por periodo (dia|mes) entre `desde` y `hasta` (fechas AAAA-MM-DD, maximo 366 dias). Solo personal de gestion.
+     * Ingresos agregados por periodo (dia|mes) o por especialidad entre `desde` y `hasta` (fechas AAAA-MM-DD, maximo 366 dias). Solo personal de gestion.
      * `confirmado` suma las facturas CONFIRMADA; `provisional` las PROVISIONAL (aun sin confirmar); las ANULADA y PENDIENTE no cuentan.
      */
     public function ingresos(IngresosRequest $request): JsonResponse
@@ -310,13 +310,19 @@ class FacturaController extends Controller
         if ($desde->diffInDays($hasta) > 366) {
             return Problem::response(422, 'RANGO_EXCEDIDO', 'Rango demasiado grande', 'El rango maximo es de 366 dias');
         }
-        $unidad = ($data['agrupar'] ?? 'mes') === 'dia' ? 'day' : 'month';
+        $agrupar = $data['agrupar'] ?? 'mes';
+        $unidad = $agrupar === 'dia' ? 'day' : 'month';
         $formato = $unidad === 'day' ? 'YYYY-MM-DD' : 'YYYY-MM';
+
+        // Con agrupar=especialidad, `periodo` lleva el nombre de la especialidad (las facturas sin ella van a SIN_ESPECIALIDAD).
+        $periodo = $agrupar === 'especialidad'
+            ? "COALESCE(especialidad, 'SIN_ESPECIALIDAD') as periodo"
+            : "to_char(date_trunc('{$unidad}', created_at), '{$formato}') as periodo";
 
         $filas = Factura::query()
             ->whereBetween('created_at', [$desde, $hasta])
             ->whereIn('estado', ['CONFIRMADA', 'PROVISIONAL', 'PAGADA'])
-            ->selectRaw("to_char(date_trunc('{$unidad}', created_at), '{$formato}') as periodo")
+            ->selectRaw($periodo)
             ->selectRaw("COALESCE(SUM(monto) FILTER (WHERE estado IN ('CONFIRMADA', 'PAGADA')), 0) as confirmado")
             ->selectRaw("COALESCE(SUM(monto) FILTER (WHERE estado = 'PROVISIONAL'), 0) as provisional")
             ->selectRaw('COUNT(*) as facturas')

@@ -160,6 +160,18 @@ export const TOPOLOGY = {
       ]
     },
     {
+      "name": "ms7.eventos",
+      "owner": "MS7",
+      "bindings": [
+        {
+          "exchange": "sigec.eventos",
+          "routingKeys": [
+            "cita.asistencia-registrada"
+          ]
+        }
+      ]
+    },
+    {
       "name": "ms6.eventos",
       "owner": "MS6",
       "bindings": [

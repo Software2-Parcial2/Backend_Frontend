@@ -246,7 +246,7 @@ export interface paths {
                 query: {
                     desde: string;
                     hasta: string;
-                    agrupar?: "dia" | "mes";
+                    agrupar?: "dia" | "mes" | "especialidad";
                 };
                 header?: never;
                 path?: never;

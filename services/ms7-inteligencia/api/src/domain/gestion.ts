@@ -53,6 +53,22 @@ export interface DemandaEspecialidades {
   especialidades: { especialidad: string; segmento: number; etiqueta: string; citasPorSemana: number; citasTotal: number }[];
 }
 
+/** Modelo de inasistencia en uso (lo que expone el servicio de ML en /model/info). */
+export interface ModeloInfo {
+  version: string | null;
+  /** Probabilidad desde la que se considera riesgo ALTO. */
+  umbral: number | null;
+  metricas: Record<string, unknown>;
+  features: string[];
+  entrenadoEn: string | null;
+  dataset: string | null;
+  sintetico: boolean;
+  /** Importancia de cada variable (suman ~1), de mayor a menor. */
+  importancias: { variable: string; importancia: number }[];
+  parametros: Record<string, unknown>;
+  aviso: string;
+}
+
 export type NivelRiesgo = 'BAJO' | 'MEDIO' | 'ALTO';
 
 export interface RiesgoInasistencia {
