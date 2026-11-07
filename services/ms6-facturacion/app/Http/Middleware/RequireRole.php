@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\Problem;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -13,7 +14,7 @@ class RequireRole
     {
         $userRoles = (array) $request->attributes->get('roles', []);
         if (array_intersect($roles, $userRoles) === []) {
-            return response()->json(['message' => 'Rol insuficiente'], 403);
+            return Problem::response(403, 'PROHIBIDO', 'Acceso denegado', 'Su rol no permite esta operacion');
         }
 
         return $next($request);

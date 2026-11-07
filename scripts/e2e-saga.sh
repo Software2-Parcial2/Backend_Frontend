@@ -223,8 +223,8 @@ check "un cursor manipulado -> 400" 400 "$(get_as "$TP" "/api/citas?cursor=eyJwa
 check "agenda del medico (indice medico/fecha) la ve recepcion" ok "$(get_as "$TR" "/api/citas?medicoId=$MH" >/dev/null; python3 -c "import json;d=json.load(open('/tmp/e2e.get'));print('ok' if len(d['items'])>=2 and all(i['medicoId']=='$MH' for i in d['items']) else 'no')")"
 # facturas (MS6): el paciente solo ve las suyas
 check "paciente lista facturas (200)" 200 "$(get_as "$TP" /api/facturacion/facturas)"
-check "...y todas son suyas" ok "$(python3 -c "import json;d=json.load(open('/tmp/e2e.get'));print('ok' if d and all(i['paciente_id']=='$MIO' for i in d) else 'no')")"
-check "caja ve facturas de varios pacientes" ok "$(get_as "$TC" /api/facturacion/facturas >/dev/null; python3 -c "import json;d=json.load(open('/tmp/e2e.get'));print('ok' if len({i['paciente_id'] for i in d})>1 else 'no')")"
+check "...y todas son suyas" ok "$(python3 -c "import json;d=json.load(open('/tmp/e2e.get'))['items'];print('ok' if d and all(i['pacienteId']=='$MIO' for i in d) else 'no')")"
+check "caja ve facturas de varios pacientes" ok "$(get_as "$TC" /api/facturacion/facturas >/dev/null; python3 -c "import json;d=json.load(open('/tmp/e2e.get'))['items'];print('ok' if len({i['pacienteId'] for i in d})>1 else 'no')")"
 
 printf '\n== Resultado: %d comprobaciones correctas, %d fallidas\n' "$pass" "$fail"
 [ "$fail" -eq 0 ] && echo "TODO OK" || { echo "HAY FALLOS (logs en ${SIGEC_LOGS:-/tmp/sigec-logs})"; exit 1; }

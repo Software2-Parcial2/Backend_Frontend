@@ -59,7 +59,7 @@ crear_paciente() {
 }
 crear_factura() {
   curl -s -o /dev/null -w '%{http_code}' -X POST "$GW/api/facturacion/facturas" -H "Authorization: Bearer $TC" -H "Idempotency-Key: $(uuid)" \
-    -H 'Content-Type: application/json' -d "{\"cita_id\":\"$(uuid)\",\"paciente_id\":\"$(uuid)\",\"monto\":99}"
+    -H 'Content-Type: application/json' -d "{\"citaId\":\"$(uuid)\",\"pacienteId\":\"$(uuid)\",\"monto\":99}"
 }
 
 echo "== 1) Con RabbitMQ encendido: la API crea y el relay publica"

@@ -136,7 +136,12 @@ class Idempotency
 
     private function problem(int $status, string $title, string $detail): Response
     {
-        return response()->json(['type' => 'about:blank', 'title' => $title, 'status' => $status, 'detail' => $detail], $status)
-            ->header('Content-Type', 'application/problem+json');
+        $code = match ($status) {
+            400 => 'IDEMPOTENCY_KEY_INVALIDA',
+            422 => 'IDEMPOTENCY_KEY_REUTILIZADA',
+            default => 'PETICION_EN_PROCESO',
+        };
+
+        return \App\Support\Problem::response($status, $code, $title, $detail);
     }
 }

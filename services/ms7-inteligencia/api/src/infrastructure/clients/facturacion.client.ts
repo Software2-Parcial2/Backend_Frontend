@@ -12,7 +12,14 @@ export class FacturacionHttpClient implements FacturacionGateway {
     timeoutMs: Number(process.env.MS7_HTTP_TIMEOUT_MS ?? 8000),
   };
 
-  ingresos(id: Identidad, q: { desde: string; hasta: string; agrupar: 'dia' | 'mes' }): Promise<IngresoPeriodo[]> {
-    return getJson<IngresoPeriodo[]>(this.op, '/api/facturacion/facturas/ingresos', q, { Authorization: `Bearer ${id.token}` });
+  /** MS6 devuelve el dinero como string decimal ("150.50", convencion de SIGEC); el dominio de MS7 trabaja con numeros. */
+  async ingresos(id: Identidad, q: { desde: string; hasta: string; agrupar: 'dia' | 'mes' }): Promise<IngresoPeriodo[]> {
+    const filas = await getJson<Array<Omit<IngresoPeriodo, 'confirmado' | 'provisional'> & { confirmado: string | number; provisional: string | number }>>(
+      this.op,
+      '/api/facturacion/facturas/ingresos',
+      q,
+      { Authorization: `Bearer ${id.token}` },
+    );
+    return filas.map((f) => ({ ...f, confirmado: Number(f.confirmado), provisional: Number(f.provisional) }));
   }
 }

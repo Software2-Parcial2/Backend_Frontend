@@ -82,6 +82,6 @@ class VerifyKeycloakJwt
 
     private function unauthorized(string $message): Response
     {
-        return response()->json(['message' => $message], 401);
+        return \App\Support\Problem::response(401, 'NO_AUTENTICADO', 'No autenticado', $message)->header('WWW-Authenticate', 'Bearer');
     }
 }

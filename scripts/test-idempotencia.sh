@@ -44,7 +44,7 @@ N=$(docker compose exec -T postgres psql -U sigec -d ms2_pacientes -tAc "select 
 check "un solo paciente en la base" 1 "$N"
 
 echo "== MS6: POST /api/facturacion/facturas"
-KEY=$(uuid); F="{\"cita_id\":\"$(uuid)\",\"paciente_id\":\"$(uuid)\",\"monto\":120}"
+KEY=$(uuid); F="{\"citaId\":\"$(uuid)\",\"pacienteId\":\"$(uuid)\",\"monto\":120}"
 check "sin cabecera -> 400" 400 "$(field "$(post "$TC" /api/facturacion/facturas - "$F")" 1)"
 R1=$(post "$TC" /api/facturacion/facturas "$KEY" "$F"); check "primera -> 201" 201 "$(field "$R1" 1)"
 R2=$(post "$TC" /api/facturacion/facturas "$KEY" "$F")

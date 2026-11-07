@@ -7,8 +7,8 @@ use Illuminate\Support\Str;
 function facturaBody(array $over = []): array
 {
     return array_merge([
-        'cita_id' => (string) Str::uuid(),
-        'paciente_id' => (string) Str::uuid(),
+        'citaId' => (string) Str::uuid(),
+        'pacienteId' => (string) Str::uuid(),
         'monto' => 150.5,
     ], $over);
 }
@@ -88,8 +88,8 @@ describe('POST /api/facturacion/facturas con Idempotency-Key', function () {
     it('una respuesta 4xx de validacion se guarda y se reproduce', function () {
         $key = (string) Str::uuid();
         $mala = facturaBody(['monto' => -5]);
-        postFactura($mala, $key)->assertStatus(422);
-        postFactura($mala, $key)->assertStatus(422)->assertHeader('Idempotent-Replay', 'true');
+        postFactura($mala, $key)->assertStatus(400)->assertJsonPath('code', 'VALIDACION');
+        postFactura($mala, $key)->assertStatus(400)->assertHeader('Idempotent-Replay', 'true');
     });
 
     it('una clave vencida se puede reutilizar', function () {

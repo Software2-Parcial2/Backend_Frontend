@@ -56,7 +56,7 @@ it('devuelve la lista vacia con un token valido', function () {
 
     $this->getJson('/api/facturacion/facturas', [
         'Authorization' => 'Bearer '.token($pem),
-    ])->assertOk()->assertExactJson([]);
+    ])->assertOk()->assertExactJson(['items' => [], 'siguiente' => null]);
 });
 
 describe('autorizacion por paciente', function () {
@@ -69,7 +69,7 @@ describe('autorizacion por paciente', function () {
 
     it('un paciente solo ve sus facturas', function () use ($PACIENTE) {
         $res = $this->getJson('/api/facturacion/facturas', authHeaders(['realm_access' => ['roles' => ['paciente']], 'paciente_id' => $PACIENTE]))->assertOk();
-        expect($res->json())->toHaveCount(1)->and($res->json('0.paciente_id'))->toBe($PACIENTE);
+        expect($res->json('items'))->toHaveCount(1)->and($res->json('items.0.pacienteId'))->toBe($PACIENTE);
     });
 
     it('un paciente sin vinculo recibe 403', function () {
@@ -77,7 +77,7 @@ describe('autorizacion por paciente', function () {
     });
 
     it('caja ve todas las facturas', function () {
-        expect($this->getJson('/api/facturacion/facturas', authHeaders())->assertOk()->json())->toHaveCount(2);
+        expect($this->getJson('/api/facturacion/facturas', authHeaders())->assertOk()->json('items'))->toHaveCount(2);
     });
 });
 
@@ -98,8 +98,8 @@ describe('ingresos agregados', function () {
 
         $res = $this->getJson('/api/facturacion/facturas/ingresos?desde=2026-01-01&hasta=2026-02-28', authHeaders())->assertOk()->json();
         expect($res)->toEqual([
-            ['periodo' => '2026-01', 'confirmado' => 150.5, 'provisional' => 30.0, 'facturas' => 3],
-            ['periodo' => '2026-02', 'confirmado' => 70.0, 'provisional' => 0.0, 'facturas' => 1],
+            ['periodo' => '2026-01', 'confirmado' => '150.50', 'provisional' => '30.00', 'moneda' => 'BOB', 'facturas' => 3],
+            ['periodo' => '2026-02', 'confirmado' => '70.00', 'provisional' => '0.00', 'moneda' => 'BOB', 'facturas' => 1],
         ]);
     });
 
@@ -107,13 +107,13 @@ describe('ingresos agregados', function () {
         insertarFactura('CONFIRMADA', 10, '2026-03-01 08:00:00');
         insertarFactura('CONFIRMADA', 15, '2026-03-01 18:00:00');
         $res = $this->getJson('/api/facturacion/facturas/ingresos?desde=2026-03-01&hasta=2026-03-02&agrupar=dia', authHeaders())->assertOk()->json();
-        expect($res)->toHaveCount(1)->and($res[0]['periodo'])->toBe('2026-03-01')->and($res[0]['confirmado'])->toEqual(25);
+        expect($res)->toHaveCount(1)->and($res[0]['periodo'])->toBe('2026-03-01')->and($res[0]['confirmado'])->toBe('25.00');
     });
 
     it('valida parametros y rango maximo', function () {
-        $this->getJson('/api/facturacion/facturas/ingresos', authHeaders())->assertUnprocessable();
-        $this->getJson('/api/facturacion/facturas/ingresos?desde=2026-02-01&hasta=2026-01-01', authHeaders())->assertUnprocessable();
-        $this->getJson('/api/facturacion/facturas/ingresos?desde=2020-01-01&hasta=2026-01-01', authHeaders())->assertUnprocessable();
+        $this->getJson('/api/facturacion/facturas/ingresos', authHeaders())->assertStatus(400)->assertJsonPath('code', 'VALIDACION');
+        $this->getJson('/api/facturacion/facturas/ingresos?desde=2026-02-01&hasta=2026-01-01', authHeaders())->assertStatus(400);
+        $this->getJson('/api/facturacion/facturas/ingresos?desde=2020-01-01&hasta=2026-01-01', authHeaders())->assertUnprocessable()->assertJsonPath('code', 'RANGO_EXCEDIDO');
     });
 
     it('solo caja y administrador', function () {
