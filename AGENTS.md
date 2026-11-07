@@ -66,6 +66,9 @@ docker compose up -d
 docker compose ps
 ```
 
+Pila completa en contenedores (infraestructura + microservicios + frontends + ML): `make up-all` (o `make up-core` sin ML); ver `README.md` y `docker-compose.full.yml`.
+No mezclar con `scripts/dev-services.sh` a la vez: usan los mismos puertos.
+
 El realm de Keycloak se importa desde `infra/keycloak/` y el script `infra/postgres/init.sql` crea las bases. Si cambias `init.sql` hay que recrear el volumen: `docker compose down -v`.
 
 ## Token de Keycloak para pruebas

@@ -205,3 +205,15 @@ Hecho: migraciones ms2 V3, ms4 V3, ms6 (`2026_11_06_000001`), ms7 `0002`; `GET /
 - Encargo vs. realidad: el `Scan` de `GET /api/citas` ya se habia reemplazado en el bloque 0; no habia nada que migrar en el codigo de acceso.
 - Incidente: un primer `make mongo-init` leyo `.env` y creo la coleccion `imagenes` vacia en el MongoDB del puerto 27017, que es de **otro proyecto**; se elimino esa coleccion vacia y se corrigio el script (ya no pisa variables). Nada mas se toco alli.
 - Entorno: 5432, 27017 y 8000 estan ocupados por otros proyectos; se verifico con `POSTGRES_HOST_PORT=5440 MONGO_HOST_PORT=27040 DYNAMODB_HOST_PORT=8040`.
+
+## Pila en Docker (`docker-compose.full.yml`)
+
+Hecho: imágenes de todos los servicios y frontends, tarea `init`, `outbox-poller`, procesos de fondo de MS6, `make up-core` / `up-all`. Verificado con `make up-core`: 22 contenedores arriba, healthchecks en verde,
+login por Keycloak y llamadas por el gateway (200 con token, 401 sin él), cola `ms6.saga.comandos` drenada (614 → 0) sin mensajes en DLQ. Guía: `docs/docker.md`.
+
+- **No verificado:** `make up-all` (ML: `ms7-ml`, `ms7-embeddings`, `ms7-whisper`, `ms5-inference`: imágenes sin construir ni arrancar aquí), el flujo en el navegador (login del shell y remotos Vue/Angular), `make n8n-import` dentro de la pila,
+  y los comandos `kcadm` de la guía.
+- Los E2E (`make e2e-saga`, `scripts/e2e-*.sh`) siguen pensados para servicios en el host; no se adaptaron a la pila en contenedores.
+- Las imágenes Nest conservan dependencias de desarrollo y el repo completo (simple, pesada: `ms7-api` ~1,5 GB). Una imagen de producción mínima (`pnpm deploy`) queda pendiente.
+- Keycloak sigue en `start-dev`, sin TLS, con usuarios y contraseñas de ejemplo: solo desarrollo.
+- MS6 monta `contracts/events/topology.json` como volumen (su imagen no contiene el monorepo); cualquier otro archivo de `contracts/` que MS6 llegue a leer en tiempo de ejecución necesitará lo mismo.
