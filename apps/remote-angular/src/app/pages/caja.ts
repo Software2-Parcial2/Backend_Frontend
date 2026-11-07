@@ -4,7 +4,7 @@ import { Component } from '@angular/core';
   selector: 'app-caja',
   template: `
 <div class="page">
-  <div class="ph"><div><h1 class="h1">Caja y cargos pendientes</h1><p class="sub">Toda cita confirmada genera un cargo según la tarifa de su especialidad</p></div></div>
+  <div class="ph"><div><h1 class="h1">Caja y cargos pendientes</h1><p class="sub">Toda cita confirmada genera un cargo según la tarifa de su especialidad</p></div><span class="sp"></span><a class="btn" href="#/movimientos">Movimientos y balance</a></div>
   <div class="g3">
     <div class="card kpi"><span class="v">Bs 1.440</span><span class="l">Cobrado hoy</span></div>
     <div class="card kpi"><span class="v">Bs 600</span><span class="l">Pendiente de cobro</span></div>
@@ -23,7 +23,7 @@ import { Component } from '@angular/core';
             <tr [class.sel]="c.sel">
               <td class="mono">{{ c.id }}</td><td class="b">{{ c.paciente }}</td><td>{{ c.concepto }}</td><td>{{ c.fecha }}</td><td class="b">{{ c.monto }}</td>
               <td><span [class]="'chip ' + c.tono">{{ c.estado }}</span></td>
-              <td class="tr">@if (c.pagado) {<button type="button" class="btn s">Comprobante</button>} @else {<a class="btn s pri" href="#/cobro">Cobrar</a>}</td>
+              <td class="tr">@if (c.pagado) {<a class="btn s" href="#/movimientos">Comprobante</a>} @else {<a class="btn s pri" href="#/cobro">Cobrar</a>}</td>
             </tr>
           }
         </tbody>

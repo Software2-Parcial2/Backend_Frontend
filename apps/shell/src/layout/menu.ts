@@ -37,6 +37,7 @@ export const MENU_BY_ROLE: Record<string, MenuGroup> = {
       inicio,
       { label: 'Caja y cargos', to: '/clinica#/caja' },
       { label: 'Registrar cobro', to: '/clinica#/cobro' },
+      { label: 'Movimientos y balance', to: '/clinica#/movimientos' },
     ],
   },
   administrador: {

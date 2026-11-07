@@ -4,7 +4,7 @@ import { Component } from '@angular/core';
   selector: 'app-historial',
   template: `
 <div class="page">
-  <div class="ph"><div><h1 class="h1">Historial de envíos</h1><p class="sub">Avisos de citas por correo y Telegram, con su estado de entrega</p></div><span class="sp"></span><button type="button" class="btn">Plantillas</button></div>
+  <div class="ph"><div><h1 class="h1">Historial de envíos</h1><p class="sub">Avisos de citas por correo y Telegram, con su estado de entrega</p></div><span class="sp"></span><a class="btn" href="#/historial/plantillas">Plantillas</a></div>
   <div class="g4">
     <div class="card kpi"><span class="v">214</span><span class="l">Enviados hoy</span></div>
     <div class="card kpi"><span class="v">98 %</span><span class="l">Entregados</span></div>
