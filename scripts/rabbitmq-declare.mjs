@@ -10,7 +10,7 @@ const topology = JSON.parse(
 );
 const url =
   process.env.RABBITMQ_URL ??
-  `amqp://${process.env.RABBITMQ_USER ?? 'sigec'}:${process.env.RABBITMQ_PASSWORD ?? 'cambia_esto'}@localhost:5672`;
+  `amqp://${encodeURIComponent(process.env.RABBITMQ_USER ?? 'sigec')}:${encodeURIComponent(process.env.RABBITMQ_PASSWORD ?? 'cambia_esto')}@${process.env.RABBITMQ_HOST ?? 'localhost'}:${process.env.RABBITMQ_PORT ?? '5672'}`;
 
 const conn = await amqp.connect(url);
 const ch = await conn.createChannel();
