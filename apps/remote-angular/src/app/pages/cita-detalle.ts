@@ -4,7 +4,7 @@ import { Component } from '@angular/core';
   selector: 'app-cita-detalle',
   template: `
 <div class="page">
-  <div class="ph"><div><h1 class="h1">Cita de Carla Rojas Vaca</h1><p class="sub">Cardiología · Mar 3 nov 2026 · 10:00 · Dra. Valeria Antelo</p></div><span class="chip ok">Confirmada</span><span class="sp"></span><button type="button" class="btn">Reprogramar</button><button type="button" class="btn dng">Cancelar cita</button></div>
+  <div class="ph"><div><h1 class="h1">Cita de Carla Rojas Vaca</h1><p class="sub">Cardiología · Mar 3 nov 2026 · 10:00 · Dra. Valeria Antelo</p></div><span class="chip ok">Confirmada</span><span class="sp"></span><a class="btn" href="#/cita/reprogramar">Reprogramar</a><a class="btn dng" href="#/cita/cancelar">Cancelar cita</a></div>
   <div class="g2">
     <div class="card">
       <div class="ch"><div class="ct">Confirmación por SAGA</div><span class="sp"></span><span class="muted sm">Orquestada por MS3</span></div>

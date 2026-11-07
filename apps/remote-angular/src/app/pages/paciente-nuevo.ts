@@ -41,7 +41,7 @@ import { Component } from '@angular/core';
         <p class="ink2">Si la conexión falla y el registro se reenvía, no se crea un segundo paciente.</p>
         <div class="field"><label>Idempotency-Key</label><div class="mono" style="padding:10px 12px;background:var(--line2);border-radius:8px;word-break:break-all">7c1e9b52-4a0d-4f6e-b3a8-2d90e1f5c6a4</div></div>
         <hr class="hr">
-        <a class="btn pri" href="#/pacientes/ficha" style="height:46px">Guardar paciente</a>
+        <a class="btn pri" href="#/pacientes/guardado" style="height:46px">Guardar paciente</a>
         <a class="btn" href="#/pacientes">Cancelar</a>
       </div>
       <div class="banner"><div><b>Eventos de dominio</b><span>Al guardar se publica el evento «paciente registrado» mediante Outbox hacia RabbitMQ.</span></div></div>

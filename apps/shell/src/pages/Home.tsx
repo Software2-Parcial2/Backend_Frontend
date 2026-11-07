@@ -43,7 +43,7 @@ const POR_ROL: Record<string, HomeData> = {
       { v: '1', l: 'Consulta en curso' },
     ],
     acciones: [
-      { label: 'Ver mi agenda', to: '/clinica#/agenda', pri: true },
+      { label: 'Ver mi agenda', to: '/clinica#/agenda-medico', pri: true },
       { label: 'Estudios radiológicos', to: '/clinica#/estudios' },
     ],
     lista: {

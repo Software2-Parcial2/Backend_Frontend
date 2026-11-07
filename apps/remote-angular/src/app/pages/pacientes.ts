@@ -4,7 +4,7 @@ import { Component } from '@angular/core';
   selector: 'app-pacientes',
   template: `
 <div class="page">
-  <div class="ph"><div><h1 class="h1">Pacientes</h1><p class="sub">Busque por nombre, documento de identidad o número de historia</p></div><span class="sp"></span><a class="btn pri" href="#/pacientes/nuevo">Registrar paciente</a></div>
+  <div class="ph"><div><h1 class="h1">Pacientes</h1><p class="sub">Busque por nombre, documento de identidad o número de historia</p></div><span class="sp"></span><a class="btn" href="#/pacientes/solicitudes">Solicitudes</a><a class="btn pri" href="#/pacientes/nuevo">Registrar paciente</a></div>
 
   <div class="card col" style="gap:14px">
     <div class="fx wrap">

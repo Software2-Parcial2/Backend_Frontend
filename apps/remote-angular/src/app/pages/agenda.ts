@@ -39,7 +39,7 @@ const L: Celda = { t: 'f' };
       }
     </div>
   </div>
-  <a class="btn gh" style="align-self:flex-start" href="#/cita">Ver detalle de la cita de Carla Rojas Vaca</a>
+  <div class="fx wrap"><a class="btn gh" href="#/cita">Ver detalle: cita de Carla Rojas Vaca</a><a class="btn gh" href="#/cita/compensacion">Ver cita con SAGA compensada (Daniela Flores)</a></div>
 </div>`,
 })
 export class Agenda {

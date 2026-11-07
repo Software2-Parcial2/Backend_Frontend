@@ -26,7 +26,7 @@ export const MENU_BY_ROLE: Record<string, MenuGroup> = {
     heading: 'Médico',
     items: [
       inicio,
-      { label: 'Agenda del médico', to: '/clinica#/agenda' },
+      { label: 'Mi agenda', to: '/clinica#/agenda-medico' },
       { label: 'Historia clínica', to: '/clinica#/historia' },
       { label: 'Estudios radiológicos', to: '/clinica#/estudios' },
     ],

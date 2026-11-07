@@ -6,7 +6,7 @@ import { ContextStore } from './context';
 const entradaPorRol: CanActivateFn = () => {
   const roles = inject(ContextStore).ctx()?.roles ?? [];
   const destino = roles.includes('medico') && !roles.includes('recepcion')
-    ? 'agenda'
+    ? 'agenda-medico'
     : roles.includes('caja') && !roles.includes('recepcion') && !roles.includes('administrador')
       ? 'caja'
       : roles.includes('administrador') && !roles.includes('recepcion')
@@ -22,6 +22,13 @@ export const routes: Routes = [
   { path: 'pacientes', loadComponent: pagina(() => import('./pages/pacientes').then((m) => m.Pacientes)) },
   { path: 'pacientes/nuevo', loadComponent: pagina(() => import('./pages/paciente-nuevo').then((m) => m.PacienteNuevo)) },
   { path: 'pacientes/ficha', loadComponent: pagina(() => import('./pages/paciente-ficha').then((m) => m.PacienteFicha)) },
+  { path: 'pacientes/guardado', loadComponent: pagina(() => import('./pages/paciente-guardado').then((m) => m.PacienteGuardado)) },
+  { path: 'pacientes/solicitudes', loadComponent: pagina(() => import('./pages/solicitudes').then((m) => m.Solicitudes)) },
+  { path: 'horarios', loadComponent: pagina(() => import('./pages/horarios').then((m) => m.Horarios)) },
+  { path: 'agenda-medico', loadComponent: pagina(() => import('./pages/agenda-medico').then((m) => m.AgendaMedico)) },
+  { path: 'cita/compensacion', loadComponent: pagina(() => import('./pages/cita-compensacion').then((m) => m.CitaCompensacion)) },
+  { path: 'cita/reprogramar', loadComponent: pagina(() => import('./pages/cita-reprogramar').then((m) => m.CitaReprogramar)) },
+  { path: 'cita/cancelar', loadComponent: pagina(() => import('./pages/cita-cancelar').then((m) => m.CitaCancelar)) },
   { path: 'agenda', loadComponent: pagina(() => import('./pages/agenda').then((m) => m.Agenda)) },
   { path: 'reservar', loadComponent: pagina(() => import('./pages/reservar').then((m) => m.Reservar)) },
   { path: 'cita', loadComponent: pagina(() => import('./pages/cita-detalle').then((m) => m.CitaDetalle)) },
