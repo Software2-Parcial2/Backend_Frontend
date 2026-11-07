@@ -36,6 +36,9 @@
                 "string",
                 "null"
               ]
+            },
+            "numeroHistoria": {
+              "type": "string"
             }
           }
         }

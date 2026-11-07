@@ -24,7 +24,7 @@ Implementación: Nest `@sigec/http-nest` (`aplicarConvenciones(app)`), Spring `P
 
 | Prefijo | Servicio | Estado |
 |---|---|---|
-| `/api/pacientes/**`, `/api/especialidades/**`, `/api/medicos/**` | MS2 Pacientes (`:8082`) | pacientes hecho; catálogo en la Fase 1 |
+| `/api/pacientes/**`, `/api/especialidades/**`, `/api/medicos/**` | MS2 Pacientes (`:8082`) | hecho (Fase 1) |
 | `/api/historias/**` | MS4 Historias clínicas (`:8084`) | solo esqueleto (Fase 4) |
 | `/api/citas/**` | MS3 Citas (`:3003`) | hecho (cancelar, reprogramar, horarios en la Fase 2) |
 | `/api/imagenes/**` | MS5 Imágenes (`:3005`) | hecho (estudios y validación en la Fase 5) |
@@ -39,7 +39,7 @@ Las rutas `/internal/**` de MS8 y los `/health` de cada servicio **no** pasan po
 
 > La lista completa y los esquemas están en `contracts/openapi/`. Aquí solo el mapa.
 
-**MS2** · `POST /api/pacientes` (administrador, recepcion, medico) · `GET /api/pacientes` · `GET /api/pacientes/{id}` (personal, o el propio paciente por claim `paciente_id`).
+**MS2** · Pacientes: `POST /api/pacientes` · `GET /api/pacientes?q&tipo=nombre|documento|historia&limite&cursor` (búsqueda fonética: «Rohas» encuentra «Rojas») · `GET /api/pacientes/me` · `GET /api/pacientes/{id}` (+`ETag`) · `PUT /api/pacientes/{id}` (con `If-Match`; evento `paciente.actualizado`). Contactos de emergencia: `GET|POST /api/pacientes/{id}/contactos`, `DELETE …/{contactoId}`. Solicitudes de actualización de contacto: `POST /api/pacientes/{id}/solicitudes` (paciente), `GET /api/pacientes/{id}/solicitudes`, `GET /api/pacientes/solicitudes?estado` (recepción), `POST /api/pacientes/solicitudes/{id}/aprobar|rechazar`. Catálogo: `GET|POST /api/especialidades`, `PUT /api/especialidades/{id}`, `GET /api/medicos?especialidad`, `GET /api/medicos/me|{id}`, `POST|PUT /api/medicos` (administrador; eventos `medico.creado|actualizado`). Lectura del catálogo: cualquier usuario autenticado (resumen sin documento ni contacto).
 **MS3** · `POST /api/citas` (202, SAGA) · `GET /api/citas` (`pacienteId` o `medicoId`+`desde`+`hasta`) · `GET /api/citas/{id}` · `GET /api/citas/disponibilidad`.
 **MS5** · `POST /api/imagenes` (multipart) · `GET /api/imagenes?pacienteId` · `GET /api/imagenes/{id}` · `GET /api/imagenes/{id}/url`.
 **MS6** · `GET /api/facturacion/facturas` (paginada) · `POST /api/facturacion/facturas` · `GET /api/facturacion/facturas/ingresos`.

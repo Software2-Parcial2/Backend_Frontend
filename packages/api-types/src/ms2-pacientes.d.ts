@@ -36,6 +36,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/especialidades": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["especialidades"];
+        put?: never;
+        post: operations["crearEspecialidad"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/especialidades/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["actualizarEspecialidad"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/medicos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["medicos"];
+        put?: never;
+        post: operations["crearMedico"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/medicos/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["yo_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/medicos/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["medico"];
+        put: operations["actualizarMedico"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/pacientes": {
         parameters: {
             query?: never;
@@ -43,9 +123,73 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar"];
+        get: operations["buscar"];
         put?: never;
         post: operations["crear"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/pacientes/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["yo"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/pacientes/solicitudes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listar_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/pacientes/solicitudes/{id}/aprobar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["aprobar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/pacientes/solicitudes/{id}/rechazar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["rechazar"];
         delete?: never;
         options?: never;
         head?: never;
@@ -60,8 +204,56 @@ export interface paths {
             cookie?: never;
         };
         get: operations["porId"];
+        put: operations["actualizar"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/pacientes/{pacienteId}/contactos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listar"];
+        put?: never;
+        post: operations["agregar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/pacientes/{pacienteId}/contactos/{contactoId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
         put?: never;
         post?: never;
+        delete: operations["eliminar"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/pacientes/{pacienteId}/solicitudes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["deUnPaciente"];
+        put?: never;
+        post: operations["solicitar"];
         delete?: never;
         options?: never;
         head?: never;
@@ -72,26 +264,174 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        ActualizarEspecialidadRequest: {
+            activa?: boolean;
+            nombre: string;
+        };
+        ActualizarPacienteRequest: {
+            beca?: boolean;
+            direccion?: string;
+            /** Format: email */
+            email?: string;
+            /** Format: date */
+            fechaNacimiento: string;
+            nombre: string;
+            /** @enum {string} */
+            sexo?: "F" | "M" | "OTRO";
+            telefono?: string;
+            /** @enum {string} */
+            tipoSeguro?: "NINGUNO" | "PUBLICO" | "PRIVADO";
+        };
+        ContactoRequest: {
+            nombre: string;
+            parentesco: string;
+            telefono: string;
+        };
+        ContactoResponse: {
+            /** Format: uuid */
+            id?: string;
+            nombre?: string;
+            /** Format: uuid */
+            pacienteId?: string;
+            parentesco?: string;
+            telefono?: string;
+        };
+        CrearEspecialidadRequest: {
+            codigo: string;
+            nombre: string;
+        };
         CrearPacienteRequest: {
+            beca?: boolean;
+            direccion?: string;
             documento: string;
             /** Format: email */
             email?: string;
             /** Format: date */
             fechaNacimiento: string;
             nombre: string;
+            /** @enum {string} */
+            sexo?: "F" | "M" | "OTRO";
             telefono?: string;
+            /** @enum {string} */
+            tipoSeguro?: "NINGUNO" | "PUBLICO" | "PRIVADO";
+            usuarioSub?: string;
+        };
+        EspecialidadResponse: {
+            activa?: boolean;
+            codigo?: string;
+            /** Format: uuid */
+            id?: string;
+            nombre?: string;
+        };
+        EspecialidadResumen: {
+            codigo?: string;
+            nombre?: string;
+        };
+        MedicoRequest: {
+            activo?: boolean;
+            consultorio?: string;
+            documento: string;
+            /** Format: email */
+            email?: string;
+            especialidad: string;
+            matricula: string;
+            nombre: string;
+            telefono?: string;
+            usuarioKeycloak?: string;
+        };
+        MedicoResponse: {
+            activo?: boolean;
+            consultorio?: string;
+            documento?: string;
+            email?: string;
+            especialidad?: components["schemas"]["EspecialidadResumen"];
+            /** Format: uuid */
+            id?: string;
+            matricula?: string;
+            nombre?: string;
+            telefono?: string;
+            usuarioKeycloak?: string;
+        };
+        MedicoResumen: {
+            activo?: boolean;
+            consultorio?: string;
+            especialidad?: components["schemas"]["EspecialidadResumen"];
+            /** Format: uuid */
+            id?: string;
+            matricula?: string;
+            nombre?: string;
         };
         PacienteResponse: {
+            beca?: boolean;
             /** Format: date-time */
             createdAt?: string;
+            direccion?: string;
             documento?: string;
+            /** Format: int32 */
+            edad?: number;
             email?: string;
             /** Format: date */
             fechaNacimiento?: string;
             /** Format: uuid */
             id?: string;
             nombre?: string;
+            numeroHistoria?: string;
+            /** @enum {string} */
+            sexo?: "F" | "M" | "OTRO";
             telefono?: string;
+            /** @enum {string} */
+            tipoSeguro?: "NINGUNO" | "PUBLICO" | "PRIVADO";
+            /** Format: date-time */
+            updatedAt?: string;
+            /** Format: int64 */
+            version?: number;
+        };
+        PaginaResponseContactoResponse: {
+            items?: components["schemas"]["ContactoResponse"][];
+            siguiente?: string;
+        };
+        PaginaResponseEspecialidadResponse: {
+            items?: components["schemas"]["EspecialidadResponse"][];
+            siguiente?: string;
+        };
+        PaginaResponseMedicoResumen: {
+            items?: components["schemas"]["MedicoResumen"][];
+            siguiente?: string;
+        };
+        PaginaResponsePacienteResponse: {
+            items?: components["schemas"]["PacienteResponse"][];
+            siguiente?: string;
+        };
+        PaginaResponseSolicitudResponse: {
+            items?: components["schemas"]["SolicitudResponse"][];
+            siguiente?: string;
+        };
+        RechazoRequest: {
+            motivo?: string;
+        };
+        SolicitudRequest: {
+            /** @enum {string} */
+            campo: "TELEFONO" | "EMAIL" | "DIRECCION";
+            valorPropuesto: string;
+        };
+        SolicitudResponse: {
+            /** @enum {string} */
+            campo?: "TELEFONO" | "EMAIL" | "DIRECCION";
+            /** @enum {string} */
+            estado?: "PENDIENTE" | "APROBADA" | "RECHAZADA";
+            /** Format: uuid */
+            id?: string;
+            motivoRechazo?: string;
+            /** Format: uuid */
+            pacienteId?: string;
+            pacienteNombre?: string;
+            /** Format: date-time */
+            resueltaEn?: string;
+            resueltaPor?: string;
+            /** Format: date-time */
+            solicitadaEn?: string;
+            valorActual?: string;
+            valorPropuesto?: string;
         };
     };
     responses: never;
@@ -146,7 +486,126 @@ export interface operations {
             };
         };
     };
-    listar: {
+    especialidades: {
+        parameters: {
+            query?: {
+                soloActivas?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PaginaResponseEspecialidadResponse"];
+                };
+            };
+        };
+    };
+    crearEspecialidad: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CrearEspecialidadRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["EspecialidadResponse"];
+                };
+            };
+        };
+    };
+    actualizarEspecialidad: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ActualizarEspecialidadRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["EspecialidadResponse"];
+                };
+            };
+        };
+    };
+    medicos: {
+        parameters: {
+            query?: {
+                especialidad?: string;
+                soloActivos?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PaginaResponseMedicoResumen"];
+                };
+            };
+        };
+    };
+    crearMedico: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MedicoRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MedicoResponse"];
+                };
+            };
+        };
+    };
+    yo_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -161,7 +620,80 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["PacienteResponse"][];
+                    "*/*": components["schemas"]["MedicoResumen"];
+                };
+            };
+        };
+    };
+    medico: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MedicoResumen"];
+                };
+            };
+        };
+    };
+    actualizarMedico: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MedicoRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MedicoResponse"];
+                };
+            };
+        };
+    };
+    buscar: {
+        parameters: {
+            query?: {
+                q?: string;
+                tipo?: string;
+                limite?: number;
+                cursor?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PaginaResponsePacienteResponse"];
                 };
             };
         };
@@ -190,6 +722,98 @@ export interface operations {
             };
         };
     };
+    yo: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PacienteResponse"];
+                };
+            };
+        };
+    };
+    listar_1: {
+        parameters: {
+            query?: {
+                estado?: "PENDIENTE" | "APROBADA" | "RECHAZADA";
+                limite?: number;
+                cursor?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PaginaResponseSolicitudResponse"];
+                };
+            };
+        };
+    };
+    aprobar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SolicitudResponse"];
+                };
+            };
+        };
+    };
+    rechazar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["RechazoRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SolicitudResponse"];
+                };
+            };
+        };
+    };
     porId: {
         parameters: {
             query?: never;
@@ -208,6 +832,151 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["PacienteResponse"];
+                };
+            };
+        };
+    };
+    actualizar: {
+        parameters: {
+            query?: never;
+            header?: {
+                "If-Match"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ActualizarPacienteRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PacienteResponse"];
+                };
+            };
+        };
+    };
+    listar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pacienteId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PaginaResponseContactoResponse"];
+                };
+            };
+        };
+    };
+    agregar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pacienteId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ContactoRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ContactoResponse"];
+                };
+            };
+        };
+    };
+    eliminar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pacienteId: string;
+                contactoId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    deUnPaciente: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pacienteId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PaginaResponseSolicitudResponse"];
+                };
+            };
+        };
+    };
+    solicitar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pacienteId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SolicitudRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SolicitudResponse"];
                 };
             };
         };

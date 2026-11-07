@@ -545,6 +545,114 @@ export const SCHEMAS: readonly Record<string, unknown>[] = [
   },
   {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://sigec.local/contracts/events/medico.actualizado.schema.json",
+    "title": "medico.actualizado",
+    "description": "Evento MS2 -> varios (exchange sigec.eventos, routing key = type). Cambio de un medico del catalogo (consultorio, especialidad, activo).",
+    "allOf": [
+      {
+        "$ref": "envelope.schema.json"
+      },
+      {
+        "properties": {
+          "type": {
+            "const": "medico.actualizado"
+          },
+          "payload": {
+            "type": "object",
+            "required": [
+              "medicoId",
+              "nombre",
+              "especialidad",
+              "especialidadNombre",
+              "activo"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "medicoId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "nombre": {
+                "type": "string"
+              },
+              "especialidad": {
+                "type": "string",
+                "description": "codigo de la especialidad (clave natural)"
+              },
+              "especialidadNombre": {
+                "type": "string"
+              },
+              "consultorio": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "activo": {
+                "type": "boolean"
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://sigec.local/contracts/events/medico.creado.schema.json",
+    "title": "medico.creado",
+    "description": "Evento MS2 -> varios (exchange sigec.eventos, routing key = type). Alta de un medico en el catalogo; MS3 lo proyecta para la agenda.",
+    "allOf": [
+      {
+        "$ref": "envelope.schema.json"
+      },
+      {
+        "properties": {
+          "type": {
+            "const": "medico.creado"
+          },
+          "payload": {
+            "type": "object",
+            "required": [
+              "medicoId",
+              "nombre",
+              "especialidad",
+              "especialidadNombre",
+              "activo"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "medicoId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "nombre": {
+                "type": "string"
+              },
+              "especialidad": {
+                "type": "string",
+                "description": "codigo de la especialidad (clave natural)"
+              },
+              "especialidadNombre": {
+                "type": "string"
+              },
+              "consultorio": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "activo": {
+                "type": "boolean"
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
     "$id": "https://sigec.local/contracts/events/notificaciones.cita-cancelada.enviar.schema.json",
     "title": "notificaciones.cita-cancelada.enviar",
     "description": "Comando MS3 -> MS8 (exchange sigec.saga, routing key = type).",
@@ -706,6 +814,66 @@ export const SCHEMAS: readonly Record<string, unknown>[] = [
   },
   {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://sigec.local/contracts/events/paciente.actualizado.schema.json",
+    "title": "paciente.actualizado",
+    "description": "Evento MS2 -> varios (exchange sigec.eventos, routing key = type). Estado vigente del paciente tras una edicion o una solicitud de actualizacion aprobada.",
+    "allOf": [
+      {
+        "$ref": "envelope.schema.json"
+      },
+      {
+        "properties": {
+          "type": {
+            "const": "paciente.actualizado"
+          },
+          "payload": {
+            "type": "object",
+            "required": [
+              "pacienteId",
+              "numeroHistoria",
+              "nombre",
+              "documento",
+              "version"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "pacienteId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "numeroHistoria": {
+                "type": "string"
+              },
+              "nombre": {
+                "type": "string"
+              },
+              "documento": {
+                "type": "string"
+              },
+              "email": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "telefono": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "version": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
     "$id": "https://sigec.local/contracts/events/paciente.creado.schema.json",
     "title": "paciente.creado",
     "description": "Evento MS2 -> varios (exchange sigec.eventos, routing key = type).",
@@ -742,6 +910,9 @@ export const SCHEMAS: readonly Record<string, unknown>[] = [
                   "string",
                   "null"
                 ]
+              },
+              "numeroHistoria": {
+                "type": "string"
               }
             }
           }

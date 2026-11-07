@@ -1,8 +1,132 @@
 {
   "components" : {
     "schemas" : {
+      "ActualizarEspecialidadRequest" : {
+        "properties" : {
+          "activa" : {
+            "type" : "boolean"
+          },
+          "nombre" : {
+            "maxLength" : 100,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "required" : [ "nombre" ],
+        "type" : "object"
+      },
+      "ActualizarPacienteRequest" : {
+        "properties" : {
+          "beca" : {
+            "type" : "boolean"
+          },
+          "direccion" : {
+            "maxLength" : 300,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "email" : {
+            "format" : "email",
+            "maxLength" : 200,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "fechaNacimiento" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "nombre" : {
+            "maxLength" : 200,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "sexo" : {
+            "enum" : [ "F", "M", "OTRO" ],
+            "type" : "string"
+          },
+          "telefono" : {
+            "maxLength" : 30,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "tipoSeguro" : {
+            "enum" : [ "NINGUNO", "PUBLICO", "PRIVADO" ],
+            "type" : "string"
+          }
+        },
+        "required" : [ "fechaNacimiento", "nombre" ],
+        "type" : "object"
+      },
+      "ContactoRequest" : {
+        "properties" : {
+          "nombre" : {
+            "maxLength" : 200,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "parentesco" : {
+            "maxLength" : 60,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "telefono" : {
+            "maxLength" : 30,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "required" : [ "nombre", "parentesco", "telefono" ],
+        "type" : "object"
+      },
+      "ContactoResponse" : {
+        "properties" : {
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "nombre" : {
+            "type" : "string"
+          },
+          "pacienteId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "parentesco" : {
+            "type" : "string"
+          },
+          "telefono" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "CrearEspecialidadRequest" : {
+        "properties" : {
+          "codigo" : {
+            "maxLength" : 40,
+            "minLength" : 0,
+            "pattern" : "[a-z0-9_]+",
+            "type" : "string"
+          },
+          "nombre" : {
+            "maxLength" : 100,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "required" : [ "codigo", "nombre" ],
+        "type" : "object"
+      },
       "CrearPacienteRequest" : {
         "properties" : {
+          "beca" : {
+            "type" : "boolean"
+          },
+          "direccion" : {
+            "maxLength" : 300,
+            "minLength" : 0,
+            "type" : "string"
+          },
           "documento" : {
             "maxLength" : 30,
             "minLength" : 0,
@@ -23,8 +147,21 @@
             "minLength" : 0,
             "type" : "string"
           },
+          "sexo" : {
+            "enum" : [ "F", "M", "OTRO" ],
+            "type" : "string"
+          },
           "telefono" : {
             "maxLength" : 30,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "tipoSeguro" : {
+            "enum" : [ "NINGUNO", "PUBLICO", "PRIVADO" ],
+            "type" : "string"
+          },
+          "usuarioSub" : {
+            "maxLength" : 100,
             "minLength" : 0,
             "type" : "string"
           }
@@ -32,14 +169,162 @@
         "required" : [ "documento", "fechaNacimiento", "nombre" ],
         "type" : "object"
       },
-      "PacienteResponse" : {
+      "EspecialidadResponse" : {
         "properties" : {
-          "createdAt" : {
-            "format" : "date-time",
+          "activa" : {
+            "type" : "boolean"
+          },
+          "codigo" : {
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "nombre" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "EspecialidadResumen" : {
+        "properties" : {
+          "codigo" : {
+            "type" : "string"
+          },
+          "nombre" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "MedicoRequest" : {
+        "properties" : {
+          "activo" : {
+            "type" : "boolean"
+          },
+          "consultorio" : {
+            "maxLength" : 30,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "documento" : {
+            "maxLength" : 30,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "email" : {
+            "format" : "email",
+            "maxLength" : 200,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "especialidad" : {
+            "minLength" : 1,
+            "type" : "string"
+          },
+          "matricula" : {
+            "maxLength" : 30,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "nombre" : {
+            "maxLength" : 200,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "telefono" : {
+            "maxLength" : 30,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "usuarioKeycloak" : {
+            "maxLength" : 100,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "required" : [ "documento", "especialidad", "matricula", "nombre" ],
+        "type" : "object"
+      },
+      "MedicoResponse" : {
+        "properties" : {
+          "activo" : {
+            "type" : "boolean"
+          },
+          "consultorio" : {
             "type" : "string"
           },
           "documento" : {
             "type" : "string"
+          },
+          "email" : {
+            "type" : "string"
+          },
+          "especialidad" : {
+            "$ref" : "#/components/schemas/EspecialidadResumen"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "matricula" : {
+            "type" : "string"
+          },
+          "nombre" : {
+            "type" : "string"
+          },
+          "telefono" : {
+            "type" : "string"
+          },
+          "usuarioKeycloak" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "MedicoResumen" : {
+        "properties" : {
+          "activo" : {
+            "type" : "boolean"
+          },
+          "consultorio" : {
+            "type" : "string"
+          },
+          "especialidad" : {
+            "$ref" : "#/components/schemas/EspecialidadResumen"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "matricula" : {
+            "type" : "string"
+          },
+          "nombre" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "PacienteResponse" : {
+        "properties" : {
+          "beca" : {
+            "type" : "boolean"
+          },
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "direccion" : {
+            "type" : "string"
+          },
+          "documento" : {
+            "type" : "string"
+          },
+          "edad" : {
+            "format" : "int32",
+            "type" : "integer"
           },
           "email" : {
             "type" : "string"
@@ -55,7 +340,165 @@
           "nombre" : {
             "type" : "string"
           },
+          "numeroHistoria" : {
+            "type" : "string"
+          },
+          "sexo" : {
+            "enum" : [ "F", "M", "OTRO" ],
+            "type" : "string"
+          },
           "telefono" : {
+            "type" : "string"
+          },
+          "tipoSeguro" : {
+            "enum" : [ "NINGUNO", "PUBLICO", "PRIVADO" ],
+            "type" : "string"
+          },
+          "updatedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "version" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "PaginaResponseContactoResponse" : {
+        "properties" : {
+          "items" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ContactoResponse"
+            },
+            "type" : "array"
+          },
+          "siguiente" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "PaginaResponseEspecialidadResponse" : {
+        "properties" : {
+          "items" : {
+            "items" : {
+              "$ref" : "#/components/schemas/EspecialidadResponse"
+            },
+            "type" : "array"
+          },
+          "siguiente" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "PaginaResponseMedicoResumen" : {
+        "properties" : {
+          "items" : {
+            "items" : {
+              "$ref" : "#/components/schemas/MedicoResumen"
+            },
+            "type" : "array"
+          },
+          "siguiente" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "PaginaResponsePacienteResponse" : {
+        "properties" : {
+          "items" : {
+            "items" : {
+              "$ref" : "#/components/schemas/PacienteResponse"
+            },
+            "type" : "array"
+          },
+          "siguiente" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "PaginaResponseSolicitudResponse" : {
+        "properties" : {
+          "items" : {
+            "items" : {
+              "$ref" : "#/components/schemas/SolicitudResponse"
+            },
+            "type" : "array"
+          },
+          "siguiente" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "RechazoRequest" : {
+        "properties" : {
+          "motivo" : {
+            "maxLength" : 300,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "SolicitudRequest" : {
+        "properties" : {
+          "campo" : {
+            "enum" : [ "TELEFONO", "EMAIL", "DIRECCION" ],
+            "type" : "string"
+          },
+          "valorPropuesto" : {
+            "maxLength" : 300,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "required" : [ "campo", "valorPropuesto" ],
+        "type" : "object"
+      },
+      "SolicitudResponse" : {
+        "properties" : {
+          "campo" : {
+            "enum" : [ "TELEFONO", "EMAIL", "DIRECCION" ],
+            "type" : "string"
+          },
+          "estado" : {
+            "enum" : [ "PENDIENTE", "APROBADA", "RECHAZADA" ],
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "motivoRechazo" : {
+            "type" : "string"
+          },
+          "pacienteId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "pacienteNombre" : {
+            "type" : "string"
+          },
+          "resueltaEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "resueltaPor" : {
+            "type" : "string"
+          },
+          "solicitadaEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "valorActual" : {
+            "type" : "string"
+          },
+          "valorPropuesto" : {
             "type" : "string"
           }
         },
@@ -107,18 +550,279 @@
         "tags" : [ "idempotency-test-controller" ]
       }
     },
-    "/api/pacientes" : {
+    "/api/especialidades" : {
       "get" : {
-        "operationId" : "listar",
+        "operationId" : "especialidades",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "soloActivas",
+          "required" : false,
+          "schema" : {
+            "default" : true,
+            "type" : "boolean"
+          }
+        } ],
         "responses" : {
           "200" : {
             "content" : {
               "*/*" : {
                 "schema" : {
-                  "items" : {
-                    "$ref" : "#/components/schemas/PacienteResponse"
-                  },
-                  "type" : "array"
+                  "$ref" : "#/components/schemas/PaginaResponseEspecialidadResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "catalogo-controller" ]
+      },
+      "post" : {
+        "operationId" : "crearEspecialidad",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CrearEspecialidadRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/EspecialidadResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "catalogo-controller" ]
+      }
+    },
+    "/api/especialidades/{id}" : {
+      "put" : {
+        "operationId" : "actualizarEspecialidad",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ActualizarEspecialidadRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/EspecialidadResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "catalogo-controller" ]
+      }
+    },
+    "/api/medicos" : {
+      "get" : {
+        "operationId" : "medicos",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "especialidad",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "soloActivos",
+          "required" : false,
+          "schema" : {
+            "default" : true,
+            "type" : "boolean"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PaginaResponseMedicoResumen"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "catalogo-controller" ]
+      },
+      "post" : {
+        "operationId" : "crearMedico",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/MedicoRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MedicoResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "catalogo-controller" ]
+      }
+    },
+    "/api/medicos/me" : {
+      "get" : {
+        "operationId" : "yo_1",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MedicoResumen"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "catalogo-controller" ]
+      }
+    },
+    "/api/medicos/{id}" : {
+      "get" : {
+        "operationId" : "medico",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MedicoResumen"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "catalogo-controller" ]
+      },
+      "put" : {
+        "operationId" : "actualizarMedico",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/MedicoRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MedicoResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "catalogo-controller" ]
+      }
+    },
+    "/api/pacientes" : {
+      "get" : {
+        "operationId" : "buscar",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "q",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "tipo",
+          "required" : false,
+          "schema" : {
+            "default" : "nombre",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "limite",
+          "required" : false,
+          "schema" : {
+            "default" : 25,
+            "format" : "int32",
+            "maximum" : 100,
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        }, {
+          "in" : "query",
+          "name" : "cursor",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PaginaResponsePacienteResponse"
                 }
               }
             },
@@ -154,6 +858,132 @@
         "tags" : [ "paciente-controller" ]
       }
     },
+    "/api/pacientes/me" : {
+      "get" : {
+        "operationId" : "yo",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PacienteResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "paciente-controller" ]
+      }
+    },
+    "/api/pacientes/solicitudes" : {
+      "get" : {
+        "operationId" : "listar_1",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "estado",
+          "required" : false,
+          "schema" : {
+            "enum" : [ "PENDIENTE", "APROBADA", "RECHAZADA" ],
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "limite",
+          "required" : false,
+          "schema" : {
+            "default" : 25,
+            "format" : "int32",
+            "maximum" : 100,
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        }, {
+          "in" : "query",
+          "name" : "cursor",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PaginaResponseSolicitudResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "solicitud-controller" ]
+      }
+    },
+    "/api/pacientes/solicitudes/{id}/aprobar" : {
+      "post" : {
+        "operationId" : "aprobar",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SolicitudResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "solicitud-controller" ]
+      }
+    },
+    "/api/pacientes/solicitudes/{id}/rechazar" : {
+      "post" : {
+        "operationId" : "rechazar",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RechazoRequest"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SolicitudResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "solicitud-controller" ]
+      }
+    },
     "/api/pacientes/{id}" : {
       "get" : {
         "operationId" : "porId",
@@ -179,6 +1009,200 @@
           }
         },
         "tags" : [ "paciente-controller" ]
+      },
+      "put" : {
+        "operationId" : "actualizar",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "header",
+          "name" : "If-Match",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ActualizarPacienteRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PacienteResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "paciente-controller" ]
+      }
+    },
+    "/api/pacientes/{pacienteId}/contactos" : {
+      "get" : {
+        "operationId" : "listar",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "pacienteId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PaginaResponseContactoResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "contacto-controller" ]
+      },
+      "post" : {
+        "operationId" : "agregar",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "pacienteId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ContactoRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ContactoResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "contacto-controller" ]
+      }
+    },
+    "/api/pacientes/{pacienteId}/contactos/{contactoId}" : {
+      "delete" : {
+        "operationId" : "eliminar",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "pacienteId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "contactoId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "contacto-controller" ]
+      }
+    },
+    "/api/pacientes/{pacienteId}/solicitudes" : {
+      "get" : {
+        "operationId" : "deUnPaciente",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "pacienteId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PaginaResponseSolicitudResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "solicitud-controller" ]
+      },
+      "post" : {
+        "operationId" : "solicitar",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "pacienteId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SolicitudRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SolicitudResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "solicitud-controller" ]
       }
     }
   },

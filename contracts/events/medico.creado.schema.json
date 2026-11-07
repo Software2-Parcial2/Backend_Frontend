@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sigec.local/contracts/events/medico.creado.schema.json",
+  "title": "medico.creado",
+  "description": "Evento MS2 -> varios (exchange sigec.eventos, routing key = type). Alta de un medico en el catalogo; MS3 lo proyecta para la agenda.",
+  "allOf": [
+    {
+      "$ref": "envelope.schema.json"
+    },
+    {
+      "properties": {
+        "type": {
+          "const": "medico.creado"
+        },
+        "payload": {
+          "type": "object",
+          "required": [
+            "medicoId",
+            "nombre",
+            "especialidad",
+            "especialidadNombre",
+            "activo"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "medicoId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "nombre": {
+              "type": "string"
+            },
+            "especialidad": {
+              "type": "string",
+              "description": "codigo de la especialidad (clave natural)"
+            },
+            "especialidadNombre": {
+              "type": "string"
+            },
+            "consultorio": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "activo": {
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

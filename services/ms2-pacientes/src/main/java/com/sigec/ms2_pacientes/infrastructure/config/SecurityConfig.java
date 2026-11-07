@@ -39,6 +39,13 @@ public class SecurityConfig {
 						.requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
 						// Antes del controlador: sin esto la validacion del cuerpo (400) se evalua antes que @PreAuthorize (403).
 						.requestMatchers(HttpMethod.POST, "/api/pacientes").hasAnyRole("administrador", "recepcion", "medico")
+						.requestMatchers(HttpMethod.PUT, "/api/pacientes/*").hasAnyRole("administrador", "recepcion")
+						.requestMatchers(HttpMethod.POST, "/api/pacientes/*/contactos").hasAnyRole("administrador", "recepcion")
+						.requestMatchers(HttpMethod.POST, "/api/pacientes/*/solicitudes").hasRole("paciente")
+						.requestMatchers(HttpMethod.POST, "/api/pacientes/solicitudes/*/aprobar", "/api/pacientes/solicitudes/*/rechazar")
+								.hasAnyRole("administrador", "recepcion")
+						.requestMatchers(HttpMethod.POST, "/api/especialidades", "/api/medicos").hasRole("administrador")
+						.requestMatchers(HttpMethod.PUT, "/api/especialidades/*", "/api/medicos/*").hasRole("administrador")
 						.anyRequest().authenticated())
 				// Despues de autenticar y autorizar: solo se reservan claves de usuarios con acceso.
 				.addFilterAfter(new IdempotencyFilter(idempotencyStore, mapper, Duration.ofHours(ttlHours)), AuthorizationFilter.class)

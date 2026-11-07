@@ -52,6 +52,20 @@ public abstract class ProblemaBase extends ResponseEntityExceptionHandler {
 		return ResponseEntity.badRequest().headers(headers).body(pd);
 	}
 
+	/** Validacion de parametros (limite fuera de rango, etc.): 400 VALIDACION con errors por parametro. */
+	@Override
+	protected ResponseEntity<Object> handleHandlerMethodValidationException(org.springframework.web.method.annotation.HandlerMethodValidationException ex,
+			HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+		ProblemDetail pd = problema(HttpStatus.BAD_REQUEST, "VALIDACION", "Solicitud invalida", "Hay parametros que no cumplen las reglas");
+		List<Map<String, String>> errores = ex.getParameterValidationResults().stream()
+				.flatMap(r -> r.getResolvableErrors().stream().map(e -> Map.of("campo", r.getMethodParameter().getParameterName() == null ? "" : r.getMethodParameter().getParameterName(),
+						"mensaje", String.valueOf(e.getDefaultMessage()))))
+				.toList();
+		pd.setProperty("errors", errores);
+		completar(pd, request);
+		return ResponseEntity.badRequest().headers(headers).body(pd);
+	}
+
 	@ExceptionHandler(AccessDeniedException.class)
 	ResponseEntity<ProblemDetail> prohibido(AccessDeniedException ex, HttpServletRequest req) {
 		ProblemDetail pd = problema(HttpStatus.FORBIDDEN, "PROHIBIDO", "Acceso denegado", "Su rol no permite esta operacion");

@@ -39,7 +39,10 @@ y con **publisher confirms**. Los consumidores usan **ack manual**.
 | `imagenes.analisis.solicitar` | comando | MS5 API → MS5 inferencia | `sigec.saga` | imagenId, pacienteId, bucket, objectKey, mime, hashSha256 |
 | `imagenes.analisis.completado` | respuesta | MS5 inferencia → MS5 API | `sigec.saga` | imagenId, probabilidad_neumonia, clase, version_modelo, modelo, aviso |
 | `imagenes.analisis.fallido` | respuesta | MS5 inferencia → MS5 API | `sigec.saga` | imagenId, motivo |
-| `paciente.creado` | evento de dominio | MS2 → varios | `sigec.eventos` | pacienteId, nombre, documento, email? |
+| `paciente.creado` | evento de dominio | MS2 → varios | `sigec.eventos` | pacienteId, numeroHistoria, nombre, documento, email? |
+| `paciente.actualizado` | evento de dominio | MS2 → varios | `sigec.eventos` | pacienteId, numeroHistoria, nombre, documento, email?, telefono?, version |
+| `medico.creado` | evento de dominio | MS2 → varios | `sigec.eventos` | medicoId, nombre, especialidad (codigo), especialidadNombre, consultorio?, activo |
+| `medico.actualizado` | evento de dominio | MS2 → varios | `sigec.eventos` | medicoId, nombre, especialidad (codigo), especialidadNombre, consultorio?, activo |
 | `cita.confirmada` | evento de dominio | MS3 → varios | `sigec.eventos` | citaId, pacienteId, medicoId, fechaHora |
 | `factura.creada` | evento de dominio | MS6 → varios | `sigec.eventos` | facturaId, citaId, pacienteId, monto, estado |
 
@@ -47,7 +50,7 @@ Las respuestas conservan el `correlationId` del comando y ponen su `id` en el `c
 
 ## Eventos de dominio y outbox
 
-Los eventos de dominio (`paciente.creado`, `factura.creada`) se escriben en la tabla `outbox` en la **misma transaccion** que el cambio
+Los eventos de dominio (`paciente.*`, `medico.*`, `factura.creada`) se escriben en la tabla `outbox` en la **misma transaccion** que el cambio
 de negocio. Un relay los publica en `sigec.eventos` **al menos una vez**: el `id` del sobre es el id de la fila del outbox, de modo que
 una reentrega lleva el mismo `id` y el consumidor la descarta (dedupe por `id`). El `occurredAt` del sobre es el `created_at` de la fila
 y `correlationId` es el id del agregado.

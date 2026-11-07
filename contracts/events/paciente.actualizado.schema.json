@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sigec.local/contracts/events/paciente.actualizado.schema.json",
+  "title": "paciente.actualizado",
+  "description": "Evento MS2 -> varios (exchange sigec.eventos, routing key = type). Estado vigente del paciente tras una edicion o una solicitud de actualizacion aprobada.",
+  "allOf": [
+    {
+      "$ref": "envelope.schema.json"
+    },
+    {
+      "properties": {
+        "type": {
+          "const": "paciente.actualizado"
+        },
+        "payload": {
+          "type": "object",
+          "required": [
+            "pacienteId",
+            "numeroHistoria",
+            "nombre",
+            "documento",
+            "version"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "pacienteId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "numeroHistoria": {
+              "type": "string"
+            },
+            "nombre": {
+              "type": "string"
+            },
+            "documento": {
+              "type": "string"
+            },
+            "email": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "telefono": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "version": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        }
+      }
+    }
+  ]
+}
