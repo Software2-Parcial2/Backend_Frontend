@@ -32,6 +32,7 @@ Los problemas y limites conocidos por bloque estan en `docs/PENDIENTES.md`. Este
 | L4 | MS7: RAG con pgvector + servicio de embeddings | Hecho; recuperacion medida 10/12 en top-1 |
 | **Datos** | Auditoria y modelo de datos (`docs/datos/`): migraciones ms2/ms4/ms6/ms7, disponibilidad de horarios (Query), `mongo-init`, semilla, EXPLAIN, diccionario generado | Hecho; ver `docs/PENDIENTES.md` (bloque Datos) |
 | **Docker** | Pila completa en contenedores (`docker-compose.full.yml`, `make up-core`/`up-all`, `docs/docker.md`) | Hecho y verificado con `up-core`; **ML (`up-all`) y navegador sin verificar** |
+| **Diseno** | Diseno visual trasladado a los frontends: `packages/design-tokens`, `design.md` por app, pantallas clave con datos de ejemplo | Hecho; **sin verificar en navegador** (ver `docs/PENDIENTES.md`) |
 | **L5** | MS7: voz (Whisper), dashboard Vue, `scripts/e2e-ms7.sh` | Hecho; **E2E 37/37 en stack real** (ver `docs/inteligencia.md`) |
 
 ## Donde estamos
@@ -46,6 +47,6 @@ Bloques 0-L terminados en el repo (commits locales, sin push). **Pendiente de ve
 
 - **MS4 Historias clinicas:** solo esqueleto; falta dominio y casos de uso (y vincular resultados de MS5).
 - **MS7:** mensajeria/idempotencia (no las usa), registrar asistencia en MS3 para entrenar el modelo de inasistencia con datos propios, pantalla integrada en el shell.
-- **Frontends:** pantallas de negocio, PWA offline de datos, iconos PNG, `expo prebuild --clean`, lint de la PWA (TS 7), validador local TFLite/TF.js.
+- **Frontends:** pantallas de la fase 2 del diseno (ver `docs/PENDIENTES.md`), conectar las pantallas a las APIs, PWA offline de datos, iconos PNG, `expo prebuild --clean`, lint de la PWA (TS 7), validador local TFLite/TF.js.
 - **AWS:** desplegar y probar la Lambda `lambda-outbox`.
 - **Deudas:** `paciente.actualizado`, fila de MS2 para el paciente demo, Ajv en MS6/Spring, fijar version de n8n y Postgres 17.

@@ -188,6 +188,24 @@ valores extremos (> Q3 + 3*IQR) se excluyen del ajuste y se informan en `atipico
 - K-means con datos de MS3: MS3 solo guarda citas futuras (se siembran de los proximos meses), asi que la "demanda" es la agenda reservada, no demanda historica.
 - Las respuestas GraphQL de error no pasan por el gateway con 401 si no hay token: lo rechaza el gateway (HTTP 401 sin cuerpo GraphQL).
 
+## Diseno visual en los frontends (`design.md` por app)
+
+Origen: diseno "Mapa de pantallas SIGEC" (Claude Design, ~90 artboards). Tokens y estilos en `packages/design-tokens`; cada app tiene su `design.md`.
+
+- **Hecho:** shell (sidebar por rol, inicio por rol, login SSO, 403/404/503), Angular clinica (13 pantallas), Vue gestion (dashboard, asistente, ML, alertas, politicas),
+  PWA (9 pantallas + acceso) y movil (9 pantallas). Datos de ejemplo del diseno; no hay conexion a APIs nuevas.
+- **Sin verificar en navegador:** solo se comprobaron `build`, `tsc`/`vue-tsc` y las pruebas unitarias existentes. Falta abrir el shell con Keycloak y comprobar visualmente:
+  que el CSS de cada remoto se inyecta al montarlo (Vue: chunk CSS de Module Federation; Angular: estilos en el JS del componente), que el menu del shell cambia de
+  pantalla dentro del remoto (el shell reenvia `hashchange`, `RemoteContainer.tsx`) y el aspecto frente al diseno.
+- **Fase 2 (artboards sin trasladar):** shell (usuarios y roles, seguridad, perfil, estado de servicios, web sin conexion); Angular (ms2-guardado/solicitudes, ms3-horarios/medico/
+  compensacion/reprogramar/cancelar, ms4-auditoria/conflicto/pestanas/receta, ms5-cargar/rechazada, ms6-tarifario/movimientos/tarifa-form/anular, ms8-plantillas/preferencias);
+  Vue (ms7-alerta-detalle, ms7-reporte-pdf).
+- **Fuentes:** Public Sans e IBM Plex Mono se cargan de Google Fonts (dependencia externa; sin conexion cae a `system-ui`, incluso en la PWA). Alternativa: `@fontsource` en el paquete de tokens.
+- **Tokens duplicados a mano:** `packages/design-tokens/{sigec.css,tokens.js}` y `apps/mobile/src/theme.ts` (movil usa npm). Un cambio de color toca los tres.
+- **Angular:** se retiro el tema global de Material (pisaba `html`/`body` del shell); Material sigue instalado sin uso. Presupuesto `anyComponentStyle` subido a 16/24 kB.
+- **Rutas por hash** (`/clinica#/...`, `/gestion#/...`) en lugar de rutas de ruta: el shell sigue siendo dueno de la URL y el contrato `mount/unmount` no cambia.
+- **Movil:** login es una maqueta (no llama a Keycloak); navegacion por pila propia sin React Navigation; iconos de la barra son glifos de texto.
+
 ## Datos (auditoria y modelo de datos, `docs/datos/`)
 
 Hecho: migraciones ms2 V3, ms4 V3, ms6 (`2026_11_06_000001`), ms7 `0002`; `GET /api/citas/disponibilidad` (Query); TTL en `citas`; `scripts/mongo-init`; `make seed`/`seed-reset`;

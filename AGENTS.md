@@ -45,6 +45,7 @@ DDD + Arquitectura Hexagonal + Clean Architecture en cada servicio.
 | `@sigec/messaging-nest` | sobre de mensajes, publicador con confirms, consumidor con reintentos/DLQ, `buildOutboxItem` |
 | `@sigec/idempotency-nest` | `@Idempotent()` (interceptor), almacen DynamoDB, deduplicador de consumidores |
 | `@sigec/mfe-contract` | tipos del contrato `mount/unmount` de los microfrontends |
+| `@sigec/design-tokens` | tokens y estilos del diseno (CSS bajo `.sigec`); cada frontend tiene su `design.md` |
 
 ## Reglas de capas
 
