@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sigec.local/contracts/events/cita.cancelada.schema.json",
+  "title": "cita.cancelada",
+  "description": "Evento de dominio MS3 -> varios (exchange sigec.eventos). Una cita confirmada fue cancelada por un usuario (no por una compensacion de la SAGA).",
+  "allOf": [
+    {
+      "$ref": "envelope.schema.json"
+    },
+    {
+      "properties": {
+        "type": {
+          "const": "cita.cancelada"
+        },
+        "payload": {
+          "type": "object",
+          "required": [
+            "citaId",
+            "pacienteId",
+            "medicoId",
+            "fechaHora",
+            "motivo"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "citaId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "pacienteId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "medicoId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "fechaHora": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "motivo": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

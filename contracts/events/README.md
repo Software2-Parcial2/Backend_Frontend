@@ -41,9 +41,12 @@ y con **publisher confirms**. Los consumidores usan **ack manual**.
 | `imagenes.analisis.fallido` | respuesta | MS5 inferencia → MS5 API | `sigec.saga` | imagenId, motivo |
 | `paciente.creado` | evento de dominio | MS2 → varios | `sigec.eventos` | pacienteId, numeroHistoria, nombre, documento, email? |
 | `paciente.actualizado` | evento de dominio | MS2 → varios | `sigec.eventos` | pacienteId, numeroHistoria, nombre, documento, email?, telefono?, version |
-| `medico.creado` | evento de dominio | MS2 → varios | `sigec.eventos` | medicoId, nombre, especialidad (codigo), especialidadNombre, consultorio?, activo |
-| `medico.actualizado` | evento de dominio | MS2 → varios | `sigec.eventos` | medicoId, nombre, especialidad (codigo), especialidadNombre, consultorio?, activo |
+| `medico.creado` | evento de dominio | MS2 → varios | `sigec.eventos` | medicoId, nombre, especialidad (codigo), especialidadNombre, consultorio?, activo, usuarioKeycloak? |
+| `medico.actualizado` | evento de dominio | MS2 → varios | `sigec.eventos` | medicoId, nombre, especialidad (codigo), especialidadNombre, consultorio?, activo, usuarioKeycloak? |
 | `cita.confirmada` | evento de dominio | MS3 → varios | `sigec.eventos` | citaId, pacienteId, medicoId, fechaHora |
+| `cita.cancelada` | evento de dominio | MS3 → varios | `sigec.eventos` | citaId, pacienteId, medicoId, fechaHora, motivo |
+| `cita.reprogramada` | evento de dominio | MS3 → varios | `sigec.eventos` | citaId, pacienteId, medicoId, fechaHora, fechaHoraAnterior |
+| `cita.asistencia-registrada` | evento de dominio | MS3 → varios | `sigec.eventos` | citaId, pacienteId, medicoId, fechaHora, asistencia (LLEGO\|ASISTIO\|NO_ASISTIO) |
 | `factura.creada` | evento de dominio | MS6 → varios | `sigec.eventos` | facturaId, citaId, pacienteId, monto, estado |
 
 Las respuestas conservan el `correlationId` del comando y ponen su `id` en el `causationId`.
@@ -86,6 +89,7 @@ la copia se publica en `sigec.dlx` → `<q>.dlq`. Un mensaje que no es JSON vali
 | `ms6.saga.comandos` | MS6 | los tres comandos `facturacion.*` |
 | `ms8.saga.comandos` | MS8 | los dos comandos `notificaciones.*` |
 | `ms3.saga.respuestas` | MS3 | las cinco respuestas |
+| `ms3.eventos` | MS3 | `paciente.creado`, `paciente.actualizado`, `medico.creado`, `medico.actualizado` (proyecciones de nombres para la agenda) |
 | `ms4.eventos.pacientes` | MS4 | `paciente.creado` |
 | `ms5.inferencia.comandos` | MS5 inferencia (Python) | `imagenes.analisis.solicitar` |
 | `ms5.api.respuestas` | MS5 API | `imagenes.analisis.completado`, `.fallido` |

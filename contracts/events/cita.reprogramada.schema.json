@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sigec.local/contracts/events/cita.reprogramada.schema.json",
+  "title": "cita.reprogramada",
+  "description": "Evento de dominio MS3 -> varios (exchange sigec.eventos). Una cita confirmada cambio de fecha y hora; el cargo se conserva.",
+  "allOf": [
+    {
+      "$ref": "envelope.schema.json"
+    },
+    {
+      "properties": {
+        "type": {
+          "const": "cita.reprogramada"
+        },
+        "payload": {
+          "type": "object",
+          "required": [
+            "citaId",
+            "pacienteId",
+            "medicoId",
+            "fechaHora",
+            "fechaHoraAnterior"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "citaId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "pacienteId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "medicoId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "fechaHora": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "fechaHoraAnterior": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

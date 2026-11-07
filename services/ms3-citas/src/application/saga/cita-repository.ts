@@ -1,4 +1,4 @@
-import type { CitaAggregate, Horario, HorarioOp, OutboxMessage } from '../../domain/cita.js';
+import type { CitaAggregate, CitaEstado, Horario, HorarioOp, OutboxMessage } from '../../domain/cita.js';
 
 export interface FiltroCitas {
   /** Citas de un paciente (indice por paciente). */
@@ -7,6 +7,8 @@ export interface FiltroCitas {
   medicoId?: string;
   desde?: number;
   hasta?: number;
+  /** Solo citas en este estado (se aplica sobre el indice elegido). */
+  estado?: CitaEstado;
 }
 
 export interface PaginaCitas {

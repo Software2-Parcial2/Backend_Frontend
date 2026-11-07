@@ -7,6 +7,8 @@ export interface AuthUser {
   roles: string[];
   /** Paciente vinculado al usuario (claim `paciente_id`); solo lo tiene el rol paciente. */
   pacienteId?: string;
+  /** Medico vinculado al usuario (claim `medico_id`); solo lo tiene el rol medico. */
+  medicoId?: string;
 }
 
 export interface AuthOptions {

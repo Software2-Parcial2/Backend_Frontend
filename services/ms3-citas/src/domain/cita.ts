@@ -6,7 +6,11 @@ export type CitaEstado =
   | 'COBRO_PROVISIONAL'
   | 'CONFIRMADA'
   | 'CANCELADA' // compensada antes de existir un cobro conocido
-  | 'ANULADA'; // compensada habiendo un cobro (que se anula)
+  | 'ANULADA' // compensada habiendo un cobro (que se anula)
+  | 'CANCELADA_USUARIO' // una persona cancelo la cita ya confirmada (no es una compensacion de la SAGA)
+  | 'EN_SALA' // el paciente llego y espera
+  | 'ATENDIDA'
+  | 'NO_ASISTIO';
 
 /** Asistencia a la cita ya ocurrida (alimenta el modelo de inasistencia de MS7). Opcional: solo existe tras la cita. */
 export type Asistencia = 'ASISTIO' | 'NO_ASISTIO';
@@ -58,6 +62,21 @@ export interface SagaState {
   historial: HistorialEntry[];
 }
 
+/** Cancelacion pedida por una persona (cita confirmada). */
+export interface Cancelacion {
+  motivo: string;
+  por: string;
+  at: number;
+}
+
+/** Cambio de fecha y hora de una cita confirmada (el cargo se conserva). */
+export interface Reprogramacion {
+  desde: string;
+  hacia: string;
+  por: string;
+  at: number;
+}
+
 export interface CitaAggregate {
   citaId: string;
   input: CitaInput;
@@ -68,6 +87,10 @@ export interface CitaAggregate {
   saga: SagaState;
   /** Registro posterior a la cita; ausente mientras no se registre. */
   asistencia?: Asistencia;
+  /** epoch ms en que el paciente llego (estado EN_SALA). */
+  llegadaEn?: number;
+  cancelacion?: Cancelacion;
+  reprogramaciones?: Reprogramacion[];
   createdAt: number;
   updatedAt: number;
   /** Version optimista del agregado. */
@@ -76,7 +99,7 @@ export interface CitaAggregate {
 
 // --- Horarios -----------------------------------------------------------------------------------
 
-export type HorarioEstado = 'LIBRE' | 'RESERVADO' | 'CONFIRMADO';
+export type HorarioEstado = 'LIBRE' | 'RESERVADO' | 'CONFIRMADO' | 'BLOQUEADO';
 
 export interface Horario {
   medicoId: string;
@@ -85,6 +108,8 @@ export interface Horario {
   citaId?: string;
   /** epoch ms; solo en RESERVADO. */
   reservaExpiraEn?: number;
+  /** Solo en BLOQUEADO (ausencia, reunion, congreso...). */
+  motivo?: string;
 }
 
 /**
@@ -100,7 +125,9 @@ export function estadoEfectivo(h: Horario | undefined, now: number): HorarioEsta
 export type HorarioOp =
   | { op: 'RESERVAR'; medicoId: string; fechaHora: string; citaId: string; expiraEn: number }
   | { op: 'CONFIRMAR'; medicoId: string; fechaHora: string; citaId: string }
-  | { op: 'LIBERAR'; medicoId: string; fechaHora: string; citaId: string };
+  | { op: 'LIBERAR'; medicoId: string; fechaHora: string; citaId: string }
+  /** Toma el horario ya CONFIRMADO para la cita en un solo paso (reprogramacion: el cargo ya esta pagado/confirmado). */
+  | { op: 'TOMAR'; medicoId: string; fechaHora: string; citaId: string };
 
 /** Mensaje que la SAGA envia por RabbitMQ (se escribe en el outbox, en la misma transaccion). */
 export interface SagaCommand {
@@ -143,3 +170,29 @@ export class HorarioPerdidoError extends Error {
 }
 
 export class SolicitudInvalidaError extends Error {}
+
+/** Recurso inexistente con `code` estable (se traduce a 404). */
+export class NoEncontradoError extends Error {
+  constructor(
+    public readonly code: string,
+    message: string,
+  ) {
+    super(message);
+  }
+}
+
+export class CitaNoEncontradaError extends Error {
+  constructor(public readonly citaId: string) {
+    super(`No existe la cita ${citaId}`);
+  }
+}
+
+/** La operacion no procede en el estado actual de la cita (se traduce a 409/422 con `code`). */
+export class TransicionInvalidaError extends Error {
+  constructor(
+    public readonly code: string,
+    message: string,
+  ) {
+    super(message);
+  }
+}

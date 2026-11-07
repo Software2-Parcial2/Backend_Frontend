@@ -45,6 +45,13 @@
             },
             "activo": {
               "type": "boolean"
+            },
+            "usuarioKeycloak": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "preferred_username del usuario del medico (une medico y cuenta)"
             }
           }
         }

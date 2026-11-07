@@ -1,6 +1,30 @@
 {
   "components": {
     "schemas": {
+      "AsistenciaDto": {
+        "properties": {},
+        "type": "object"
+      },
+      "BloqueoDto": {
+        "properties": {},
+        "type": "object"
+      },
+      "CancelarCitaDto": {
+        "properties": {},
+        "type": "object"
+      },
+      "GenerarHorariosDto": {
+        "properties": {},
+        "type": "object"
+      },
+      "PlantillaDto": {
+        "properties": {},
+        "type": "object"
+      },
+      "ReprogramarCitaDto": {
+        "properties": {},
+        "type": "object"
+      },
       "SolicitarCitaDto": {
         "properties": {},
         "type": "object"
@@ -106,9 +130,464 @@
         ]
       }
     },
+    "/api/citas/{id}/asistencia": {
+      "post": {
+        "operationId": "CitasController_asistencia",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "UUID; ver contracts/idempotency.md",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AsistenciaDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "citas"
+        ]
+      }
+    },
+    "/api/citas/{id}/cancelar": {
+      "post": {
+        "operationId": "CitasController_cancelar",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "UUID; ver contracts/idempotency.md",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelarCitaDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "citas"
+        ]
+      }
+    },
+    "/api/citas/{id}/historial": {
+      "get": {
+        "operationId": "CitasController_historial",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "citas"
+        ]
+      }
+    },
+    "/api/citas/{id}/reprogramar": {
+      "post": {
+        "operationId": "CitasController_reprogramar",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "UUID; ver contracts/idempotency.md",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReprogramarCitaDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "citas"
+        ]
+      }
+    },
+    "/api/citas/agenda": {
+      "get": {
+        "operationId": "AgendaController_dia",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "agenda"
+        ]
+      }
+    },
+    "/api/citas/agenda/medico/me": {
+      "get": {
+        "operationId": "AgendaController_mia",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "agenda"
+        ]
+      }
+    },
     "/api/citas/disponibilidad": {
       "get": {
         "operationId": "CitasController_disponibilidad",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "citas"
+        ]
+      }
+    },
+    "/api/citas/medicos/{medicoId}/bloqueos": {
+      "get": {
+        "operationId": "HorariosController_bloqueos",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "medicoId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "horarios"
+        ]
+      },
+      "post": {
+        "operationId": "HorariosController_crearBloqueo",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "medicoId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "UUID; ver contracts/idempotency.md",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BloqueoDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "horarios"
+        ]
+      }
+    },
+    "/api/citas/medicos/{medicoId}/bloqueos/{id}": {
+      "delete": {
+        "operationId": "HorariosController_quitarBloqueo",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "medicoId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "horarios"
+        ]
+      }
+    },
+    "/api/citas/medicos/{medicoId}/horario": {
+      "get": {
+        "operationId": "HorariosController_plantilla",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "medicoId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "horarios"
+        ]
+      },
+      "put": {
+        "operationId": "HorariosController_guardar",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "medicoId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "UUID; ver contracts/idempotency.md",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlantillaDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "horarios"
+        ]
+      }
+    },
+    "/api/citas/medicos/{medicoId}/horario/generar": {
+      "post": {
+        "operationId": "HorariosController_generar",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "medicoId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "UUID; ver contracts/idempotency.md",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerarHorariosDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "horarios"
+        ]
+      }
+    },
+    "/api/citas/resumen": {
+      "get": {
+        "operationId": "CitasController_resumen",
         "parameters": [],
         "responses": {
           "200": {

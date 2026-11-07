@@ -163,3 +163,19 @@ pnpm --filter ms8-notificaciones test
 docker compose up -d && make dynamodb-init && make rabbitmq-declare
 make e2e-saga                                        # scripts/e2e-saga.sh: escenarios (a)-(g) con token real (~4 min)
 ```
+
+
+## Ciclo de vida de una cita confirmada (Fase 2)
+
+Una vez `CONFIRMADA` la cita sale de la SAGA y se modifica con funciones puras en `application/saga/ciclo-vida.ts` (misma persistencia atomica: cita + horario + outbox en una transaccion).
+Las citas con la SAGA **en curso** no se tocan (`409 CITA_EN_PROCESO`).
+
+| Operacion | Efecto | Eventos / comandos |
+|---|---|---|
+| `POST /api/citas/{id}/cancelar` | estado `CANCELADA_USUARIO`; libera el horario; anula el cobro (`anulacionCobro` PENDIENTE → CONFIRMADA al responder MS6); deja de reintentar el aviso | `facturacion.cobro.anular`, `notificaciones.cita-cancelada.enviar`, evento `cita.cancelada` |
+| `POST /api/citas/{id}/reprogramar` | `TOMAR` el horario nuevo ya CONFIRMADO + `LIBERAR` el viejo en **la misma** `TransactWriteItems`; si el nuevo esta ocupado nada cambia (`409 HORARIO_OCUPADO`); el cargo se conserva | evento `cita.reprogramada` |
+| `POST /api/citas/{id}/asistencia` | `LLEGO` → `EN_SALA`; `ATENDIDA` → `ATENDIDA`; `NO_ASISTIO` (solo pasada la hora) → `NO_ASISTIO` | evento `cita.asistencia-registrada` (alimenta el modelo de inasistencia de MS7) |
+
+**Horarios.** La plantilla semanal (`MEDICO#id/PLANTILLA`, horas locales de la clinica, `CLINICA_UTC_OFFSET_MIN`, por defecto -240) genera los horarios `LIBRE`; un bloqueo (`MEDICO#id/BLOQUEO#...`) los pasa a `BLOQUEADO` y devuelve las citas que ya estaban dentro (no se cancelan solas). Con `HORARIOS_ESTRICTOS=true` solo se pueden reservar horarios publicados; por defecto (false) una fecha sin item cuenta como libre, que es el comportamiento historico de la SAGA y de los E2E.
+
+**Proyecciones.** MS3 consume `ms3.eventos` (`paciente.creado|actualizado`, `medico.creado|actualizado`) para mostrar nombres en la agenda sin llamar a MS2.

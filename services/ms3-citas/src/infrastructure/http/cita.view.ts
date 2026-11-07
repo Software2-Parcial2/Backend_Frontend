@@ -13,6 +13,10 @@ export function toView(c: CitaAggregate) {
     facturaId: c.facturaId ?? null,
     notificacion: c.notificacion.estado,
     motivoFallo: c.motivoFallo ?? null,
+    asistencia: c.asistencia ?? null,
+    llegadaEn: c.llegadaEn ? new Date(c.llegadaEn).toISOString() : null,
+    cancelacion: c.cancelacion ? { motivo: c.cancelacion.motivo, por: c.cancelacion.por, en: new Date(c.cancelacion.at).toISOString() } : null,
+    reprogramaciones: (c.reprogramaciones ?? []).map((r) => ({ desde: r.desde, hacia: r.hacia, por: r.por, en: new Date(r.at).toISOString() })),
     saga: {
       estado: c.saga.estado,
       paso: c.saga.paso,

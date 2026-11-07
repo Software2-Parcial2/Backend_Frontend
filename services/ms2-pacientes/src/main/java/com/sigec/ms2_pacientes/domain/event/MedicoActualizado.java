@@ -7,10 +7,10 @@ import com.sigec.ms2_pacientes.domain.model.Especialidad;
 import com.sigec.ms2_pacientes.domain.model.Medico;
 
 public record MedicoActualizado(UUID medicoId, String nombre, String especialidad, String especialidadNombre, String consultorio, boolean activo,
-		Instant occurredAt) implements DomainEvent {
+		String usuarioKeycloak, Instant occurredAt) implements DomainEvent {
 
 	public static MedicoActualizado de(Medico m, Especialidad e) {
-		return new MedicoActualizado(m.id(), m.nombre(), e.codigo(), e.nombre(), m.consultorio(), m.activo(), Instant.now());
+		return new MedicoActualizado(m.id(), m.nombre(), e.codigo(), e.nombre(), m.consultorio(), m.activo(), m.usuarioKeycloak(), Instant.now());
 	}
 
 	@Override

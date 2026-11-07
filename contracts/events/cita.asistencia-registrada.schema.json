@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sigec.local/contracts/events/cita.asistencia-registrada.schema.json",
+  "title": "cita.asistencia-registrada",
+  "description": "Evento de dominio MS3 -> varios (exchange sigec.eventos). Llegada, atencion o inasistencia de una cita; alimenta el modelo de inasistencia de MS7.",
+  "allOf": [
+    {
+      "$ref": "envelope.schema.json"
+    },
+    {
+      "properties": {
+        "type": {
+          "const": "cita.asistencia-registrada"
+        },
+        "payload": {
+          "type": "object",
+          "required": [
+            "citaId",
+            "pacienteId",
+            "medicoId",
+            "fechaHora",
+            "asistencia"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "citaId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "pacienteId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "medicoId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "fechaHora": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "asistencia": {
+              "type": "string",
+              "enum": [
+                "LLEGO",
+                "ASISTIO",
+                "NO_ASISTIO"
+              ]
+            }
+          }
+        }
+      }
+    }
+  ]
+}

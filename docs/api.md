@@ -26,7 +26,7 @@ Implementación: Nest `@sigec/http-nest` (`aplicarConvenciones(app)`), Spring `P
 |---|---|---|
 | `/api/pacientes/**`, `/api/especialidades/**`, `/api/medicos/**` | MS2 Pacientes (`:8082`) | hecho (Fase 1) |
 | `/api/historias/**` | MS4 Historias clínicas (`:8084`) | solo esqueleto (Fase 4) |
-| `/api/citas/**` | MS3 Citas (`:3003`) | hecho (cancelar, reprogramar, horarios en la Fase 2) |
+| `/api/citas/**` | MS3 Citas (`:3003`) | hecho (Fase 2) |
 | `/api/imagenes/**` | MS5 Imágenes (`:3005`) | hecho (estudios y validación en la Fase 5) |
 | `/api/facturacion/**` | MS6 Facturación (`:8006`) | hecho (pagos, anulación, caja, tarifas en la Fase 3) |
 | `/api/notificaciones/**` | MS8 Notificaciones (`:3008`) | hecho (historial, plantillas, preferencias en la Fase 6) |
@@ -40,7 +40,7 @@ Las rutas `/internal/**` de MS8 y los `/health` de cada servicio **no** pasan po
 > La lista completa y los esquemas están en `contracts/openapi/`. Aquí solo el mapa.
 
 **MS2** · Pacientes: `POST /api/pacientes` · `GET /api/pacientes?q&tipo=nombre|documento|historia&limite&cursor` (búsqueda fonética: «Rohas» encuentra «Rojas») · `GET /api/pacientes/me` · `GET /api/pacientes/{id}` (+`ETag`) · `PUT /api/pacientes/{id}` (con `If-Match`; evento `paciente.actualizado`). Contactos de emergencia: `GET|POST /api/pacientes/{id}/contactos`, `DELETE …/{contactoId}`. Solicitudes de actualización de contacto: `POST /api/pacientes/{id}/solicitudes` (paciente), `GET /api/pacientes/{id}/solicitudes`, `GET /api/pacientes/solicitudes?estado` (recepción), `POST /api/pacientes/solicitudes/{id}/aprobar|rechazar`. Catálogo: `GET|POST /api/especialidades`, `PUT /api/especialidades/{id}`, `GET /api/medicos?especialidad`, `GET /api/medicos/me|{id}`, `POST|PUT /api/medicos` (administrador; eventos `medico.creado|actualizado`). Lectura del catálogo: cualquier usuario autenticado (resumen sin documento ni contacto).
-**MS3** · `POST /api/citas` (202, SAGA) · `GET /api/citas` (`pacienteId` o `medicoId`+`desde`+`hasta`) · `GET /api/citas/{id}` · `GET /api/citas/disponibilidad`.
+**MS3** · Citas: `POST /api/citas` (202, SAGA) · `GET /api/citas?pacienteId|medicoId&desde&hasta&estado&limite&cursor` · `GET /api/citas/{id}` · `GET /api/citas/{id}/historial` (estados, pasos de la SAGA y compensación) · `POST /api/citas/{id}/cancelar|reprogramar|asistencia` (200; la reprogramación y la cancelación son atómicas, ver `docs/saga-citas.md`) · `GET /api/citas/disponibilidad` · `GET /api/citas/resumen?desde&hasta&agruparPor=especialidad|medico|estado|mes`. Agenda: `GET /api/citas/agenda?fecha&especialidad&consultorio` (una columna por médico) y `GET /api/citas/agenda/medico/me?fecha`. Horarios: `GET|PUT /api/citas/medicos/{id}/horario` (plantilla semanal), `POST …/horario/generar`, `GET|POST …/bloqueos`, `DELETE …/bloqueos/{bloqueoId}`. Códigos de error propios: `HORARIO_OCUPADO`, `CITA_EN_PROCESO`, `CITA_YA_CANCELADA`, `CITA_NO_MODIFICABLE`, `CITA_PASADA`, `FECHA_PASADA`, `MISMO_HORARIO`, `ASISTENCIA_INVALIDA`, `CITA_FUTURA`, `PLANTILLA_VACIA`.
 **MS5** · `POST /api/imagenes` (multipart) · `GET /api/imagenes?pacienteId` · `GET /api/imagenes/{id}` · `GET /api/imagenes/{id}/url`.
 **MS6** · `GET /api/facturacion/facturas` (paginada) · `POST /api/facturacion/facturas` · `GET /api/facturacion/facturas/ingresos`.
 **MS7** · `POST /api/inteligencia/agente/consulta|voz` · `POST /api/inteligencia/reportes?formato=` · `GET /api/inteligencia/agente/auditoria` · `/api/inteligencia/rag/*` · `POST /graphql`.

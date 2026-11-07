@@ -33,6 +33,11 @@ export class DynamoCitaRepository implements CitaRepository {
     private readonly doc: DynamoDBDocumentClient,
     private readonly tables: { citas: string; outbox: string } = { citas: 'citas', outbox: 'outbox' },
     private readonly now: () => number = Date.now,
+    /**
+     * Horarios estrictos (HORARIOS_ESTRICTOS=true): solo se puede reservar un horario PUBLICADO (item LIBRE creado desde la plantilla
+     * del medico). Por defecto (false) una fecha sin item cuenta como libre, que es el comportamiento historico de la SAGA y del E2E.
+     */
+    private readonly estricto: boolean = process.env.HORARIOS_ESTRICTOS === 'true',
   ) {}
 
   async cargar(citaId: string): Promise<CitaAggregate | null> {
@@ -53,7 +58,7 @@ export class DynamoCitaRepository implements CitaRepository {
         if (failed.includes(0)) throw new ConcurrentUpdateError(change.aggregate.citaId);
         // Los indices 1..ops.length son las operaciones de horario, en orden.
         const failedOps = failed.map((i) => ops[i - 1]).filter(Boolean);
-        const reservar = failedOps.find((o) => o.op === 'RESERVAR');
+        const reservar = failedOps.find((o) => o.op === 'RESERVAR' || o.op === 'TOMAR');
         if (reservar) throw new HorarioNoDisponibleError(reservar.medicoId, reservar.fechaHora);
         if (failedOps.some((o) => o.op === 'CONFIRMAR')) throw new HorarioPerdidoError(change.aggregate.citaId);
         if (failedOps.length > 0 && attempt === 0) {
@@ -103,8 +108,16 @@ export class DynamoCitaRepository implements CitaRepository {
           Put: {
             TableName: this.tables.citas,
             Item: { ...Key, medicoId: op.medicoId, fechaHora: op.fechaHora, estado: 'RESERVADO', citaId: op.citaId, reservaExpiraEn: op.expiraEn },
-            // Libre si: no existe, esta LIBRE, o esta RESERVADO con la reserva vencida (la expiracion se comprueba aqui, no por TTL).
-            ConditionExpression: 'attribute_not_exists(pk) OR estado = :libre OR (estado = :reservado AND reservaExpiraEn < :now)',
+            ConditionExpression: this.condicionLibre(),
+            ExpressionAttributeValues: { ':libre': 'LIBRE', ':reservado': 'RESERVADO', ':now': now },
+          },
+        };
+      case 'TOMAR':
+        return {
+          Put: {
+            TableName: this.tables.citas,
+            Item: { ...Key, medicoId: op.medicoId, fechaHora: op.fechaHora, estado: 'CONFIRMADO', citaId: op.citaId },
+            ConditionExpression: this.condicionLibre(),
             ExpressionAttributeValues: { ':libre': 'LIBRE', ':reservado': 'RESERVADO', ':now': now },
           },
         };
@@ -129,6 +142,15 @@ export class DynamoCitaRepository implements CitaRepository {
           },
         };
     }
+  }
+
+  /**
+   * Libre si: esta LIBRE, o RESERVADO con la reserva vencida (la expiracion se comprueba aqui, no por TTL), o (si no hay modo estricto)
+   * no existe el item. Un horario BLOQUEADO o CONFIRMADO nunca se puede tomar.
+   */
+  private condicionLibre(): string {
+    const base = 'estado = :libre OR (estado = :reservado AND reservaExpiraEn < :now)';
+    return this.estricto ? base : `attribute_not_exists(pk) OR ${base}`;
   }
 
   sagasVencidas(now: number, limit = 25): Promise<string[]> {
@@ -195,7 +217,7 @@ export class DynamoCitaRepository implements CitaRepository {
           medicoId: h.medicoId,
           fechaHora: h.fechaHora,
           estado,
-          ...(estado === 'LIBRE' ? {} : { citaId: h.citaId, ...(h.reservaExpiraEn !== undefined ? { reservaExpiraEn: h.reservaExpiraEn } : {}) }),
+          ...(estado === 'LIBRE' ? {} : { citaId: h.citaId, ...(h.reservaExpiraEn !== undefined ? { reservaExpiraEn: h.reservaExpiraEn } : {}), ...(h.motivo ? { motivo: h.motivo } : {}) }),
         });
         last = { pk: partition, sk: h.fechaHora };
       }
@@ -230,22 +252,47 @@ export class DynamoCitaRepository implements CitaRepository {
     } else {
       [index, partition] = ['gsi4', 'CITA'];
     }
-    const exclusiveStartKey = cursor ? decodeCursor(cursor, index, partition) : undefined;
-    const res = await this.doc.send(
-      new QueryCommand({
-        TableName: this.tables.citas,
-        IndexName: index,
-        KeyConditionExpression: range ? `${index}pk = :p AND ${index}sk BETWEEN :lo AND :hi` : `${index}pk = :p`,
-        ExpressionAttributeValues: { ':p': partition, ...(range ? { ':lo': range.lo, ':hi': range.hi } : {}) },
-        ScanIndexForward: forward,
-        Limit: limite,
-        ExclusiveStartKey: exclusiveStartKey,
-      }),
-    );
-    return {
-      items: (res.Items ?? []).map(toAggregate),
-      siguiente: res.LastEvaluatedKey ? Buffer.from(JSON.stringify(res.LastEvaluatedKey)).toString('base64url') : null,
+    let exclusiveStartKey: Record<string, unknown> | undefined = cursor ? decodeCursor(cursor, index, partition) : undefined;
+    const base = {
+      TableName: this.tables.citas,
+      IndexName: index,
+      KeyConditionExpression: range ? `${index}pk = :p AND ${index}sk BETWEEN :lo AND :hi` : `${index}pk = :p`,
+      ScanIndexForward: forward,
+      Limit: limite,
     };
+    const valores = { ':p': partition, ...(range ? { ':lo': range.lo, ':hi': range.hi } : {}) };
+    if (!filtro.estado) {
+      const res = await this.doc.send(new QueryCommand({ ...base, ExpressionAttributeValues: valores, ExclusiveStartKey: exclusiveStartKey }));
+      return {
+        items: (res.Items ?? []).map(toAggregate),
+        siguiente: res.LastEvaluatedKey ? Buffer.from(JSON.stringify(res.LastEvaluatedKey)).toString('base64url') : null,
+      };
+    }
+    // Con filtro por estado: DynamoDB filtra DESPUES de leer `Limit` items, asi que se repite (hasta 10 veces) para llenar la pagina.
+    const items: Record<string, unknown>[] = [];
+    let siguiente: Record<string, unknown> | undefined;
+    for (let i = 0; i < MAX_CONSULTAS_FILTRADAS && items.length < limite; i++) {
+      const res = await this.doc.send(
+        new QueryCommand({
+          ...base,
+          FilterExpression: '#e = :estado',
+          ExpressionAttributeNames: { '#e': 'estado' },
+          ExpressionAttributeValues: { ...valores, ':estado': filtro.estado },
+          ExclusiveStartKey: exclusiveStartKey,
+        }),
+      );
+      items.push(...(res.Items ?? []));
+      exclusiveStartKey = res.LastEvaluatedKey;
+      siguiente = exclusiveStartKey;
+      if (!exclusiveStartKey) break;
+    }
+    if (items.length > limite) {
+      // La pagina se paso: el cursor debe apuntar al ultimo item DEVUELTO, no al ultimo evaluado.
+      items.length = limite;
+      const ultimo = items[limite - 1];
+      siguiente = { pk: ultimo.pk, sk: ultimo.sk, [`${index}pk`]: ultimo[`${index}pk`], [`${index}sk`]: ultimo[`${index}sk`] };
+    }
+    return { items: items.map(toAggregate), siguiente: siguiente ? Buffer.from(JSON.stringify(siguiente)).toString('base64url') : null };
   }
 }
 

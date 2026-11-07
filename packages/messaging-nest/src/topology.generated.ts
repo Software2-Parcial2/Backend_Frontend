@@ -134,6 +134,21 @@ export const TOPOLOGY = {
           ]
         }
       ]
+    },
+    {
+      "name": "ms3.eventos",
+      "owner": "MS3",
+      "bindings": [
+        {
+          "exchange": "sigec.eventos",
+          "routingKeys": [
+            "paciente.creado",
+            "paciente.actualizado",
+            "medico.creado",
+            "medico.actualizado"
+          ]
+        }
+      ]
     }
   ]
 } as const;

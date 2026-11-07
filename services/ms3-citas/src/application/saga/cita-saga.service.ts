@@ -1,4 +1,5 @@
 import {
+  CitaNoEncontradaError,
   ConcurrentUpdateError,
   HorarioPerdidoError,
   SolicitudInvalidaError,
@@ -8,6 +9,7 @@ import {
   type SagaCommand,
 } from '../../domain/cita.js';
 import type { CitaRepository, FiltroCitas, FiltroDisponibilidad, PaginaCitas, PaginaHorarios } from './cita-repository.js';
+import { cancelar, reprogramar, registrarAsistencia, type AccionAsistencia } from './ciclo-vida.js';
 import { aplicar, iniciar, type MachineDeps, type SagaEvent, type Transition } from './saga-machine.js';
 import type { SagaPolicy } from './saga-policy.js';
 
@@ -113,6 +115,36 @@ export class CitaSagaService {
       if (await this.onEvent(id, { type: 'REINTENTAR_NOTIFICACION' })) n++;
     }
     return n;
+  }
+
+  /** Cancela una cita confirmada (TransicionInvalidaError si no procede). Anula el cobro, libera el horario y avisa. */
+  cancelar(citaId: string, motivo: string, actor: string): Promise<CitaAggregate> {
+    return this.cicloVida(citaId, (agg, d) => cancelar(agg, motivo, actor, d));
+  }
+
+  /** Mueve una cita confirmada a otra fecha y hora. HorarioNoDisponibleError si el nuevo horario esta ocupado (no cambia nada). */
+  reprogramarCita(citaId: string, nuevaFechaHora: string, actor: string): Promise<CitaAggregate> {
+    return this.cicloVida(citaId, (agg, d) => reprogramar(agg, nuevaFechaHora, actor, d));
+  }
+
+  registrarAsistencia(citaId: string, accion: AccionAsistencia, actor: string): Promise<CitaAggregate> {
+    return this.cicloVida(citaId, (agg, d) => registrarAsistencia(agg, accion, actor, d));
+  }
+
+  /** Carga, aplica una transicion del ciclo de vida y persiste; reintenta si otro proceso avanzo la cita. */
+  private async cicloVida(citaId: string, f: (agg: CitaAggregate, d: MachineDeps) => Transition): Promise<CitaAggregate> {
+    for (let attempt = 1; ; attempt++) {
+      const agg = await this.d.repo.cargar(citaId);
+      if (!agg) throw new CitaNoEncontradaError(citaId);
+      const t = f(agg, this.machineDeps());
+      try {
+        await this.persist(agg, t, null);
+        return { ...t.aggregate, version: agg.version + 1 };
+      } catch (e) {
+        if (e instanceof ConcurrentUpdateError && attempt < MAX_RETRIES) continue;
+        throw e;
+      }
+    }
   }
 
   obtener(citaId: string): Promise<CitaAggregate | null> {

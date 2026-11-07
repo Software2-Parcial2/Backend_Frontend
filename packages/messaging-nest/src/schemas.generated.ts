@@ -2,6 +2,111 @@
 export const SCHEMAS: readonly Record<string, unknown>[] = [
   {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://sigec.local/contracts/events/cita.asistencia-registrada.schema.json",
+    "title": "cita.asistencia-registrada",
+    "description": "Evento de dominio MS3 -> varios (exchange sigec.eventos). Llegada, atencion o inasistencia de una cita; alimenta el modelo de inasistencia de MS7.",
+    "allOf": [
+      {
+        "$ref": "envelope.schema.json"
+      },
+      {
+        "properties": {
+          "type": {
+            "const": "cita.asistencia-registrada"
+          },
+          "payload": {
+            "type": "object",
+            "required": [
+              "citaId",
+              "pacienteId",
+              "medicoId",
+              "fechaHora",
+              "asistencia"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "citaId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "pacienteId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "medicoId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "fechaHora": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "asistencia": {
+                "type": "string",
+                "enum": [
+                  "LLEGO",
+                  "ASISTIO",
+                  "NO_ASISTIO"
+                ]
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://sigec.local/contracts/events/cita.cancelada.schema.json",
+    "title": "cita.cancelada",
+    "description": "Evento de dominio MS3 -> varios (exchange sigec.eventos). Una cita confirmada fue cancelada por un usuario (no por una compensacion de la SAGA).",
+    "allOf": [
+      {
+        "$ref": "envelope.schema.json"
+      },
+      {
+        "properties": {
+          "type": {
+            "const": "cita.cancelada"
+          },
+          "payload": {
+            "type": "object",
+            "required": [
+              "citaId",
+              "pacienteId",
+              "medicoId",
+              "fechaHora",
+              "motivo"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "citaId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "pacienteId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "medicoId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "fechaHora": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "motivo": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
     "$id": "https://sigec.local/contracts/events/cita.confirmada.schema.json",
     "title": "cita.confirmada",
     "description": "Evento de dominio MS3 -> varios (exchange sigec.eventos). Lo consume MS8 para los recordatorios.",
@@ -37,6 +142,57 @@ export const SCHEMAS: readonly Record<string, unknown>[] = [
                 "format": "uuid"
               },
               "fechaHora": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://sigec.local/contracts/events/cita.reprogramada.schema.json",
+    "title": "cita.reprogramada",
+    "description": "Evento de dominio MS3 -> varios (exchange sigec.eventos). Una cita confirmada cambio de fecha y hora; el cargo se conserva.",
+    "allOf": [
+      {
+        "$ref": "envelope.schema.json"
+      },
+      {
+        "properties": {
+          "type": {
+            "const": "cita.reprogramada"
+          },
+          "payload": {
+            "type": "object",
+            "required": [
+              "citaId",
+              "pacienteId",
+              "medicoId",
+              "fechaHora",
+              "fechaHoraAnterior"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "citaId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "pacienteId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "medicoId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "fechaHora": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "fechaHoraAnterior": {
                 "type": "string",
                 "format": "date-time"
               }
@@ -590,6 +746,13 @@ export const SCHEMAS: readonly Record<string, unknown>[] = [
               },
               "activo": {
                 "type": "boolean"
+              },
+              "usuarioKeycloak": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "preferred_username del usuario del medico (une medico y cuenta)"
               }
             }
           }
@@ -644,6 +807,13 @@ export const SCHEMAS: readonly Record<string, unknown>[] = [
               },
               "activo": {
                 "type": "boolean"
+              },
+              "usuarioKeycloak": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "preferred_username del usuario del medico (une medico y cuenta)"
               }
             }
           }

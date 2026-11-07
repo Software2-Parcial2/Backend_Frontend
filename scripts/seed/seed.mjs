@@ -147,6 +147,12 @@ async function sembrar() {
   await lote(T.citas, D.citas, (c) => put(itemCita(c)));
   await lote(T.citas, D.citas, (c) => put(itemHorarioCita(c)));
   await lote(T.citas, D.horarios, (h) => put({ pk: `HORARIO#${h.medicoId}`, sk: h.fechaHora, medicoId: h.medicoId, fechaHora: h.fechaHora, estado: 'LIBRE', expiresAt: h.expiresAt }));
+  // Proyecciones de la agenda de MS3 (en produccion las alimentan los eventos medico.* y paciente.* de MS2).
+  await lote(T.citas, MEDICOS, (m) => {
+    const esp = ESPECIALIDADES.find((e) => e.codigo === m.esp);
+    return put({ pk: `MEDICO#${m.id}`, sk: 'PERFIL', medicoId: m.id, nombre: m.nombre, especialidad: m.esp, especialidadNombre: esp.nombre, activo: true, usuarioKeycloak: m.usuario, ocurridoEn: 0, gsi4pk: 'MEDICO', gsi4sk: 0 });
+  });
+  await lote(T.citas, PACIENTES, (p) => put({ pk: `PACIENTE#${p.id}`, sk: 'PERFIL', pacienteId: p.id, nombre: p.nombre, numeroHistoria: '', ocurridoEn: 0 }));
 
   await lote(T.notificaciones, D.contactos, (c) => put({ pk: `PACIENTE#${c.pacienteId}`, sk: 'CONTACTO', ...c }));
   await lote(T.notificaciones, D.notificaciones, (n) => {
@@ -204,6 +210,8 @@ async function limpiar() {
   });
 
   await lote(T.citas, D.citas, (c) => del({ pk: `CITA#${c.id}`, sk: 'CITA' }));
+  await lote(T.citas, MEDICOS, (m) => del({ pk: `MEDICO#${m.id}`, sk: 'PERFIL' }));
+  await lote(T.citas, PACIENTES, (p) => del({ pk: `PACIENTE#${p.id}`, sk: 'PERFIL' }));
   // Horarios de los medicos sembrados: se consultan por clave (Query), no con Scan.
   for (const m of MEDICOS) {
     let start;

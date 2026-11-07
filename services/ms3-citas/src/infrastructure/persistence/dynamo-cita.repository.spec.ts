@@ -82,11 +82,6 @@ describe.skipIf(!available)('DynamoCitaRepository (DynamoDB Local)', () => {
   beforeEach(() => {
     now = T0;
   });
-  afterAll(async () => {
-    await raw.send(new DeleteTableCommand({ TableName: tables.citas })).catch(() => undefined);
-    await raw.send(new DeleteTableCommand({ TableName: tables.outbox })).catch(() => undefined);
-  });
-
   const outboxCount = async () => (await doc.send(new ScanCommand({ TableName: tables.outbox }))).Count ?? 0;
 
   async function crear(medicoId = medico(), fechaHora = fecha()) {
@@ -318,4 +313,144 @@ describe.skipIf(!available)('DynamoCitaRepository (DynamoDB Local)', () => {
       await expect(repo.disponibilidad({ medicoId: ana, desde: fecha(160), hasta: fecha(170) }, 1, 'basura')).rejects.toBeInstanceOf(CursorInvalidoError);
     });
   });
+});
+
+// --- Ciclo de vida de la cita confirmada y horarios estrictos ---------------------------------
+describe.skipIf(!available)('DynamoCitaRepository: cancelar, reprogramar, bloqueos y modo estricto', () => {
+  let now = T0;
+  const repo = new DynamoCitaRepository(doc, tables, () => now, false);
+  const estricto = new DynamoCitaRepository(doc, tables, () => now, true);
+  beforeEach(() => {
+    now = T0;
+  });
+
+  type Efectos = { aggregate: CitaAggregate; horarioOps: Parameters<DynamoCitaRepository['aplicar']>[0]['horarioOps']; commands: { type: string; exchange?: string; payload: Record<string, unknown> }[] };
+  /** Persiste una transicion tal cual la produce la maquina (mensajes con sus payloads reales, validados por Ajv). */
+  async function persistir(r: DynamoCitaRepository, prev: CitaAggregate | null, t: Efectos) {
+    await r.aplicar({
+      aggregate: t.aggregate,
+      expectedVersion: prev ? prev.version : null,
+      horarioOps: t.horarioOps,
+      messages: t.commands.map((c) => ({ id: randomUUID(), exchange: c.exchange ?? 'sigec.saga', type: c.type, correlationId: t.aggregate.saga.sagaId, causationId: null, payload: c.payload })),
+    });
+    return (await r.cargar(t.aggregate.citaId))!;
+  }
+
+  async function confirmada(r = repo, m = medico(), fechaHora = fecha(48)) {
+    const ini = iniciar(input(m, fechaHora), deps(now));
+    let agg = await persistir(r, null, ini);
+    agg = await persistir(r, agg, aplicar(agg, { type: 'COBRO_REGISTRADO', facturaId: randomUUID(), monto: 180 }, deps(now))!);
+    agg = await persistir(r, agg, aplicar(agg, { type: 'NOTIFICACION_ENVIADA' }, deps(now))!);
+    expect(agg.estado).toBe('CONFIRMADA');
+    return agg;
+  }
+
+  const horario = async (m: string, f: string) => (await repo.disponibilidad({ medicoId: m, desde: f, hasta: f }, 10)).items[0];
+
+  it('cancelar libera el horario y publica el cobro a anular, el aviso y cita.cancelada en el mismo cambio', async () => {
+    const { cancelar } = await import('../../application/saga/ciclo-vida.js');
+    const a = await confirmada();
+    expect((await horario(a.input.medicoId, a.input.fechaHora)).estado).toBe('CONFIRMADO');
+    const antes = await outboxCount();
+    const c = await persistir(repo, a, cancelar(a, 'Pedido del paciente', 'recepcion', deps(now)));
+    expect(c).toMatchObject({ estado: 'CANCELADA_USUARIO', version: a.version + 1 });
+    expect(c.cancelacion?.motivo).toBe('Pedido del paciente');
+    expect((await horario(a.input.medicoId, a.input.fechaHora)).estado).toBe('LIBRE');
+    expect(await outboxCount()).toBe(antes + 3);
+    // el horario liberado se puede volver a reservar
+    await expect(crear(a.input.medicoId, a.input.fechaHora)).resolves.toBeDefined();
+  });
+
+  it('reprogramar mueve la cita: el horario nuevo queda CONFIRMADO y el viejo LIBRE, con la misma cita y el mismo cargo', async () => {
+    const { reprogramar } = await import('../../application/saga/ciclo-vida.js');
+    const a = await confirmada();
+    const nueva = fecha(72);
+    const r = await persistir(repo, a, reprogramar(a, nueva, 'recepcion', deps(now)));
+    expect(r).toMatchObject({ citaId: a.citaId, facturaId: a.facturaId, estado: 'CONFIRMADA' });
+    expect(r.input.fechaHora).toBe(nueva);
+    expect((await horario(a.input.medicoId, nueva)).estado).toBe('CONFIRMADO');
+    expect((await horario(a.input.medicoId, a.input.fechaHora)).estado).toBe('LIBRE');
+    // la agenda del medico (indice por fecha) ya refleja la nueva fecha
+    const agenda = await repo.buscar({ medicoId: a.input.medicoId, desde: Date.parse(nueva) - 1, hasta: Date.parse(nueva) + 1 }, 10);
+    expect(agenda.items.map((x) => x.citaId)).toEqual([a.citaId]);
+  });
+
+  it('reprogramar a un horario ocupado falla con HorarioNoDisponibleError y NO cambia nada', async () => {
+    const { reprogramar } = await import('../../application/saga/ciclo-vida.js');
+    const m = medico();
+    const a = await confirmada(repo, m, fecha(48));
+    const otra = await confirmada(repo, m, fecha(72));
+    const antes = await outboxCount();
+    await expect(persistir(repo, a, reprogramar(a, otra.input.fechaHora, 'u', deps(now)))).rejects.toBeInstanceOf(HorarioNoDisponibleError);
+    expect((await repo.cargar(a.citaId))!.input.fechaHora).toBe(a.input.fechaHora);
+    expect((await horario(m, a.input.fechaHora)).estado).toBe('CONFIRMADO');
+    expect(await outboxCount()).toBe(antes);
+  });
+
+  it('dos reprogramaciones simultaneas de citas distintas al mismo horario: solo una gana', async () => {
+    const { reprogramar } = await import('../../application/saga/ciclo-vida.js');
+    const m = medico();
+    const a = await confirmada(repo, m, fecha(48));
+    const b = await confirmada(repo, m, fecha(49));
+    const destino = fecha(96);
+    const res = await Promise.allSettled([persistir(repo, a, reprogramar(a, destino, 'u', deps(now))), persistir(repo, b, reprogramar(b, destino, 'u', deps(now)))]);
+    expect(res.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+    expect(res.filter((r) => r.status === 'rejected' && r.reason instanceof HorarioNoDisponibleError)).toHaveLength(1);
+  });
+
+  it('un horario BLOQUEADO no se puede reservar ni tomar, ni en modo estricto ni en el abierto', async () => {
+    const m = medico();
+    const f = fecha(30);
+    await doc.send(new PutCommand({ TableName: tables.citas, Item: { pk: `HORARIO#${m}`, sk: f, medicoId: m, fechaHora: f, estado: 'BLOQUEADO', motivo: 'Congreso' } }));
+    for (const r of [repo, estricto]) {
+      const t = iniciar(input(m, f), deps(now));
+      await expect(persistir(r, null, t)).rejects.toBeInstanceOf(HorarioNoDisponibleError);
+    }
+    const lista = await repo.disponibilidad({ medicoId: m, desde: f, hasta: f }, 10);
+    expect(lista.items[0].estado).toBe('BLOQUEADO');
+    expect((await repo.disponibilidad({ medicoId: m, desde: f, hasta: f, soloLibres: true }, 10)).items).toHaveLength(0);
+  });
+
+  it('modo estricto: solo se reservan horarios publicados (LIBRE); el abierto sigue aceptando fechas sin item', async () => {
+    const m = medico();
+    const f = fecha(31);
+    await expect(persistir(estricto, null, iniciar(input(m, f), deps(now)))).rejects.toBeInstanceOf(HorarioNoDisponibleError);
+    await doc.send(new PutCommand({ TableName: tables.citas, Item: { pk: `HORARIO#${m}`, sk: f, medicoId: m, fechaHora: f, estado: 'LIBRE' } }));
+    await expect(persistir(estricto, null, iniciar(input(m, f), deps(now)))).resolves.toBeDefined();
+    await expect(persistir(repo, null, iniciar(input(medico(), f), deps(now)))).resolves.toBeDefined();
+  });
+
+  it('buscar por estado llena la pagina aunque el filtro descarte items (cursor consistente)', async () => {
+    const m = medico();
+    // 3 canceladas intercaladas con 3 confirmadas, todas del mismo medico (indice por fecha)
+    const { cancelar } = await import('../../application/saga/ciclo-vida.js');
+    const confirmadas: string[] = [];
+    for (let i = 0; i < 6; i++) {
+      const a = await confirmada(repo, m, fecha(100 + i));
+      if (i % 2 === 0) await persistir(repo, a, cancelar(a, 'x', 'u', deps(now)));
+      else confirmadas.push(a.citaId);
+    }
+    const vistos: string[] = [];
+    let cursor: string | undefined;
+    let paginas = 0;
+    do {
+      const p = await repo.buscar({ medicoId: m, estado: 'CONFIRMADA', desde: 0, hasta: Number.MAX_SAFE_INTEGER }, 2, cursor);
+      vistos.push(...p.items.map((x) => x.citaId));
+      cursor = p.siguiente ?? undefined;
+      paginas++;
+    } while (cursor && paginas < 10);
+    expect(vistos.sort()).toEqual([...confirmadas].sort());
+  });
+
+  async function crear(medicoId: string, fechaHora: string) {
+    const t = iniciar(input(medicoId, fechaHora), deps(now));
+    return persistir(repo, null, t);
+  }
+  const outboxCount = async () => (await doc.send(new ScanCommand({ TableName: tables.outbox }))).Count ?? 0;
+});
+
+// Las tablas de prueba se borran una sola vez, al terminar todos los bloques de este archivo.
+afterAll(async () => {
+  await raw.send(new DeleteTableCommand({ TableName: tables.citas })).catch(() => undefined);
+  await raw.send(new DeleteTableCommand({ TableName: tables.outbox })).catch(() => undefined);
 });
