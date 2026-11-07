@@ -1,4 +1,4 @@
-import { ValidationPipe } from '@nestjs/common';
+import { aplicarConvenciones } from '@sigec/http-nest';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module.js';
@@ -6,9 +6,8 @@ import { AppModule } from './app.module.js';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   // El CORS se gestiona solo en el gateway.
-  app.useGlobalPipes(
-    new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),
-  );
+  // Validacion estricta, errores problem+json y X-Correlation-Id (packages/http-nest).
+  aplicarConvenciones(app);
 
   const config = new DocumentBuilder()
     .setTitle('ms7-api')
