@@ -59,39 +59,35 @@ defineExpose({ cargar })
 </script>
 
 <template>
-  <section aria-labelledby="t-resumen">
-    <div class="cabecera">
-      <h2 id="t-resumen">Resumen (últimos 90 días y próximos 30)</h2>
-      <button type="button" @click="cargar" :disabled="cargando">{{ cargando ? 'Cargando…' : 'Actualizar' }}</button>
+  <section aria-labelledby="t-resumen" class="col" style="gap: 20px">
+    <div class="ph">
+      <div><h1 id="t-resumen" class="h1">Dashboard empresarial</h1><p class="sub">Indicadores consolidados desde citas, caja y atención (últimos 90 días y próximos 30)</p></div>
+      <span class="sp"></span>
+      <span v-if="demandaSintetica" class="chip warn">Datos sintéticos de demostración</span>
+      <button type="button" class="btn" @click="cargar" :disabled="cargando">{{ cargando ? 'Cargando…' : 'Actualizar' }}</button>
     </div>
-    <ul v-if="errores.length" class="errores" role="alert">
-      <li v-for="e in errores" :key="e">{{ e }}</li>
-    </ul>
-    <div class="tarjetas">
-      <div class="tarjeta"><span>Citas</span><strong>{{ totalCitas }}</strong></div>
-      <div class="tarjeta"><span>Confirmadas</span><strong>{{ confirmadas }}</strong></div>
-      <div class="tarjeta"><span>Canceladas</span><strong>{{ canceladas }}</strong></div>
-      <div v-if="puedeVerIngresos" class="tarjeta"><span>Ingresos (Bs)</span><strong>{{ totalIngresos.toLocaleString('es-BO', { minimumFractionDigits: 2 }) }}</strong></div>
+    <div v-if="errores.length" class="banner err" role="alert">
+      <div><b>Algunos indicadores no se pudieron cargar</b><span v-for="e in errores" :key="e" style="display: block">{{ e }}</span></div>
     </div>
-    <div class="graficos">
-      <figure><figcaption>Citas por especialidad</figcaption><Grafico :opcion="graficoCitas" etiqueta="Gráfico de barras de citas por especialidad" /></figure>
-      <figure v-if="puedeVerIngresos"><figcaption>Ingresos confirmados por mes</figcaption><Grafico :opcion="graficoIngresos" etiqueta="Gráfico de líneas de ingresos por mes" /></figure>
-      <figure>
-        <figcaption>Demanda semanal por especialidad <small v-if="demandaSintetica">(datos sintéticos de demostración)</small></figcaption>
+    <div class="g4">
+      <div class="card kpi"><span class="l">Citas</span><span class="v">{{ totalCitas }}</span></div>
+      <div class="card kpi"><span class="l">Confirmadas</span><span class="v">{{ confirmadas }}</span></div>
+      <div class="card kpi"><span class="l">Canceladas</span><span class="v">{{ canceladas }}</span></div>
+      <div v-if="puedeVerIngresos" class="card kpi"><span class="l">Ingresos (Bs)</span><span class="v">{{ totalIngresos.toLocaleString('es-BO', { minimumFractionDigits: 2 }) }}</span></div>
+    </div>
+    <div class="g2">
+      <div class="card"><div class="ch"><div class="ct">Citas por especialidad</div></div><Grafico :opcion="graficoCitas" etiqueta="Gráfico de barras de citas por especialidad" /></div>
+      <div v-if="puedeVerIngresos" class="card"><div class="ch"><div class="ct">Ingresos confirmados por mes</div></div><Grafico :opcion="graficoIngresos" etiqueta="Gráfico de líneas de ingresos por mes" /></div>
+      <div class="card">
+        <div class="ch"><div class="ct">Demanda semanal por especialidad</div><span class="sp"></span><span v-if="demandaSintetica" class="sm muted">datos sintéticos</span></div>
         <Grafico :opcion="graficoDemanda" etiqueta="Gráfico de barras de la demanda por especialidad" />
-      </figure>
+      </div>
+    </div>
+    <div class="card fx wrap" style="gap: 14px">
+      <div><div class="ct">Siguiente paso</div><p class="ink2">Pida un reporte en lenguaje natural, por texto o por voz.</p></div>
+      <span class="sp"></span>
+      <a class="btn" href="#/ml">Ver Machine Learning</a>
+      <a class="btn pri" href="#/asistente">Abrir asistente de reportes</a>
     </div>
   </section>
 </template>
-
-<style scoped>
-.cabecera { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
-.tarjetas { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.75rem; margin: 0.75rem 0; }
-.tarjeta { background: #f4f6fa; border-radius: 8px; padding: 0.75rem; display: flex; flex-direction: column; }
-.tarjeta span { color: #555; font-size: 0.85rem; }
-.tarjeta strong { font-size: 1.5rem; }
-.graficos { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1rem; }
-figure { margin: 0; }
-figcaption { font-weight: 600; margin-bottom: 0.25rem; }
-.errores { color: #8a1c1c; background: #fdecec; padding: 0.5rem 1.25rem; border-radius: 6px; }
-</style>

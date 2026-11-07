@@ -133,87 +133,73 @@ async function exportar(formato: FormatoExportacion) {
 </script>
 
 <template>
-  <section aria-labelledby="t-asistente">
-    <h2 id="t-asistente">Asistente de gestión</h2>
-    <p class="nota">Apoyo a la gestión: consulta datos agregados de citas, ingresos, demanda y políticas. No accede a información clínica.</p>
+  <section aria-labelledby="t-asistente" class="col" style="gap: 20px">
+    <div class="ph">
+      <div><h1 id="t-asistente" class="h1">Asistente de reportes</h1><p class="sub">Pida un reporte escribiendo o hablando. Consulta datos agregados de citas, ingresos, demanda y políticas; no accede a información clínica.</p></div>
+      <span class="sp"></span>
+      <span v-if="!enLinea" class="chip warn">Sin conexión a internet</span>
+      <span v-else class="chip warn">Requiere conexión</span>
+    </div>
 
-    <form @submit.prevent="enviarTexto" class="consulta">
-      <label for="consulta">Tu pregunta</label>
-      <textarea id="consulta" v-model="texto" rows="2" maxlength="1000" placeholder="Ej.: ¿Cuántas citas hubo por especialidad en los últimos 3 meses? / Genera un reporte de ingresos por mes" />
-      <div class="botones">
-        <button type="submit" :disabled="trabajando || escuchando">{{ trabajando ? 'Consultando…' : 'Consultar' }}</button>
-        <button type="button" :class="{ activo: escuchando }" :aria-pressed="escuchando" :disabled="trabajando || estrategia === 'ninguna'" @click="alternarMicrofono">
-          {{ escuchando ? '⏹ Detener' : '🎤 Hablar' }}
-        </button>
-        <small class="modo" v-if="estrategia === 'web-speech'">Voz: reconocimiento del navegador (con conexión)</small>
-        <small class="modo" v-else-if="estrategia === 'whisper'">Voz: se grabará el audio y se transcribirá en el servidor{{ enLinea ? '' : ' (sin conexión a internet)' }}</small>
-        <small class="modo" v-else>Voz no disponible en este navegador</small>
+    <div class="card">
+      <form @submit.prevent="enviarTexto" class="col" style="gap: 12px">
+        <div class="field">
+          <label for="consulta">Tu pregunta</label>
+          <textarea id="consulta" class="in" v-model="texto" rows="2" maxlength="1000" placeholder="Ej.: ¿Cuántas citas hubo por especialidad en los últimos 3 meses? / Genera un reporte de ingresos por mes" />
+        </div>
+        <div class="fx wrap" style="gap: 8px">
+          <button type="submit" class="btn pri" :disabled="trabajando || escuchando">{{ trabajando ? 'Consultando…' : 'Consultar' }}</button>
+          <button type="button" class="btn" :class="{ dng: escuchando }" :aria-pressed="escuchando" :disabled="trabajando || estrategia === 'ninguna'" @click="alternarMicrofono">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="12" rx="3" /><path d="M5 11a7 7 0 0014 0M12 18v3" /></svg>
+            {{ escuchando ? 'Detener' : 'Hablar' }}
+          </button>
+          <span class="sm muted" v-if="estrategia === 'web-speech'">Voz: reconocimiento del navegador (con conexión)</span>
+          <span class="sm muted" v-else-if="estrategia === 'whisper'">Voz: se grabará el audio y se transcribirá en el servidor{{ enLinea ? '' : ' (sin conexión a internet)' }}</span>
+          <span class="sm muted" v-else>Voz no disponible en este navegador</span>
+        </div>
+        <div class="sm muted">El agente solo recibe cifras agregadas, nunca nombres ni identificadores de pacientes.</div>
+      </form>
+    </div>
+
+    <div v-if="aviso" class="banner" role="status"><div><span>{{ aviso }}</span></div></div>
+    <div v-if="error" class="banner err" role="alert"><div><b>No se pudo completar</b><span>{{ error }}</span></div></div>
+
+    <article v-if="respuesta" class="col" style="gap: 16px" aria-live="polite">
+      <div class="card col" style="gap: 12px">
+        <div v-if="respuesta.transcripcion" class="msg me">{{ respuesta.transcripcion.texto }}</div>
+        <div v-if="respuesta.transcripcion" class="sm muted tr">Dictado por voz · {{ respuesta.transcripcion.duracionS }} s</div>
+        <div class="msg" style="max-width: 100%; white-space: pre-wrap">{{ respuesta.respuesta }}</div>
+        <div v-if="respuesta.incompleta" class="banner warn"><div><span>La respuesta está incompleta (se alcanzó un límite). Prueba con una pregunta más concreta.</span></div></div>
+        <div class="fx wrap" style="gap: 6px" v-if="respuesta.herramientasUsadas.length">
+          <span class="sm muted">Herramientas usadas:</span>
+          <span v-for="(h, i) in respuesta.herramientasUsadas" :key="i" class="chip" :class="h.ok ? 'pri' : 'err'" :title="JSON.stringify(h.argumentos)">
+            {{ h.nombre }} <span class="sm">{{ h.ok ? `${h.ms} ms` : 'rechazada/error' }}</span>
+          </span>
+        </div>
+        <span class="sm muted">Modelo: {{ respuesta.proveedor }} / {{ respuesta.modelo }}</span>
       </div>
-    </form>
 
-    <p v-if="aviso" class="aviso" role="status">{{ aviso }}</p>
-    <p v-if="error" class="error" role="alert">{{ error }}</p>
-
-    <article v-if="respuesta" class="respuesta" aria-live="polite">
-      <p v-if="respuesta.transcripcion" class="transcripcion">
-        <strong>Entendí:</strong> «{{ respuesta.transcripcion.texto }}» ({{ respuesta.transcripcion.duracionS }} s)
-      </p>
-      <p class="texto">{{ respuesta.respuesta }}</p>
-      <p v-if="respuesta.incompleta" class="aviso">La respuesta está incompleta (se alcanzó un límite). Prueba con una pregunta más concreta.</p>
-
-      <div class="herramientas" v-if="respuesta.herramientasUsadas.length">
-        <span>Herramientas usadas:</span>
-        <span v-for="(h, i) in respuesta.herramientasUsadas" :key="i" class="chip" :class="{ fallo: !h.ok }" :title="JSON.stringify(h.argumentos)">
-          {{ h.nombre }} <small>{{ h.ok ? `${h.ms} ms` : 'rechazada/error' }}</small>
-        </span>
-      </div>
-      <small class="proveedor">Modelo: {{ respuesta.proveedor }} / {{ respuesta.modelo }}</small>
-
-      <div v-if="respuesta.reporte" class="reporte">
-        <h3>{{ respuesta.reporte.titulo }}</h3>
-        <p v-if="respuesta.reporte.sintetico" class="aviso">Incluye predicciones de un modelo entrenado con datos sintéticos (solo demostración).</p>
-        <p v-if="respuesta.reporte.nota" class="nota">{{ respuesta.reporte.nota }}</p>
+      <div v-if="respuesta.reporte" class="card col" style="gap: 14px">
+        <div class="fx wrap">
+          <div><div class="ct">{{ respuesta.reporte.titulo }}</div><div v-if="respuesta.reporte.nota" class="sm muted">{{ respuesta.reporte.nota }}</div></div>
+          <span class="sp"></span>
+          <button v-for="f in (['xlsx', 'csv', 'pdf'] as const)" :key="f" type="button" class="btn s" :class="{ pri: f === 'pdf' }" :disabled="exportando !== null" @click="exportar(f)">
+            {{ exportando === f ? 'Generando…' : f === 'xlsx' ? 'Excel' : f.toUpperCase() }}
+          </button>
+        </div>
+        <div v-if="respuesta.reporte.sintetico" class="banner warn"><div><span>Incluye predicciones de un modelo entrenado con datos sintéticos (solo demostración).</span></div></div>
         <Grafico :opcion="opcion" :etiqueta="`Gráfico del reporte ${respuesta.reporte.titulo}`" />
-        <div class="tabla-envoltorio">
-          <table>
+        <div class="scroll">
+          <table class="tbl" style="min-width: 420px">
             <thead><tr><th v-for="c in respuesta.reporte.columnas" :key="c.clave" scope="col">{{ c.titulo }}</th></tr></thead>
             <tbody>
               <tr v-for="(f, i) in respuesta.reporte.filas" :key="i">
-                <td v-for="c in respuesta.reporte.columnas" :key="c.clave" :class="{ num: c.tipo !== 'texto' && c.tipo !== 'fecha' }">{{ formatearCelda(f[c.clave] ?? null, c.tipo) }}</td>
+                <td v-for="c in respuesta.reporte.columnas" :key="c.clave" :class="{ tr: c.tipo !== 'texto' && c.tipo !== 'fecha' }">{{ formatearCelda(f[c.clave] ?? null, c.tipo) }}</td>
               </tr>
             </tbody>
           </table>
-        </div>
-        <div class="botones">
-          <span>Exportar:</span>
-          <button v-for="f in (['xlsx', 'csv', 'pdf'] as const)" :key="f" type="button" :disabled="exportando !== null" @click="exportar(f)">
-            {{ exportando === f ? 'Generando…' : f === 'xlsx' ? 'Excel' : f.toUpperCase() }}
-          </button>
         </div>
       </div>
     </article>
   </section>
 </template>
-
-<style scoped>
-.nota { color: #555; font-size: 0.9rem; }
-.consulta { display: flex; flex-direction: column; gap: 0.5rem; }
-textarea { width: 100%; box-sizing: border-box; font: inherit; padding: 0.5rem; }
-.botones { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
-button { padding: 0.45rem 0.9rem; cursor: pointer; }
-button.activo { background: #b00020; color: #fff; }
-.modo { color: #555; }
-.aviso { background: #fff7e0; border-left: 4px solid #e0a800; padding: 0.4rem 0.75rem; }
-.error { background: #fdecec; border-left: 4px solid #b00020; padding: 0.4rem 0.75rem; color: #8a1c1c; }
-.respuesta { margin-top: 1rem; border: 1px solid #dde2ea; border-radius: 8px; padding: 0.75rem 1rem; }
-.texto { white-space: pre-wrap; }
-.transcripcion { color: #333; }
-.herramientas { display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; margin: 0.5rem 0; }
-.chip { background: #e8f0fe; border-radius: 12px; padding: 0.1rem 0.6rem; font-size: 0.85rem; }
-.chip.fallo { background: #fdecec; }
-.proveedor { color: #777; }
-.tabla-envoltorio { overflow-x: auto; margin: 0.5rem 0; }
-table { border-collapse: collapse; min-width: 100%; }
-th, td { border-bottom: 1px solid #e3e6ec; padding: 0.35rem 0.6rem; text-align: left; }
-td.num { text-align: right; font-variant-numeric: tabular-nums; }
-</style>

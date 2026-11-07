@@ -44,5 +44,5 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-.vacio { color: #666; font-size: 0.9rem; }
+.vacio { color: var(--ink3); font-size: 12.5px; }
 </style>
