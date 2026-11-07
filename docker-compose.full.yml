@@ -250,6 +250,17 @@ services:
     depends_on:
       ms6: { condition: service_healthy }
 
+  # Proyeccion de nombres de paciente para los listados de caja (eventos paciente.* de MS2).
+  ms6-eventos-consumer:
+    build: { context: services/ms6-facturacion }
+    restart: unless-stopped
+    command: ["consume-eventos"]
+    environment: *ms6-env
+    volumes:
+      - ./contracts/events/topology.json:/contracts/topology.json:ro,z
+    depends_on:
+      ms6: { condition: service_healthy }
+
   ms7-api:
     build:
       context: .

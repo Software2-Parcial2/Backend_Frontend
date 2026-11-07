@@ -24,6 +24,9 @@ case "${1:-serve}" in
   relay)
     esperar_bd
     exec php artisan outbox:relay --interval=1 ;;
+  consume-eventos)
+    esperar_bd
+    exec php artisan eventos:consume ;;
   consume)
     esperar_bd
     exec php artisan saga:consume ;;

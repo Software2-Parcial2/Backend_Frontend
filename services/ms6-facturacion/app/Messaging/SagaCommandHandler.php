@@ -65,7 +65,14 @@ final class SagaCommandHandler
             return;
         }
 
-        $factura = Factura::create(['cita_id' => $citaId, 'paciente_id' => $p['pacienteId'], 'monto' => $monto, 'estado' => 'PROVISIONAL']);
+        $factura = Factura::create([
+            'cita_id' => $citaId,
+            'paciente_id' => $p['pacienteId'],
+            'monto' => $monto,
+            'estado' => 'PROVISIONAL',
+            'especialidad' => strtolower($p['especialidad']),
+            'fecha_cita' => $p['fechaHora'] ?? null,
+        ]);
         $this->responder($env, 'facturacion.cobro-provisional.registrado', $factura->id, ['citaId' => $citaId, 'facturaId' => $factura->id, 'monto' => $monto]);
     }
 

@@ -149,6 +149,19 @@ export const TOPOLOGY = {
           ]
         }
       ]
+    },
+    {
+      "name": "ms6.eventos",
+      "owner": "MS6",
+      "bindings": [
+        {
+          "exchange": "sigec.eventos",
+          "routingKeys": [
+            "paciente.creado",
+            "paciente.actualizado"
+          ]
+        }
+      ]
     }
   ]
 } as const;

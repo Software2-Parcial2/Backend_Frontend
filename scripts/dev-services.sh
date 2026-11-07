@@ -90,7 +90,7 @@ cmd_poller_stop() { [ -f "$POLLER_PID" ] && kill "$(cat "$POLLER_PID")" 2>/dev/n
 # Procesos de fondo de MS6: relay del outbox (publica las respuestas) y consumidor de comandos de la SAGA.
 MS6_DIR="$ROOT/services/ms6-facturacion"
 cmd_workers_start() {
-  for w in "outbox:relay --interval=1" "saga:consume"; do
+  for w in "outbox:relay --interval=1" "saga:consume" "eventos:consume"; do
     name="${w%% *}"; pidf="/tmp/sigec-ms6-${name//:/-}.pid"
     if [ -f "$pidf" ] && kill -0 "$(cat "$pidf")" 2>/dev/null; then echo "ms6 $name ya en marcha"; continue; fi
     (cd "$MS6_DIR"; nohup php artisan $w >"$LOGS/ms6-${name//:/-}.log" 2>&1 </dev/null & echo $! >"$pidf")
@@ -98,7 +98,7 @@ cmd_workers_start() {
   done
 }
 cmd_workers_stop() {
-  for name in outbox-relay saga-consume; do
+  for name in outbox-relay saga-consume eventos-consume; do
     pidf="/tmp/sigec-ms6-$name.pid"
     [ -f "$pidf" ] && kill "$(cat "$pidf")" 2>/dev/null && echo "ms6 $name parado"
     rm -f "$pidf"

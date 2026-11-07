@@ -262,6 +262,61 @@ export const SCHEMAS: readonly Record<string, unknown>[] = [
   },
   {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://sigec.local/contracts/events/factura.anulada.schema.json",
+    "title": "factura.anulada",
+    "description": "Evento de dominio MS6 -> varios (exchange sigec.eventos). Un cargo fue anulado manualmente en caja (no por la SAGA).",
+    "allOf": [
+      {
+        "$ref": "envelope.schema.json"
+      },
+      {
+        "properties": {
+          "type": {
+            "const": "factura.anulada"
+          },
+          "payload": {
+            "type": "object",
+            "required": [
+              "facturaId",
+              "citaId",
+              "pacienteId",
+              "monto",
+              "motivo",
+              "estabaPagada"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "facturaId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "citaId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "pacienteId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "monto": {
+                "type": "string",
+                "pattern": "^\\d+\\.\\d{2}$",
+                "description": "dinero como string decimal (BOB)"
+              },
+              "motivo": {
+                "type": "string"
+              },
+              "estabaPagada": {
+                "type": "boolean"
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
     "$id": "https://sigec.local/contracts/events/factura.creada.schema.json",
     "title": "factura.creada",
     "description": "Evento de dominio MS6 -> varios (exchange sigec.eventos, routing key = type).",
@@ -1082,6 +1137,71 @@ export const SCHEMAS: readonly Record<string, unknown>[] = [
                 ]
               },
               "numeroHistoria": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://sigec.local/contracts/events/pago.registrado.schema.json",
+    "title": "pago.registrado",
+    "description": "Evento de dominio MS6 -> varios (exchange sigec.eventos). Un cargo fue cobrado en caja.",
+    "allOf": [
+      {
+        "$ref": "envelope.schema.json"
+      },
+      {
+        "properties": {
+          "type": {
+            "const": "pago.registrado"
+          },
+          "payload": {
+            "type": "object",
+            "required": [
+              "pagoId",
+              "facturaId",
+              "citaId",
+              "pacienteId",
+              "monto",
+              "metodo",
+              "comprobante"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "pagoId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "facturaId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "citaId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "pacienteId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "monto": {
+                "type": "string",
+                "pattern": "^\\d+\\.\\d{2}$",
+                "description": "dinero como string decimal (BOB)"
+              },
+              "metodo": {
+                "type": "string",
+                "enum": [
+                  "EFECTIVO",
+                  "TRANSFERENCIA",
+                  "POS"
+                ]
+              },
+              "comprobante": {
                 "type": "string"
               }
             }

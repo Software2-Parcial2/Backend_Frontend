@@ -12,4 +12,7 @@ return [
 
     // Cola de consumo propia de MS6.
     'queue' => env('MS6_SAGA_QUEUE', 'ms6.saga.comandos'),
+
+    // Eventos de dominio de MS2 (proyeccion de nombres de paciente para caja).
+    'eventos_queue' => env('MS6_EVENTOS_QUEUE', 'ms6.eventos'),
 ];

@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sigec.local/contracts/events/pago.registrado.schema.json",
+  "title": "pago.registrado",
+  "description": "Evento de dominio MS6 -> varios (exchange sigec.eventos). Un cargo fue cobrado en caja.",
+  "allOf": [
+    {
+      "$ref": "envelope.schema.json"
+    },
+    {
+      "properties": {
+        "type": {
+          "const": "pago.registrado"
+        },
+        "payload": {
+          "type": "object",
+          "required": [
+            "pagoId",
+            "facturaId",
+            "citaId",
+            "pacienteId",
+            "monto",
+            "metodo",
+            "comprobante"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "pagoId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "facturaId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "citaId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "pacienteId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "monto": {
+              "type": "string",
+              "pattern": "^\\d+\\.\\d{2}$",
+              "description": "dinero como string decimal (BOB)"
+            },
+            "metodo": {
+              "type": "string",
+              "enum": [
+                "EFECTIVO",
+                "TRANSFERENCIA",
+                "POS"
+              ]
+            },
+            "comprobante": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

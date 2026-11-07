@@ -1,6 +1,187 @@
 {
   "components": {
     "schemas": {
+      "ActualizarTarifa": {
+        "properties": {
+          "monto": {
+            "minimum": 0.01,
+            "type": "number"
+          },
+          "nombre": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "tipo": {
+            "enum": [
+              "CONSULTA",
+              "ESTUDIO"
+            ],
+            "type": "string"
+          },
+          "vigenteDesde": {
+            "format": "date",
+            "type": "string"
+          }
+        },
+        "required": [
+          "monto"
+        ],
+        "type": "object"
+      },
+      "AnularFactura": {
+        "properties": {
+          "motivo": {
+            "maxLength": 300,
+            "minLength": 3,
+            "type": "string"
+          }
+        },
+        "required": [
+          "motivo"
+        ],
+        "type": "object"
+      },
+      "Balance": {
+        "properties": {
+          "anulaciones": {
+            "type": "integer"
+          },
+          "cobros": {
+            "type": "integer"
+          },
+          "fecha": {
+            "type": "string"
+          },
+          "moneda": {
+            "type": "string"
+          },
+          "pendiente": {
+            "properties": {
+              "cargos": {
+                "type": "integer"
+              },
+              "monto": {
+                "example": "180.00",
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "porMetodo": {
+            "properties": {
+              "EFECTIVO": {
+                "example": "180.00",
+                "type": "string"
+              },
+              "POS": {
+                "example": "180.00",
+                "type": "string"
+              },
+              "TRANSFERENCIA": {
+                "example": "180.00",
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "totalCobrado": {
+            "example": "180.00",
+            "type": "string"
+          },
+          "turno": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "type": "object"
+      },
+      "Comprobante": {
+        "properties": {
+          "anulado": {
+            "type": "boolean"
+          },
+          "aviso": {
+            "type": "string"
+          },
+          "cajero": {
+            "type": "string"
+          },
+          "cambio": {
+            "example": "180.00",
+            "type": "string"
+          },
+          "cargo": {
+            "type": "string"
+          },
+          "concepto": {
+            "type": "string"
+          },
+          "emitidoEn": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "facturaId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "fechaCita": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "metodo": {
+            "type": "string"
+          },
+          "moneda": {
+            "type": "string"
+          },
+          "numero": {
+            "type": "string"
+          },
+          "paciente": {
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "nombre": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "numeroHistoria": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "type": "object"
+          },
+          "recibido": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "referencia": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "total": {
+            "example": "180.00",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "CrearFactura": {
         "properties": {
           "citaId": {
@@ -24,11 +205,53 @@
         ],
         "type": "object"
       },
+      "CrearTarifa": {
+        "properties": {
+          "especialidad": {
+            "pattern": "^[a-z0-9_]+$",
+            "type": "string"
+          },
+          "monto": {
+            "minimum": 0.01,
+            "type": "number"
+          },
+          "nombre": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "tipo": {
+            "enum": [
+              "CONSULTA",
+              "ESTUDIO"
+            ],
+            "type": "string"
+          },
+          "vigenteDesde": {
+            "format": "date",
+            "type": "string"
+          }
+        },
+        "required": [
+          "especialidad",
+          "monto",
+          "vigenteDesde"
+        ],
+        "type": "object"
+      },
       "Factura": {
         "properties": {
           "actualizadaEn": {
             "format": "date-time",
             "type": "string"
+          },
+          "anuladaEn": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "citaId": {
             "format": "uuid",
@@ -38,14 +261,28 @@
             "format": "date-time",
             "type": "string"
           },
+          "especialidad": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "estado": {
             "enum": [
               "PENDIENTE",
               "PROVISIONAL",
               "CONFIRMADA",
+              "PAGADA",
               "ANULADA"
             ],
             "type": "string"
+          },
+          "fechaCita": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "id": {
             "format": "uuid",
@@ -59,9 +296,25 @@
             "example": "180.00",
             "type": "string"
           },
+          "motivoAnulacion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "numeroCargo": {
+            "example": "CG-20261103-0412",
+            "type": "string"
+          },
           "pacienteId": {
             "format": "uuid",
             "type": "string"
+          },
+          "pacienteNombre": {
+            "type": [
+              "string",
+              "null"
+            ]
           }
         },
         "required": [
@@ -73,6 +326,34 @@
           "estado"
         ],
         "type": "object"
+      },
+      "FacturaDetalle": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Factura"
+          },
+          {
+            "properties": {
+              "movimientos": {
+                "items": {
+                  "$ref": "#/components/schemas/MovimientoLedger"
+                },
+                "type": "array"
+              },
+              "pago": {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/Pago"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "type": "object"
+          }
+        ]
       },
       "IngresoPeriodo": {
         "properties": {
@@ -95,6 +376,115 @@
         },
         "type": "object"
       },
+      "Movimiento": {
+        "properties": {
+          "cargo": {
+            "type": "string"
+          },
+          "comprobante": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "en": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "estado": {
+            "enum": [
+              "PAGADO",
+              "ANULADO"
+            ],
+            "type": "string"
+          },
+          "facturaId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "hora": {
+            "example": "10:21",
+            "type": "string"
+          },
+          "metodo": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "monto": {
+            "example": "180.00",
+            "type": "string"
+          },
+          "motivo": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "paciente": {
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "nombre": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "type": "object"
+          }
+        },
+        "type": "object"
+      },
+      "MovimientoLedger": {
+        "properties": {
+          "estadoAnterior": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "estadoNuevo": {
+            "type": "string"
+          },
+          "monto": {
+            "example": "180.00",
+            "type": "string"
+          },
+          "ocurridoEn": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "PagarFactura": {
+        "properties": {
+          "metodo": {
+            "enum": [
+              "EFECTIVO",
+              "TRANSFERENCIA",
+              "POS"
+            ],
+            "type": "string"
+          },
+          "recibido": {
+            "description": "Obligatorio en efectivo",
+            "type": "number"
+          },
+          "referencia": {
+            "description": "Obligatoria en transferencia y POS",
+            "type": "string"
+          }
+        },
+        "required": [
+          "metodo"
+        ],
+        "type": "object"
+      },
       "PaginaFacturas": {
         "properties": {
           "items": {
@@ -114,6 +504,123 @@
           "items",
           "siguiente"
         ],
+        "type": "object"
+      },
+      "PaginaMovimientos": {
+        "properties": {
+          "fecha": {
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/Movimiento"
+            },
+            "type": "array"
+          },
+          "siguiente": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "turno": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "items",
+          "siguiente"
+        ],
+        "type": "object"
+      },
+      "PaginaTarifas": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/Tarifa"
+            },
+            "type": "array"
+          },
+          "siguiente": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "items",
+          "siguiente"
+        ],
+        "type": "object"
+      },
+      "Pago": {
+        "properties": {
+          "cajero": {
+            "type": "string"
+          },
+          "cambio": {
+            "example": "180.00",
+            "type": "string"
+          },
+          "comprobante": {
+            "example": "CI-000873",
+            "type": "string"
+          },
+          "facturaId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "metodo": {
+            "enum": [
+              "EFECTIVO",
+              "TRANSFERENCIA",
+              "POS"
+            ],
+            "type": "string"
+          },
+          "monto": {
+            "example": "180.00",
+            "type": "string"
+          },
+          "pagadoEn": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "recibido": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "referencia": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "type": "object"
+      },
+      "PagoRegistrado": {
+        "properties": {
+          "comprobante": {
+            "$ref": "#/components/schemas/Comprobante"
+          },
+          "factura": {
+            "$ref": "#/components/schemas/Factura"
+          },
+          "pago": {
+            "$ref": "#/components/schemas/Pago"
+          }
+        },
         "type": "object"
       },
       "Problem": {
@@ -162,6 +669,57 @@
           "code"
         ],
         "type": "object"
+      },
+      "Tarifa": {
+        "properties": {
+          "especialidad": {
+            "type": "string"
+          },
+          "estado": {
+            "enum": [
+              "VIGENTE",
+              "PROGRAMADA",
+              "HISTORICA"
+            ],
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "moneda": {
+            "type": "string"
+          },
+          "monto": {
+            "example": "180.00",
+            "type": "string"
+          },
+          "nombre": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "tipo": {
+            "enum": [
+              "CONSULTA",
+              "ESTUDIO"
+            ],
+            "type": "string"
+          },
+          "vigenteDesde": {
+            "format": "date",
+            "type": "string"
+          },
+          "vigenteHasta": {
+            "format": "date",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "type": "object"
       }
     },
     "securitySchemes": {
@@ -179,6 +737,81 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/facturacion/balance": {
+      "get": {
+        "description": "Roles: caja, administrador.",
+        "parameters": [
+          {
+            "description": "Dia local de la clinica (AAAA-MM-DD); por defecto hoy",
+            "in": "query",
+            "name": "fecha",
+            "schema": {
+              "format": "date",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "turno",
+            "schema": {
+              "enum": [
+                "manana",
+                "tarde"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Balance"
+                }
+              }
+            },
+            "description": "Balance"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validacion"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Sin token"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Rol insuficiente"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Balance de caja de un dia"
+      }
+    },
     "/api/facturacion/facturas": {
       "get": {
         "description": "Roles: caja, administrador, recepcion, paciente.",
@@ -197,6 +830,63 @@
             "in": "query",
             "name": "cursor",
             "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Lista separada por comas: PROVISIONAL,CONFIRMADA",
+            "in": "query",
+            "name": "estado",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Atajo: PENDIENTE, PROVISIONAL y CONFIRMADA",
+            "in": "query",
+            "name": "porCobrar",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "desde",
+            "schema": {
+              "format": "date",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "hasta",
+            "schema": {
+              "format": "date",
+              "type": "string"
+            }
+          },
+          {
+            "description": "N.° de cargo o nombre del paciente",
+            "in": "query",
+            "name": "q",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "citaId",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Solo personal",
+            "in": "query",
+            "name": "pacienteId",
+            "schema": {
+              "format": "uuid",
               "type": "string"
             }
           }
@@ -449,6 +1139,375 @@
         "summary": "Ingresos agregados por periodo"
       }
     },
+    "/api/facturacion/facturas/{factura}": {
+      "get": {
+        "description": "Roles: caja, administrador, recepcion, paciente (solo las suyas; ajena = 404).",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "factura",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FacturaDetalle"
+                }
+              }
+            },
+            "description": "Factura"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Sin token"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Rol insuficiente"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "No existe o es de otro paciente"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Detalle de una factura con su pago y su ledger"
+      }
+    },
+    "/api/facturacion/facturas/{factura}/anular": {
+      "post": {
+        "description": "Roles: caja, administrador. Publica `factura.anulada`.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "factura",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "description": "UUID; ver contracts/idempotency.md",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnularFactura"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Factura"
+                }
+              }
+            },
+            "description": "Anulada"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validacion"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Sin token"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Rol insuficiente"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "FACTURA_NO_ENCONTRADA"
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "FACTURA_YA_ANULADA"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Anula un cargo con su motivo (no se borra)"
+      }
+    },
+    "/api/facturacion/facturas/{factura}/comprobante": {
+      "get": {
+        "description": "JSON por defecto; `?formato=html` o `Accept: text/html` devuelve una pagina imprimible.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "factura",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "formato",
+            "schema": {
+              "enum": [
+                "json",
+                "html"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Comprobante"
+                }
+              },
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Comprobante"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Sin token"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Rol insuficiente"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "FACTURA_NO_ENCONTRADA o COMPROBANTE_NO_ENCONTRADO"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Comprobante interno de un cobro (no es factura fiscal)"
+      }
+    },
+    "/api/facturacion/facturas/{factura}/pagos": {
+      "post": {
+        "description": "Roles: caja, administrador. Efectivo: `recibido` >= monto; transferencia y POS: `referencia`. Publica `pago.registrado`.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "factura",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "description": "UUID; ver contracts/idempotency.md",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PagarFactura"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagoRegistrado"
+                }
+              }
+            },
+            "description": "Cobrado",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validacion"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Sin token"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Rol insuficiente"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "FACTURA_NO_ENCONTRADA"
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "FACTURA_YA_PAGADA, FACTURA_ANULADA o FACTURA_NO_COBRABLE"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "MONTO_INSUFICIENTE o Idempotency-Key reutilizada"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Cobra un cargo en caja"
+      }
+    },
     "/api/facturacion/health": {
       "get": {
         "responses": {
@@ -473,6 +1532,368 @@
         },
         "security": [],
         "summary": "Salud del servicio"
+      }
+    },
+    "/api/facturacion/movimientos": {
+      "get": {
+        "description": "Roles: caja, administrador. Acotado a un dia: sin cursor.",
+        "parameters": [
+          {
+            "description": "Dia local de la clinica (AAAA-MM-DD); por defecto hoy",
+            "in": "query",
+            "name": "fecha",
+            "schema": {
+              "format": "date",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "turno",
+            "schema": {
+              "enum": [
+                "manana",
+                "tarde"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "metodo",
+            "schema": {
+              "enum": [
+                "EFECTIVO",
+                "TRANSFERENCIA",
+                "POS"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "tipo",
+            "schema": {
+              "enum": [
+                "cobros",
+                "anulaciones",
+                "todos"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginaMovimientos"
+                }
+              }
+            },
+            "description": "Movimientos"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validacion"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Sin token"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Rol insuficiente"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Cobros y anulaciones de un dia de caja"
+      }
+    },
+    "/api/facturacion/tarifas": {
+      "get": {
+        "description": "Roles: administrador, caja, recepcion.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "soloVigentes",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "especialidad",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginaTarifas"
+                }
+              }
+            },
+            "description": "Tarifas"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Sin token"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Rol insuficiente"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Tarifario (vigentes, programadas e historicas)"
+      },
+      "post": {
+        "description": "Rol: administrador. No modifica los cargos ya emitidos.",
+        "parameters": [
+          {
+            "description": "UUID; ver contracts/idempotency.md",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearTarifa"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Tarifa"
+                }
+              }
+            },
+            "description": "Creada",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validacion"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Sin token"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Rol insuficiente"
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "TARIFA_DUPLICADA"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "VIGENCIA_PASADA"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Crea una tarifa (cierra la vigente anterior)"
+      }
+    },
+    "/api/facturacion/tarifas/{tarifa}": {
+      "put": {
+        "description": "Rol: administrador. Una tarifa que ya rige no se edita (TARIFA_NO_EDITABLE).",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tarifa",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "description": "UUID; ver contracts/idempotency.md",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarTarifa"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Tarifa"
+                }
+              }
+            },
+            "description": "Actualizada"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validacion"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Sin token"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Rol insuficiente"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "TARIFA_NO_ENCONTRADA"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "TARIFA_NO_EDITABLE"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Corrige una tarifa PROGRAMADA"
       }
     }
   },

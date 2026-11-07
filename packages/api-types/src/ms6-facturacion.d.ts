@@ -4,6 +4,76 @@
  */
 
 export interface paths {
+    "/api/facturacion/balance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Balance de caja de un dia
+         * @description Roles: caja, administrador.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Dia local de la clinica (AAAA-MM-DD); por defecto hoy */
+                    fecha?: string;
+                    turno?: "manana" | "tarde";
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Balance */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Balance"];
+                    };
+                };
+                /** @description Validacion */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description Sin token */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description Rol insuficiente */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/facturacion/facturas": {
         parameters: {
             query?: never;
@@ -20,6 +90,17 @@ export interface paths {
                 query?: {
                     limite?: number;
                     cursor?: string;
+                    /** @description Lista separada por comas: PROVISIONAL,CONFIRMADA */
+                    estado?: string;
+                    /** @description Atajo: PENDIENTE, PROVISIONAL y CONFIRMADA */
+                    porCobrar?: boolean;
+                    desde?: string;
+                    hasta?: string;
+                    /** @description N.° de cargo o nombre del paciente */
+                    q?: string;
+                    citaId?: string;
+                    /** @description Solo personal */
+                    pacienteId?: string;
                 };
                 header?: never;
                 path?: never;
@@ -228,6 +309,341 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/facturacion/facturas/{factura}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Detalle de una factura con su pago y su ledger
+         * @description Roles: caja, administrador, recepcion, paciente (solo las suyas; ajena = 404).
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    factura: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Factura */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["FacturaDetalle"];
+                    };
+                };
+                /** @description Sin token */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description Rol insuficiente */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description No existe o es de otro paciente */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/facturacion/facturas/{factura}/anular": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Anula un cargo con su motivo (no se borra)
+         * @description Roles: caja, administrador. Publica `factura.anulada`.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description UUID; ver contracts/idempotency.md */
+                    "Idempotency-Key": string;
+                };
+                path: {
+                    factura: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AnularFactura"];
+                };
+            };
+            responses: {
+                /** @description Anulada */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Factura"];
+                    };
+                };
+                /** @description Validacion */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description Sin token */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description Rol insuficiente */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description FACTURA_NO_ENCONTRADA */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description FACTURA_YA_ANULADA */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/facturacion/facturas/{factura}/comprobante": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Comprobante interno de un cobro (no es factura fiscal)
+         * @description JSON por defecto; `?formato=html` o `Accept: text/html` devuelve una pagina imprimible.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    formato?: "json" | "html";
+                };
+                header?: never;
+                path: {
+                    factura: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Comprobante */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Comprobante"];
+                        "text/html": string;
+                    };
+                };
+                /** @description Sin token */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description Rol insuficiente */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description FACTURA_NO_ENCONTRADA o COMPROBANTE_NO_ENCONTRADO */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/facturacion/facturas/{factura}/pagos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cobra un cargo en caja
+         * @description Roles: caja, administrador. Efectivo: `recibido` >= monto; transferencia y POS: `referencia`. Publica `pago.registrado`.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description UUID; ver contracts/idempotency.md */
+                    "Idempotency-Key": string;
+                };
+                path: {
+                    factura: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["PagarFactura"];
+                };
+            };
+            responses: {
+                /** @description Cobrado */
+                201: {
+                    headers: {
+                        Location?: string;
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PagoRegistrado"];
+                    };
+                };
+                /** @description Validacion */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description Sin token */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description Rol insuficiente */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description FACTURA_NO_ENCONTRADA */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description FACTURA_YA_PAGADA, FACTURA_ANULADA o FACTURA_NO_COBRABLE */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description MONTO_INSUFICIENTE o Idempotency-Key reutilizada */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/facturacion/health": {
         parameters: {
             query?: never;
@@ -267,10 +683,370 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/facturacion/movimientos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Cobros y anulaciones de un dia de caja
+         * @description Roles: caja, administrador. Acotado a un dia: sin cursor.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Dia local de la clinica (AAAA-MM-DD); por defecto hoy */
+                    fecha?: string;
+                    turno?: "manana" | "tarde";
+                    metodo?: "EFECTIVO" | "TRANSFERENCIA" | "POS";
+                    tipo?: "cobros" | "anulaciones" | "todos";
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Movimientos */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PaginaMovimientos"];
+                    };
+                };
+                /** @description Validacion */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description Sin token */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description Rol insuficiente */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/facturacion/tarifas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Tarifario (vigentes, programadas e historicas)
+         * @description Roles: administrador, caja, recepcion.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    soloVigentes?: boolean;
+                    especialidad?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Tarifas */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PaginaTarifas"];
+                    };
+                };
+                /** @description Sin token */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description Rol insuficiente */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Crea una tarifa (cierra la vigente anterior)
+         * @description Rol: administrador. No modifica los cargos ya emitidos.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description UUID; ver contracts/idempotency.md */
+                    "Idempotency-Key": string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CrearTarifa"];
+                };
+            };
+            responses: {
+                /** @description Creada */
+                201: {
+                    headers: {
+                        Location?: string;
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Tarifa"];
+                    };
+                };
+                /** @description Validacion */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description Sin token */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description Rol insuficiente */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description TARIFA_DUPLICADA */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description VIGENCIA_PASADA */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/facturacion/tarifas/{tarifa}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Corrige una tarifa PROGRAMADA
+         * @description Rol: administrador. Una tarifa que ya rige no se edita (TARIFA_NO_EDITABLE).
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description UUID; ver contracts/idempotency.md */
+                    "Idempotency-Key": string;
+                };
+                path: {
+                    tarifa: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ActualizarTarifa"];
+                };
+            };
+            responses: {
+                /** @description Actualizada */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Tarifa"];
+                    };
+                };
+                /** @description Validacion */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description Sin token */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description Rol insuficiente */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description TARIFA_NO_ENCONTRADA */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description TARIFA_NO_EDITABLE */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        ActualizarTarifa: {
+            monto: number;
+            nombre?: string | null;
+            /** @enum {string} */
+            tipo?: "CONSULTA" | "ESTUDIO";
+            /** Format: date */
+            vigenteDesde?: string;
+        };
+        AnularFactura: {
+            motivo: string;
+        };
+        Balance: {
+            anulaciones?: number;
+            cobros?: number;
+            fecha?: string;
+            moneda?: string;
+            pendiente?: {
+                cargos?: number;
+                /** @example 180.00 */
+                monto?: string;
+            };
+            porMetodo?: {
+                /** @example 180.00 */
+                EFECTIVO?: string;
+                /** @example 180.00 */
+                POS?: string;
+                /** @example 180.00 */
+                TRANSFERENCIA?: string;
+            };
+            /** @example 180.00 */
+            totalCobrado?: string;
+            turno?: string | null;
+        };
+        Comprobante: {
+            anulado?: boolean;
+            aviso?: string;
+            cajero?: string;
+            /** @example 180.00 */
+            cambio?: string;
+            cargo?: string;
+            concepto?: string;
+            /** Format: date-time */
+            emitidoEn?: string;
+            /** Format: uuid */
+            facturaId?: string;
+            fechaCita?: string | null;
+            metodo?: string;
+            moneda?: string;
+            numero?: string;
+            paciente?: {
+                id?: string;
+                nombre?: string | null;
+                numeroHistoria?: string | null;
+            };
+            recibido?: string | null;
+            referencia?: string | null;
+            /** @example 180.00 */
+            total?: string;
+        };
         CrearFactura: {
             /** Format: uuid */
             citaId: string;
@@ -278,23 +1054,45 @@ export interface components {
             /** Format: uuid */
             pacienteId: string;
         };
+        CrearTarifa: {
+            especialidad: string;
+            monto: number;
+            nombre?: string | null;
+            /** @enum {string} */
+            tipo?: "CONSULTA" | "ESTUDIO";
+            /** Format: date */
+            vigenteDesde: string;
+        };
         Factura: {
             /** Format: date-time */
             actualizadaEn?: string;
+            /** Format: date-time */
+            anuladaEn?: string | null;
             /** Format: uuid */
             citaId: string;
             /** Format: date-time */
             creadaEn?: string;
+            especialidad?: string | null;
             /** @enum {string} */
-            estado: "PENDIENTE" | "PROVISIONAL" | "CONFIRMADA" | "ANULADA";
+            estado: "PENDIENTE" | "PROVISIONAL" | "CONFIRMADA" | "PAGADA" | "ANULADA";
+            /** Format: date-time */
+            fechaCita?: string | null;
             /** Format: uuid */
             id: string;
             /** @example BOB */
             moneda: string;
             /** @example 180.00 */
             monto: string;
+            motivoAnulacion?: string | null;
+            /** @example CG-20261103-0412 */
+            numeroCargo?: string;
             /** Format: uuid */
             pacienteId: string;
+            pacienteNombre?: string | null;
+        };
+        FacturaDetalle: components["schemas"]["Factura"] & {
+            movimientos?: components["schemas"]["MovimientoLedger"][];
+            pago?: components["schemas"]["Pago"] | null;
         };
         IngresoPeriodo: {
             confirmado?: string;
@@ -304,9 +1102,79 @@ export interface components {
             periodo?: string;
             provisional?: string;
         };
+        Movimiento: {
+            cargo?: string;
+            comprobante?: string | null;
+            /** Format: date-time */
+            en?: string;
+            /** @enum {string} */
+            estado?: "PAGADO" | "ANULADO";
+            /** Format: uuid */
+            facturaId?: string;
+            /** @example 10:21 */
+            hora?: string;
+            metodo?: string | null;
+            /** @example 180.00 */
+            monto?: string;
+            motivo?: string | null;
+            paciente?: {
+                id?: string;
+                nombre?: string | null;
+            };
+        };
+        MovimientoLedger: {
+            estadoAnterior?: string | null;
+            estadoNuevo?: string;
+            /** @example 180.00 */
+            monto?: string;
+            /** Format: date-time */
+            ocurridoEn?: string;
+        };
+        PagarFactura: {
+            /** @enum {string} */
+            metodo: "EFECTIVO" | "TRANSFERENCIA" | "POS";
+            /** @description Obligatorio en efectivo */
+            recibido?: number;
+            /** @description Obligatoria en transferencia y POS */
+            referencia?: string;
+        };
         PaginaFacturas: {
             items: components["schemas"]["Factura"][];
             siguiente: string | null;
+        };
+        PaginaMovimientos: {
+            fecha?: string;
+            items: components["schemas"]["Movimiento"][];
+            siguiente: string | null;
+            turno?: string | null;
+        };
+        PaginaTarifas: {
+            items: components["schemas"]["Tarifa"][];
+            siguiente: string | null;
+        };
+        Pago: {
+            cajero?: string;
+            /** @example 180.00 */
+            cambio?: string;
+            /** @example CI-000873 */
+            comprobante?: string;
+            /** Format: uuid */
+            facturaId?: string;
+            /** Format: uuid */
+            id?: string;
+            /** @enum {string} */
+            metodo?: "EFECTIVO" | "TRANSFERENCIA" | "POS";
+            /** @example 180.00 */
+            monto?: string;
+            /** Format: date-time */
+            pagadoEn?: string;
+            recibido?: string | null;
+            referencia?: string | null;
+        };
+        PagoRegistrado: {
+            comprobante?: components["schemas"]["Comprobante"];
+            factura?: components["schemas"]["Factura"];
+            pago?: components["schemas"]["Pago"];
         };
         Problem: {
             code: string;
@@ -320,6 +1188,23 @@ export interface components {
             status: number;
             title: string;
             type: string;
+        };
+        Tarifa: {
+            especialidad?: string;
+            /** @enum {string} */
+            estado?: "VIGENTE" | "PROGRAMADA" | "HISTORICA";
+            /** Format: uuid */
+            id?: string;
+            moneda?: string;
+            /** @example 180.00 */
+            monto?: string;
+            nombre?: string | null;
+            /** @enum {string} */
+            tipo?: "CONSULTA" | "ESTUDIO";
+            /** Format: date */
+            vigenteDesde?: string;
+            /** Format: date */
+            vigenteHasta?: string | null;
         };
     };
     responses: never;

@@ -48,12 +48,14 @@ y con **publisher confirms**. Los consumidores usan **ack manual**.
 | `cita.reprogramada` | evento de dominio | MS3 → varios | `sigec.eventos` | citaId, pacienteId, medicoId, fechaHora, fechaHoraAnterior |
 | `cita.asistencia-registrada` | evento de dominio | MS3 → varios | `sigec.eventos` | citaId, pacienteId, medicoId, fechaHora, asistencia (LLEGO\|ASISTIO\|NO_ASISTIO) |
 | `factura.creada` | evento de dominio | MS6 → varios | `sigec.eventos` | facturaId, citaId, pacienteId, monto, estado |
+| `pago.registrado` | evento de dominio | MS6 → varios | `sigec.eventos` | pagoId, facturaId, citaId, pacienteId, monto (string), metodo, comprobante |
+| `factura.anulada` | evento de dominio | MS6 → varios | `sigec.eventos` | facturaId, citaId, pacienteId, monto (string), motivo, estabaPagada |
 
 Las respuestas conservan el `correlationId` del comando y ponen su `id` en el `causationId`.
 
 ## Eventos de dominio y outbox
 
-Los eventos de dominio (`paciente.*`, `medico.*`, `factura.creada`) se escriben en la tabla `outbox` en la **misma transaccion** que el cambio
+Los eventos de dominio (`paciente.*`, `medico.*`, `factura.*`, `pago.registrado`) se escriben en la tabla `outbox` en la **misma transaccion** que el cambio
 de negocio. Un relay los publica en `sigec.eventos` **al menos una vez**: el `id` del sobre es el id de la fila del outbox, de modo que
 una reentrega lleva el mismo `id` y el consumidor la descarta (dedupe por `id`). El `occurredAt` del sobre es el `created_at` de la fila
 y `correlationId` es el id del agregado.
@@ -91,6 +93,7 @@ la copia se publica en `sigec.dlx` → `<q>.dlq`. Un mensaje que no es JSON vali
 | `ms3.saga.respuestas` | MS3 | las cinco respuestas |
 | `ms3.eventos` | MS3 | `paciente.creado`, `paciente.actualizado`, `medico.creado`, `medico.actualizado` (proyecciones de nombres para la agenda) |
 | `ms4.eventos.pacientes` | MS4 | `paciente.creado` |
+| `ms6.eventos` | MS6 | `paciente.creado`, `paciente.actualizado` (nombres de paciente en los listados de caja) |
 | `ms5.inferencia.comandos` | MS5 inferencia (Python) | `imagenes.analisis.solicitar` |
 | `ms5.api.respuestas` | MS5 API | `imagenes.analisis.completado`, `.fallido` |
 | `ms8.eventos` | MS8 | `cita.confirmada`, `paciente.creado` (contacto del paciente y recordatorios) |
