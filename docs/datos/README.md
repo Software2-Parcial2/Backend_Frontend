@@ -5,6 +5,7 @@ repositorios y scripts del repo; lo nuevo esta marcado como **[nuevo]** y lo no 
 
 | Documento | Contenido |
 |---|---|
+| [sql-por-servicio.md](sql-por-servicio.md) | Índice de los archivos SQL/migraciones de cada servicio y qué tablas crean |
 | [auditoria.md](auditoria.md) | Inventario real por servicio y huecos del modelo, con dueno y decision |
 | [postgresql.md](postgresql.md) | Diagramas ER (ms2, ms4, ms6, ms7), restricciones, indices, tipos, outbox/idempotencia, pgvector |
 | [dynamodb.md](dynamodb.md) | Patrones de acceso, claves pk/sk, GSI, TTL, condiciones de escritura (MS3, MS5, MS8) |
