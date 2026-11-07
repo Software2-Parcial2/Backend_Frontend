@@ -10,6 +10,7 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.web.SecurityFilterChain;
+import com.sigec.gateway.web.ProblemJsonSecurityHandlers;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -19,6 +20,7 @@ public class SecurityConfig {
 
 	@Bean
 	SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+		ProblemJsonSecurityHandlers problemas = new ProblemJsonSecurityHandlers();
 		return http
 				.csrf(AbstractHttpConfigurer::disable)
 				.cors(Customizer.withDefaults())
@@ -26,7 +28,10 @@ public class SecurityConfig {
 						.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 						.requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
 						.anyRequest().authenticated())
-				.oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
+				.exceptionHandling(e -> e.authenticationEntryPoint(problemas).accessDeniedHandler(problemas))
+				.oauth2ResourceServer(oauth2 -> oauth2
+						.authenticationEntryPoint(problemas).accessDeniedHandler(problemas)
+						.jwt(Customizer.withDefaults()))
 				.build();
 	}
 
@@ -36,9 +41,9 @@ public class SecurityConfig {
 		CorsConfiguration config = new CorsConfiguration();
 		config.setAllowedOrigins(allowedOrigins);
 		config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-		config.setAllowedHeaders(List.of("Authorization", "Content-Type", "Idempotency-Key"));
+		config.setAllowedHeaders(List.of("Authorization", "Content-Type", "Idempotency-Key", "If-Match", "X-Correlation-Id", "Accept-Language"));
 		// El navegador solo deja leer estas cabeceras de respuesta si se exponen (contracts/idempotency.md).
-		config.setExposedHeaders(List.of("Idempotent-Replay", "Retry-After", "Location"));
+		config.setExposedHeaders(List.of("Idempotent-Replay", "Retry-After", "Location", "ETag", "X-Correlation-Id"));
 		config.setMaxAge(3600L);
 		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
 		source.registerCorsConfiguration("/**", config);

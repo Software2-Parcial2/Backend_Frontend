@@ -14,7 +14,7 @@ spring:
             - id: ms2-pacientes
               uri: ${MS2_URL:http://localhost:8082}
               predicates:
-                - Path=/api/pacientes/**
+                - Path=/api/pacientes/**,/api/especialidades/**,/api/medicos/**
             - id: ms4-historias
               uri: ${MS4_URL:http://localhost:8084}
               predicates:
@@ -39,6 +39,11 @@ spring:
               uri: ${MS6_URL:http://localhost:8006}
               predicates:
                 - Path=/api/facturacion/**
+
+            - id: ms1-identidad
+              uri: ${MS1_URL:http://localhost:3001}
+              predicates:
+                - Path=/api/identidad/**,/api/salud/**
 
 server:
   port: 8090
