@@ -47,6 +47,9 @@
             },
             "aviso": {
               "type": "string"
+            },
+            "gradcamKey": {
+              "type": "string"
             }
           }
         }

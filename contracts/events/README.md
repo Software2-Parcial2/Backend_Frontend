@@ -42,6 +42,7 @@ y con **publisher confirms**. Los consumidores usan **ack manual**.
 | `paciente.creado` | evento de dominio | MS2 → varios | `sigec.eventos` | pacienteId, numeroHistoria, nombre, documento, email? |
 | `paciente.actualizado` | evento de dominio | MS2 → varios | `sigec.eventos` | pacienteId, numeroHistoria, nombre, documento, email?, telefono?, version |
 | `consulta.firmada` | evento de dominio | MS4 → varios | `sigec.eventos` | consultaId, historiaId, pacienteId, medicoId, citaId?, firmadaEn (sin contenido clinico) |
+| `imagen.informe-validado` | evento de dominio | MS5 → varios | `sigec.eventos` | imagenId, pacienteId, estudio, decision, validacion, validadoPor, medicoId?, validadoEn, huella, versionModelo? (sin el texto del informe; id estable por imagen y firma) |
 | `medico.creado` | evento de dominio | MS2 → varios | `sigec.eventos` | medicoId, nombre, especialidad (codigo), especialidadNombre, consultorio?, activo, usuarioKeycloak? |
 | `medico.actualizado` | evento de dominio | MS2 → varios | `sigec.eventos` | medicoId, nombre, especialidad (codigo), especialidadNombre, consultorio?, activo, usuarioKeycloak? |
 | `cita.confirmada` | evento de dominio | MS3 → varios | `sigec.eventos` | citaId, pacienteId, medicoId, fechaHora |
@@ -93,7 +94,7 @@ la copia se publica en `sigec.dlx` → `<q>.dlq`. Un mensaje que no es JSON vali
 | `ms8.saga.comandos` | MS8 | los dos comandos `notificaciones.*` |
 | `ms3.saga.respuestas` | MS3 | las cinco respuestas |
 | `ms3.eventos` | MS3 | `paciente.creado`, `paciente.actualizado`, `medico.creado`, `medico.actualizado` (proyecciones de nombres para la agenda) |
-| `ms4.eventos` | MS4 | `paciente.creado`, `paciente.actualizado` (crea/actualiza la historia), `cita.confirmada`, `cita.cancelada`, `cita.asistencia-registrada` (citas que habilitan una consulta) |
+| `ms4.eventos` | MS4 | `paciente.creado`, `paciente.actualizado` (crea/actualiza la historia), `cita.confirmada`, `cita.cancelada`, `cita.asistencia-registrada` (citas que habilitan una consulta), `imagen.informe-validado` (estudios de la historia) |
 | `ms6.eventos` | MS6 | `paciente.creado`, `paciente.actualizado` (nombres de paciente en los listados de caja) |
 | `ms5.inferencia.comandos` | MS5 inferencia (Python) | `imagenes.analisis.solicitar` |
 | `ms5.api.respuestas` | MS5 API | `imagenes.analisis.completado`, `.fallido` |

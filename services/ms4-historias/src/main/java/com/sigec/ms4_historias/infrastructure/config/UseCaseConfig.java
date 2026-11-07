@@ -9,18 +9,21 @@ import com.sigec.ms4_historias.application.port.in.AuditoriaUseCase;
 import com.sigec.ms4_historias.application.port.in.ConsentimientosUseCase;
 import com.sigec.ms4_historias.application.port.in.ConsultasUseCase;
 import com.sigec.ms4_historias.application.port.in.HistoriasUseCase;
+import com.sigec.ms4_historias.application.port.in.EstudiosUseCase;
 import com.sigec.ms4_historias.application.port.in.ProyeccionesUseCase;
 import com.sigec.ms4_historias.application.port.out.AntecedenteRepositoryPort;
 import com.sigec.ms4_historias.application.port.out.AuditoriaPort;
 import com.sigec.ms4_historias.application.port.out.CitaProyeccionPort;
 import com.sigec.ms4_historias.application.port.out.ConsentimientoRepositoryPort;
 import com.sigec.ms4_historias.application.port.out.ConsultaRepositoryPort;
+import com.sigec.ms4_historias.application.port.out.EstudioProyeccionPort;
 import com.sigec.ms4_historias.application.port.out.EventPublisherPort;
 import com.sigec.ms4_historias.application.port.out.HistoriaRepositoryPort;
 import com.sigec.ms4_historias.application.service.AntecedenteService;
 import com.sigec.ms4_historias.application.service.AuditoriaService;
 import com.sigec.ms4_historias.application.service.ConsentimientoService;
 import com.sigec.ms4_historias.application.service.ConsultaService;
+import com.sigec.ms4_historias.application.service.EstudioService;
 import com.sigec.ms4_historias.application.service.HistoriaService;
 import com.sigec.ms4_historias.application.service.ProyeccionService;
 
@@ -60,7 +63,14 @@ public class UseCaseConfig {
 	}
 
 	@Bean
-	ProyeccionesUseCase proyeccionesUseCase(HistoriaRepositoryPort historias, CitaProyeccionPort citas, TransactionTemplate tx) {
-		return Transaccional.envolver(ProyeccionesUseCase.class, new ProyeccionService(historias, citas), tx);
+	ProyeccionesUseCase proyeccionesUseCase(HistoriaRepositoryPort historias, CitaProyeccionPort citas, EstudioProyeccionPort estudios,
+			TransactionTemplate tx) {
+		return Transaccional.envolver(ProyeccionesUseCase.class, new ProyeccionService(historias, citas, estudios), tx);
+	}
+
+	@Bean
+	EstudiosUseCase estudiosUseCase(HistoriaRepositoryPort historias, EstudioProyeccionPort estudios, AuditoriaPort auditoria,
+			TransactionTemplate tx) {
+		return Transaccional.envolver(EstudiosUseCase.class, new EstudioService(historias, estudios, auditoria), tx);
 	}
 }

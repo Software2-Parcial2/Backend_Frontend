@@ -2,24 +2,25 @@ import { BadRequestException, ConflictException, ForbiddenException, NotFoundExc
 import type { AuthUser } from '@sigec/auth-nest';
 import { randomUUID } from 'node:crypto';
 import type { ImagenesService } from '../../application/imagenes.service.js';
-import { ArchivoInvalidoError, PacienteInexistenteError, type Imagen } from '../../domain/imagen.js';
+import { ArchivoInvalidoError, PacienteInexistenteError, ReglaImagenError, type Imagen } from '../../domain/imagen.js';
 import { ImagenesController, toView } from './imagenes.controller.js';
 
 const MIO = 'a0000000-0000-4000-8000-000000000001';
 const OTRO = 'b0000000-0000-4000-8000-000000000002';
-const img = (pacienteId: string): Imagen => ({ id: randomUUID(), pacienteId, estudio: 'x', estado: 'ANALIZADA', hashSha256: 'a'.repeat(64), mime: 'image/jpeg', bytes: 10, bucket: 'secreto-bucket', objectKey: 'radiografias/clave/secreta.jpg', usuarioId: 'u', intentosAnalisis: 1, creadaEn: 1, actualizadaEn: 1 });
+const img = (pacienteId: string): Imagen => ({ id: randomUUID(), pacienteId, estudio: 'x', estado: 'ANALIZADA', hashSha256: 'a'.repeat(64), mime: 'image/jpeg', bytes: 10, bucket: 'secreto-bucket', objectKey: 'radiografias/clave/secreta.jpg', usuarioId: 'u', origen: 'MEDICO', validacion: 'VALIDADO', intentosAnalisis: 1, creadaEn: 1, actualizadaEn: 1 });
 const paciente: AuthUser = { sub: 'p', roles: ['paciente'], pacienteId: MIO };
 const medico: AuthUser = { sub: 'm', roles: ['medico'] };
 
 function setup(imagenes: Imagen[] = [img(MIO)], subir?: () => Promise<Imagen>) {
-  const calls: unknown[] = [];
+  const calls: Record<string, unknown>[] = [];
+  const subidos: Record<string, unknown>[] = [];
   const service = {
     obtener: async (id: string) => imagenes.find((i) => i.id === id) ?? null,
-    listar: async (p: string) => (calls.push(p), { items: imagenes.filter((i) => i.pacienteId === p), siguiente: null }),
+    listar: async (f: { pacienteId?: string }) => (calls.push(f), { items: imagenes.filter((i) => !f.pacienteId || i.pacienteId === f.pacienteId), siguiente: null }),
     urlTemporal: async () => ({ url: 'http://s3/firmada', expiraEn: 'x' }),
-    subir: subir ?? (async () => imagenes[0]),
+    subir: subir ?? (async (c: unknown) => (subidos.push(c as Record<string, unknown>), imagenes[0])),
   } as unknown as ImagenesService;
-  return { controller: new ImagenesController(service), calls, imagenes };
+  return { controller: new ImagenesController(service), calls, imagenes, subidos };
 }
 
 describe('ImagenesController', () => {
@@ -45,13 +46,36 @@ describe('ImagenesController', () => {
     await expect(t.controller.obtener(t.imagenes[0].id, { sub: 'a', roles: ['administrador'] })).resolves.toBeDefined();
   });
 
-  it('el listado: un paciente queda forzado a sus imagenes; el personal debe indicar pacienteId', async () => {
+  it('el listado: un paciente queda forzado a sus imagenes ya validadas; el personal puede listar todas', async () => {
     const t = setup([img(MIO), img(OTRO)]);
     await t.controller.listar({}, paciente);
-    expect(t.calls).toEqual([MIO]);
+    expect(t.calls).toEqual([{ pacienteId: MIO, validacion: 'VALIDADO' }]);
     await expect(t.controller.listar({ pacienteId: OTRO }, paciente)).rejects.toBeInstanceOf(ForbiddenException);
-    await expect(t.controller.listar({}, medico)).rejects.toBeInstanceOf(BadRequestException);
-    await expect(t.controller.listar({ pacienteId: OTRO }, medico)).resolves.toMatchObject({ items: [{ pacienteId: OTRO }] });
+    await expect(t.controller.listar({ pacienteId: OTRO, validacion: 'PENDIENTE' }, medico)).resolves.toMatchObject({ items: [{ pacienteId: OTRO }] });
+    expect(t.calls.at(-1)).toMatchObject({ pacienteId: OTRO, validacion: 'PENDIENTE' });
+    await t.controller.listar({ q: 'rojas' }, medico);
+    expect(t.calls.at(-1)).toMatchObject({ q: 'rojas', pacienteId: undefined });
+  });
+
+  it('un paciente no ve un estudio sin validar (404) ni el de otro', async () => {
+    const t = setup([{ ...img(MIO), validacion: 'PENDIENTE' }]);
+    await expect(t.controller.obtener(t.imagenes[0].id, paciente)).rejects.toBeInstanceOf(NotFoundException);
+    await expect(t.controller.obtener(t.imagenes[0].id, medico)).resolves.toMatchObject({ validacion: 'PENDIENTE' });
+  });
+
+  it('un paciente sube a su nombre (origen PACIENTE); a nombre de otro es 403', async () => {
+    const t = setup();
+    await expect(t.controller.subir({ buffer: Buffer.from('x') }, { pacienteId: OTRO }, paciente, 't')).rejects.toBeInstanceOf(ForbiddenException);
+    await t.controller.subir({ buffer: Buffer.from('x') }, {}, paciente, 't');
+    expect(t.subidos.at(-1)).toMatchObject({ pacienteId: MIO, origen: 'PACIENTE' });
+    await t.controller.subir({ buffer: Buffer.from('x') }, { pacienteId: OTRO }, medico, 't');
+    expect(t.subidos.at(-1)).toMatchObject({ pacienteId: OTRO, origen: 'MEDICO' });
+    await expect(t.controller.subir({ buffer: Buffer.from('x') }, {}, medico, 't')).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('IMAGEN_DUPLICADA se traduce a 409 problem+json con su code', async () => {
+    const dup = setup([img(MIO)], async () => { throw new ReglaImagenError('IMAGEN_DUPLICADA', 409, 'ya subida'); });
+    await expect(dup.controller.subir({ buffer: Buffer.from('x') }, { pacienteId: MIO }, medico, 't')).rejects.toMatchObject({ status: 409, response: { code: 'IMAGEN_DUPLICADA' } });
   });
 
   it('subir: falta el archivo -> 400; errores de dominio -> 400/404 como HttpException (la idempotencia los guarda)', async () => {

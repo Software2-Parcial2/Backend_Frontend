@@ -6,6 +6,7 @@ import { ImagenesService } from '../application/imagenes.service.js';
 import { Ms2PacienteGateway } from './http/ms2-paciente.gateway.js';
 import { ImagenesController } from './http/imagenes.controller.js';
 import { RabbitAnalisisPublisher } from './messaging/analisis.publisher.js';
+import { RabbitValidacionPublisher } from './messaging/validacion.publisher.js';
 import { MongoImagenRepository } from './persistence/mongo-imagen.repository.js';
 import { S3ObjectStore } from './storage/s3-object-store.js';
 
@@ -41,7 +42,7 @@ class ImagenesWorkers implements OnApplicationBootstrap, OnApplicationShutdown {
             version_modelo: String(p.version_modelo),
             modelo: String(p.modelo),
             aviso: String(p.aviso),
-          });
+          }, typeof p.gradcamKey === 'string' ? p.gradcamKey : undefined);
           this.log.log(`${env.type} imagen=${String(p.imagenId).slice(0, 8)} -> ${aplicado ? 'aplicado' : 'ignorado'}`);
         } else if (env.type === 'imagenes.analisis.fallido') {
           const aplicado = await this.service.aplicarFallo(String(p.imagenId), String(p.motivo));
@@ -96,6 +97,7 @@ class ImagenesWorkers implements OnApplicationBootstrap, OnApplicationShutdown {
           }),
           pacientes: new Ms2PacienteGateway(process.env.MS2_URL ?? 'http://localhost:8082'),
           publisher: new RabbitAnalisisPublisher(publisher),
+          validaciones: new RabbitValidacionPublisher(publisher),
           newId: randomUUID,
           randomKey: () => randomBytes(32).toString('hex'),
           log: (m) => log.warn(m),

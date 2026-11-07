@@ -9,7 +9,7 @@ const conn = mongoose.createConnection(uri, { serverSelectionTimeoutMS: 1500 });
 const available = await conn.asPromise().then(() => true).catch(() => false);
 
 const nueva = (pacienteId: string, creadaEn: number, over: Partial<Imagen> = {}): Imagen => ({
-  id: randomUUID(), pacienteId, estudio: 'x', estado: 'SUBIDA', hashSha256: 'a'.repeat(64), mime: 'image/png', bytes: 5, bucket: 'b', objectKey: `k/${randomUUID()}`, usuarioId: 'u', intentosAnalisis: 0, creadaEn, actualizadaEn: creadaEn, ...over,
+  id: randomUUID(), pacienteId, estudio: 'x', estado: 'SUBIDA', hashSha256: 'a'.repeat(64), mime: 'image/png', bytes: 5, bucket: 'b', objectKey: `k/${randomUUID()}`, usuarioId: 'u', origen: 'MEDICO', validacion: 'PENDIENTE', intentosAnalisis: 0, creadaEn, actualizadaEn: creadaEn, ...over,
 });
 
 // El validador $jsonSchema real (scripts/mongo-init): todas las pruebas del repositorio corren con el activo, asi que un
@@ -42,7 +42,7 @@ describe.skipIf(!available)('MongoImagenRepository (MongoDB)', () => {
     const vistos: string[] = [];
     let cursor: string | undefined;
     for (let pagina = 0; pagina < 4; pagina++) {
-      const r = await repo.porPaciente(p, 2, cursor);
+      const r = await repo.buscar({ pacienteId: p }, 2, cursor);
       vistos.push(...r.items.map((x) => x.id));
       expect(r.items.every((x) => x.pacienteId === p)).toBe(true);
       if (!r.siguiente) break;
@@ -51,7 +51,7 @@ describe.skipIf(!available)('MongoImagenRepository (MongoDB)', () => {
     expect(vistos).toHaveLength(5);
     expect(new Set(vistos).size).toBe(5);
     expect(new Set(vistos)).toEqual(new Set(ids));
-    await expect(repo.porPaciente(p, 2, 'basura')).rejects.toBeInstanceOf(CursorInvalidoError);
+    await expect(repo.buscar({ pacienteId: p }, 2, 'basura')).rejects.toBeInstanceOf(CursorInvalidoError);
   });
 
   it('las transiciones son condicionales: la segunda no cambia nada (idempotente)', async () => {
@@ -61,6 +61,26 @@ describe.skipIf(!available)('MongoImagenRepository (MongoDB)', () => {
     expect(await repo.transicion(i.id, ['SUBIDA', 'ANALIZANDO'], { estado: 'ANALIZADA', resultado: r }, 10)).toBe(true);
     expect(await repo.transicion(i.id, ['SUBIDA', 'ANALIZANDO'], { estado: 'FALLIDA', error: 'x' }, 11)).toBe(false);
     expect(await repo.obtener(i.id)).toMatchObject({ estado: 'ANALIZADA', resultado: { probabilidad_neumonia: 0.2 }, actualizadaEn: 10 });
+  });
+
+  it('busca por validacion y texto libre, encuentra duplicados por huella y registra la validacion una sola vez', async () => {
+    const p = randomUUID();
+    const hash = 'b'.repeat(64);
+    const i = nueva(p, 7000, { hashSha256: hash, pacienteNombre: 'Carla Rojas', numeroHistoria: 'HC-004218', estado: 'ANALIZADA' });
+    await repo.guardar(i);
+    await repo.guardar(nueva(p, 7001, { pacienteNombre: 'Otra Persona', validacion: 'VALIDADO' }));
+    expect((await repo.buscar({ validacion: 'PENDIENTE', q: 'rojas' }, 10)).items.map((x) => x.id)).toEqual([i.id]);
+    expect((await repo.buscar({ q: 'hc-0042' }, 10)).items.map((x) => x.id)).toContain(i.id);
+    expect((await repo.buscar({ q: '.*' }, 10)).items).toHaveLength(0); // el texto no se interpreta como expresion regular
+    expect((await repo.porHash(p, hash))?.id).toBe(i.id);
+    expect(await repo.porHash(randomUUID(), hash)).toBeNull();
+    const informe = { decision: 'CONFIRMA' as const, texto: null, validadoPor: 'dr', medicoId: null, validadoEn: 9, huella: 'c'.repeat(64), versionModelo: 'v' };
+    expect(await repo.validar(i.id, informe, 'VALIDADO', 9)).toBe(true);
+    expect(await repo.validar(i.id, informe, 'DESCARTADO', 10)).toBe(false);
+    expect((await repo.conEventoPendiente(10)).map((x) => x.id)).toContain(i.id);
+    await repo.marcarEventoPublicado(i.id);
+    expect((await repo.conEventoPendiente(10)).map((x) => x.id)).not.toContain(i.id);
+    expect(await repo.obtener(i.id)).toMatchObject({ validacion: 'VALIDADO', informe: { huella: 'c'.repeat(64) } });
   });
 
   it('marcarEnvio cuenta el intento y atascadas devuelve las que no avanzan', async () => {

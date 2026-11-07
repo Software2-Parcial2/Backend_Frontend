@@ -24,6 +24,7 @@ import com.sigec.ms4_historias.application.port.in.AntecedentesUseCase;
 import com.sigec.ms4_historias.application.port.in.AuditoriaUseCase;
 import com.sigec.ms4_historias.application.port.in.ConsentimientosUseCase;
 import com.sigec.ms4_historias.application.port.in.ConsultasUseCase;
+import com.sigec.ms4_historias.application.port.in.EstudiosUseCase;
 import com.sigec.ms4_historias.application.port.in.HistoriasUseCase;
 import com.sigec.ms4_historias.domain.model.Accion;
 import com.sigec.ms4_historias.domain.model.Consulta;
@@ -51,9 +52,11 @@ public class HistoriaController {
 	private final AntecedentesUseCase antecedentes;
 	private final ConsentimientosUseCase consentimientos;
 	private final AuditoriaUseCase auditoria;
+	private final EstudiosUseCase estudios;
 
 	public HistoriaController(HistoriasUseCase historias, ConsultasUseCase consultas, AntecedentesUseCase antecedentes,
-			ConsentimientosUseCase consentimientos, AuditoriaUseCase auditoria) {
+			ConsentimientosUseCase consentimientos, AuditoriaUseCase auditoria, EstudiosUseCase estudios) {
+		this.estudios = estudios;
 		this.historias = historias;
 		this.consultas = consultas;
 		this.antecedentes = antecedentes;
@@ -164,6 +167,15 @@ public class HistoriaController {
 	public ResponseEntity<AntecedenteResponse> desactivarAntecedente(Authentication auth, @PathVariable UUID id,
 			@RequestHeader(value = "If-Match", required = false) String ifMatch) {
 		return ResponseEntity.ok(AntecedenteResponse.de(antecedentes.desactivar(ActorJwt.de(auth), id, version(ifMatch))));
+	}
+
+	// --- Estudios de imagen -------------------------------------------------------------------------------------
+
+	/** Estudios con informe validado en MS5 (la imagen y el informe se piden alli por `imagenId`). El paciente no ve los descartados. */
+	@GetMapping("/{id}/estudios")
+	@PreAuthorize("hasAnyRole('medico','paciente')")
+	public List<EstudioResponse> estudios(Authentication auth, @PathVariable UUID id) {
+		return estudios.listar(ActorJwt.de(auth), id).stream().map(EstudioResponse::de).toList();
 	}
 
 	// --- Consentimientos ----------------------------------------------------------------------------------------

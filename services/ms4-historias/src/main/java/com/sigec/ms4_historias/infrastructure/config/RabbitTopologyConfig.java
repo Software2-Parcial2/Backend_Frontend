@@ -58,7 +58,7 @@ public class RabbitTopologyConfig {
 	Declarables ms4EventosQueue() {
 		List<Declarable> all = new ArrayList<>(consumerQueue(COLA_EVENTOS));
 		for (String clave : List.of("paciente.creado", "paciente.actualizado", "cita.confirmada", "cita.cancelada",
-				"cita.asistencia-registrada")) {
+				"cita.asistencia-registrada", "imagen.informe-validado")) {
 			all.add(bind(COLA_EVENTOS, EXCHANGE_EVENTOS, clave, true));
 		}
 		return new Declarables(all);

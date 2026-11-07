@@ -96,7 +96,8 @@ export const TOPOLOGY = {
             "paciente.actualizado",
             "cita.confirmada",
             "cita.cancelada",
-            "cita.asistencia-registrada"
+            "cita.asistencia-registrada",
+            "imagen.informe-validado"
           ]
         }
       ]

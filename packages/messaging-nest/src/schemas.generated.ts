@@ -666,6 +666,88 @@ export const SCHEMAS: readonly Record<string, unknown>[] = [
   },
   {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://sigec.local/contracts/events/imagen.informe-validado.schema.json",
+    "title": "imagen.informe-validado",
+    "description": "Evento de dominio MS5 -> varios (exchange sigec.eventos). Un medico valido (o descarto) el informe de un estudio. Sin el texto del informe: solo ids, decision y huella de la firma.",
+    "allOf": [
+      {
+        "$ref": "envelope.schema.json"
+      },
+      {
+        "properties": {
+          "type": {
+            "const": "imagen.informe-validado"
+          },
+          "payload": {
+            "type": "object",
+            "required": [
+              "imagenId",
+              "pacienteId",
+              "estudio",
+              "decision",
+              "validacion",
+              "validadoPor",
+              "validadoEn",
+              "huella"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "imagenId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "pacienteId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "estudio": {
+                "type": "string"
+              },
+              "decision": {
+                "enum": [
+                  "CONFIRMA",
+                  "MODIFICA",
+                  "DESCARTA"
+                ]
+              },
+              "validacion": {
+                "enum": [
+                  "VALIDADO",
+                  "DESCARTADO"
+                ]
+              },
+              "validadoPor": {
+                "type": "string"
+              },
+              "medicoId": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "uuid"
+              },
+              "validadoEn": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "huella": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "versionModelo": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
     "$id": "https://sigec.local/contracts/events/imagenes.analisis.completado.schema.json",
     "title": "imagenes.analisis.completado",
     "description": "Respuesta MS5 inferencia -> MS5 API. APOYO A LA DECISION, no un diagnostico.",
@@ -712,6 +794,9 @@ export const SCHEMAS: readonly Record<string, unknown>[] = [
                 "type": "string"
               },
               "aviso": {
+                "type": "string"
+              },
+              "gradcamKey": {
                 "type": "string"
               }
             }

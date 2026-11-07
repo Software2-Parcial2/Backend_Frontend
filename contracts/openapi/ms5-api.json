@@ -1,6 +1,11 @@
 {
   "components": {
-    "schemas": {},
+    "schemas": {
+      "ValidarImagenDto": {
+        "properties": {},
+        "type": "object"
+      }
+    },
     "securitySchemes": {
       "bearer": {
         "bearerFormat": "JWT",
@@ -60,14 +65,17 @@
                   "estudio": {
                     "type": "string"
                   },
+                  "observaciones": {
+                    "type": "string"
+                  },
                   "pacienteId": {
+                    "description": "Obligatorio para el personal; un paciente sube siempre a su nombre",
                     "format": "uuid",
                     "type": "string"
                   }
                 },
                 "required": [
-                  "archivo",
-                  "pacienteId"
+                  "archivo"
                 ],
                 "type": "object"
               }
@@ -118,6 +126,34 @@
         ]
       }
     },
+    "/api/imagenes/{id}/gradcam-url": {
+      "get": {
+        "operationId": "ImagenesController_gradcam",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "imagenes"
+        ]
+      }
+    },
     "/api/imagenes/{id}/url": {
       "get": {
         "operationId": "ImagenesController_url",
@@ -131,6 +167,53 @@
             }
           }
         ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "imagenes"
+        ]
+      }
+    },
+    "/api/imagenes/{id}/validacion": {
+      "post": {
+        "operationId": "ImagenesController_validar",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "UUID; ver contracts/idempotency.md",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValidarImagenDto"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "200": {
             "description": ""

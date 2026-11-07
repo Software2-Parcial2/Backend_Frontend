@@ -232,6 +232,42 @@
         "required" : [ "motivo" ],
         "type" : "object"
       },
+      "EstudioResponse" : {
+        "properties" : {
+          "decision" : {
+            "type" : "string"
+          },
+          "estudio" : {
+            "type" : "string"
+          },
+          "huella" : {
+            "type" : "string"
+          },
+          "imagenId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "medicoId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "pacienteId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "validacion" : {
+            "type" : "string"
+          },
+          "validadoEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "versionModelo" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "EvolucionRequest" : {
         "properties" : {
           "nota" : {
@@ -1086,6 +1122,36 @@
               "*/*" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/ConsultaResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "historia-controller" ]
+      }
+    },
+    "/api/historias/{id}/estudios" : {
+      "get" : {
+        "operationId" : "estudios",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/EstudioResponse"
+                  },
+                  "type" : "array"
                 }
               }
             },

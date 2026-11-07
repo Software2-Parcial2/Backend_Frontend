@@ -36,6 +36,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/imagenes/{id}/gradcam-url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ImagenesController_gradcam"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/imagenes/{id}/url": {
         parameters: {
             query?: never;
@@ -46,6 +62,22 @@ export interface paths {
         get: operations["ImagenesController_url"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/imagenes/{id}/validacion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ImagenesController_validar"];
         delete?: never;
         options?: never;
         head?: never;
@@ -71,7 +103,9 @@ export interface paths {
 }
 export type webhooks = Record<string, never>;
 export interface components {
-    schemas: never;
+    schemas: {
+        ValidarImagenDto: Record<string, never>;
+    };
     responses: never;
     parameters: never;
     requestBodies: never;
@@ -113,8 +147,12 @@ export interface operations {
                     /** Format: binary */
                     archivo: string;
                     estudio?: string;
-                    /** Format: uuid */
-                    pacienteId: string;
+                    observaciones?: string;
+                    /**
+                     * Format: uuid
+                     * @description Obligatorio para el personal; un paciente sube siempre a su nombre
+                     */
+                    pacienteId?: string;
                 };
             };
         };
@@ -146,6 +184,25 @@ export interface operations {
             };
         };
     };
+    ImagenesController_gradcam: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     ImagenesController_url: {
         parameters: {
             query?: never;
@@ -156,6 +213,32 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ImagenesController_validar: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description UUID; ver contracts/idempotency.md */
+                "Idempotency-Key": string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ValidarImagenDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {

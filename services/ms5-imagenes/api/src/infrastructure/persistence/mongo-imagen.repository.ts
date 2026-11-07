@@ -1,6 +1,6 @@
 import mongoose, { type Connection, type Model } from 'mongoose';
-import type { ImagenRepository, PaginaImagenes } from '../../application/ports.js';
-import type { Imagen, ImagenEstado, ResultadoAnalisis } from '../../domain/imagen.js';
+import type { FiltroImagenes, ImagenRepository, PaginaImagenes } from '../../application/ports.js';
+import type { Imagen, ImagenEstado, InformeValidado, ResultadoAnalisis, Validacion } from '../../domain/imagen.js';
 
 const schema = new mongoose.Schema<Imagen & { _id: string }>(
   {
@@ -14,6 +14,14 @@ const schema = new mongoose.Schema<Imagen & { _id: string }>(
     bucket: { type: String, required: true },
     objectKey: { type: String, required: true },
     usuarioId: { type: String, required: true },
+    origen: { type: String, required: true, enum: ['MEDICO', 'PACIENTE'], default: 'MEDICO' },
+    validacion: { type: String, required: true, enum: ['PENDIENTE', 'VALIDADO', 'DESCARTADO'], default: 'PENDIENTE' },
+    informe: { type: Object },
+    eventoPendiente: { type: Boolean },
+    observaciones: { type: String },
+    pacienteNombre: { type: String },
+    numeroHistoria: { type: String },
+    gradcamKey: { type: String },
     resultado: { type: Object },
     error: { type: String },
     intentosAnalisis: { type: Number, default: 0 },
@@ -25,6 +33,9 @@ const schema = new mongoose.Schema<Imagen & { _id: string }>(
 // Listado por paciente (mas recientes primero) y barrido de imagenes atascadas.
 schema.index({ pacienteId: 1, creadaEn: -1, _id: -1 });
 schema.index({ estado: 1, actualizadaEn: 1 });
+schema.index({ validacion: 1, creadaEn: -1, _id: -1 });
+schema.index({ pacienteId: 1, hashSha256: 1 });
+schema.index({ eventoPendiente: 1 }, { sparse: true });
 
 type Doc = Imagen & { _id: string };
 const aImagen = (d: Doc): Imagen => {
@@ -50,11 +61,19 @@ export class MongoImagenRepository implements ImagenRepository {
     return d ? aImagen(d) : null;
   }
 
-  async porPaciente(pacienteId: string, limite: number, cursor?: string): Promise<PaginaImagenes> {
-    const filtro: Record<string, unknown> = { pacienteId };
+  async buscar(f: FiltroImagenes, limite: number, cursor?: string): Promise<PaginaImagenes> {
+    const filtro: Record<string, unknown> = {};
+    if (f.pacienteId) filtro.pacienteId = f.pacienteId;
+    if (f.validacion) filtro.validacion = f.validacion;
+    if (f.estado) filtro.estado = f.estado;
+    if (f.q?.trim()) {
+      const re = new RegExp(f.q.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+      filtro.$and = [{ $or: [{ pacienteNombre: re }, { numeroHistoria: re }, { estudio: re }] }];
+    }
     if (cursor) {
       const { t, id } = decodificar(cursor);
-      filtro.$or = [{ creadaEn: { $lt: t } }, { creadaEn: t, _id: { $lt: id } }];
+      const keyset = { $or: [{ creadaEn: { $lt: t } }, { creadaEn: t, _id: { $lt: id } }] };
+      filtro.$and = [...((filtro.$and as unknown[]) ?? []), keyset];
     }
     const docs = await this.model.find(filtro).sort({ creadaEn: -1, _id: -1 }).limit(limite + 1).lean<Doc[]>();
     const hayMas = docs.length > limite;
@@ -63,10 +82,31 @@ export class MongoImagenRepository implements ImagenRepository {
     return { items, siguiente: hayMas && ultimo ? Buffer.from(JSON.stringify({ t: ultimo.creadaEn, id: ultimo.id })).toString('base64url') : null };
   }
 
+  async porHash(pacienteId: string, hashSha256: string): Promise<Imagen | null> {
+    const d = await this.model.findOne({ pacienteId, hashSha256 }).lean<Doc>();
+    return d ? aImagen(d) : null;
+  }
+
+  async validar(id: string, informe: InformeValidado, validacion: Validacion, ahora: number): Promise<boolean> {
+    const r = await this.model
+      .findOneAndUpdate({ _id: id, estado: 'ANALIZADA', validacion: 'PENDIENTE' }, { $set: { informe, validacion, eventoPendiente: true, actualizadaEn: ahora } }, { new: false })
+      .lean();
+    return r !== null;
+  }
+
+  async marcarEventoPublicado(id: string): Promise<void> {
+    await this.model.updateOne({ _id: id }, { $unset: { eventoPendiente: '' } });
+  }
+
+  async conEventoPendiente(limite: number): Promise<Imagen[]> {
+    const docs = await this.model.find({ eventoPendiente: true }).sort({ actualizadaEn: 1 }).limit(limite).lean<Doc[]>();
+    return docs.map(aImagen);
+  }
+
   async transicion(
     id: string,
     desde: ImagenEstado[],
-    cambios: { estado: ImagenEstado; resultado?: ResultadoAnalisis; error?: string },
+    cambios: { estado: ImagenEstado; resultado?: ResultadoAnalisis; error?: string; gradcamKey?: string },
     ahora: number,
   ): Promise<boolean> {
     const r = await this.model.findOneAndUpdate({ _id: id, estado: { $in: desde } }, { $set: { ...cambios, actualizadaEn: ahora } }, { new: false }).lean();

@@ -296,4 +296,26 @@ class Fase4IntegrationTest {
 		assertThat(ejecutar(get("/api/historias/" + hid + "/auditoria?cursor=xx").with(como("administrador"))).getStatus()).isEqualTo(400);
 		assertThat(ejecutar(get("/api/historias/" + hid + "/auditoria?tipo=ZZZ").with(como("administrador"))).getStatus()).isEqualTo(400);
 	}
+
+	@Test
+	void estudiosValidadosApareceEnLaHistoriaYElPacienteNoVeLosDescartados() throws Exception {
+		UUID pacienteId = crearHistoria("Rita");
+		UUID hid = historiaId(pacienteId);
+		UUID ok = UUID.randomUUID();
+		UUID descartado = UUID.randomUUID();
+		for (UUID img : new UUID[] { ok, descartado }) {
+			boolean valido = img.equals(ok);
+			enviar("imagen.informe-validado", UUID.randomUUID(), "{\"imagenId\":\"" + img + "\",\"pacienteId\":\"" + pacienteId
+					+ "\",\"estudio\":\"torax\",\"decision\":\"" + (valido ? "CONFIRMA" : "DESCARTA") + "\",\"validacion\":\""
+					+ (valido ? "VALIDADO" : "DESCARTADO") + "\",\"validadoPor\":\"dr\",\"medicoId\":\"" + medicoId + "\",\"validadoEn\":\""
+					+ Instant.now() + "\",\"huella\":\"" + "a".repeat(64) + "\",\"versionModelo\":\"v1\"}");
+		}
+		esperar(() -> jdbc.queryForObject("SELECT count(*) FROM estudios_proyeccion WHERE paciente_id = ?", Integer.class, pacienteId) == 2);
+		assertThat(cuerpo(ejecutar(get("/api/historias/" + hid + "/estudios").with(como("medico")))).size()).isEqualTo(2);
+		JsonNode paciente = cuerpo(ejecutar(get("/api/historias/" + hid + "/estudios").with(paciente(pacienteId))));
+		assertThat(paciente.size()).isEqualTo(1);
+		assertThat(paciente.get(0).get("imagenId").asString()).isEqualTo(ok.toString());
+		assertThat(ejecutar(get("/api/historias/" + hid + "/estudios").with(paciente(UUID.randomUUID()))).getStatus()).isEqualTo(404);
+		assertThat(ejecutar(get("/api/historias/" + hid + "/estudios").with(como("recepcion"))).getStatus()).isEqualTo(403);
+	}
 }

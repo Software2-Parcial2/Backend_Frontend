@@ -109,4 +109,12 @@ final class Dtos {
 			return new AccesoResponse(a.id(), a.pacienteId(), a.historiaId(), a.usuarioId(), a.rol(), a.accion().name(), a.recurso(), a.ocurridoEn());
 		}
 	}
+
+	record EstudioResponse(UUID imagenId, UUID pacienteId, String estudio, String decision, String validacion, UUID medicoId, Instant validadoEn,
+			String huella, String versionModelo) {
+		static EstudioResponse de(com.sigec.ms4_historias.domain.model.EstudioValidado e) {
+			return new EstudioResponse(e.imagenId(), e.pacienteId(), e.estudio(), e.decision(), e.validacion(), e.medicoId(), e.validadoEn(), e.huella(),
+					e.versionModelo());
+		}
+	}
 }

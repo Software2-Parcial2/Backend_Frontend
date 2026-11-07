@@ -13,4 +13,7 @@ public interface ProyeccionesUseCase {
 
 	/** estado: CANCELADA, LLEGO, ATENDIDA o NO_ASISTIO. */
 	void citaCambiada(UUID citaId, UUID pacienteId, UUID medicoId, Instant fechaHora, String estado);
+
+	/** imagen.informe-validado: el estudio aparece en la historia. */
+	void estudioValidado(com.sigec.ms4_historias.domain.model.EstudioValidado estudio);
 }

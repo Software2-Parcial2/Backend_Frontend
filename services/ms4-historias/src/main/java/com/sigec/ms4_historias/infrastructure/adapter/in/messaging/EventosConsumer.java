@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 
 import com.rabbitmq.client.Channel;
 import com.sigec.ms4_historias.application.port.in.ProyeccionesUseCase;
+import com.sigec.ms4_historias.domain.model.EstudioValidado;
 import com.sigec.ms4_historias.infrastructure.config.RabbitTopologyConfig;
 
 import tools.jackson.databind.JsonNode;
@@ -91,6 +92,10 @@ public class EventosConsumer {
 			case "cita.confirmada" -> proyecciones.citaConfirmada(uuid(p, "citaId"), uuid(p, "pacienteId"), uuid(p, "medicoId"), instante(p));
 			case "cita.cancelada" -> cambio(p, "CANCELADA");
 			case "cita.asistencia-registrada" -> cambio(p, requerido(p, "asistencia"));
+			case "imagen.informe-validado" -> proyecciones.estudioValidado(new EstudioValidado(uuid(p, "imagenId"), uuid(p, "pacienteId"),
+					requerido(p, "estudio"), requerido(p, "decision"), requerido(p, "validacion"),
+					texto(p, "medicoId") == null ? null : UUID.fromString(texto(p, "medicoId")), Instant.parse(requerido(p, "validadoEn")),
+					requerido(p, "huella"), texto(p, "versionModelo")));
 			default -> log.debug("ms4: evento {} ignorado", tipo);
 		}
 	}
