@@ -2,7 +2,7 @@
 SHELL := /bin/bash
 ENV_FILE := .env
 
-.PHONY: up-all up-core down-all ps-all infra-up dynamodb-init rabbitmq-declare e2e-saga dlq-replay n8n-import n8n-export s3-init mongo-init seed seed-reset datos-docs datos-explain db-purge db-backup openapi-check openapi-update
+.PHONY: up-all up-core down-all ps-all infra-up dynamodb-init rabbitmq-declare e2e-saga dlq-replay n8n-import n8n-export s3-init mongo-init seed seed-reset datos-docs datos-explain db-purge db-backup openapi-check openapi-update keycloak-aplicar
 
 infra-up:
 	docker compose up -d
@@ -91,7 +91,7 @@ ps-all:
 
 # --- Contratos REST (contracts/openapi/*.json + packages/api-types) ---
 # Los tests de cada servicio comparan el contrato versionado con el que genera su codigo (MS6: rutas contra un archivo escrito a mano).
-OPENAPI_NEST := ms3-citas ms5-api ms7-api ms8-notificaciones
+OPENAPI_NEST := ms1-identidad ms3-citas ms5-api ms7-api ms8-notificaciones
 OPENAPI_SPRING := ms2-pacientes ms4-historias
 
 # Falla si algun servicio se desvio de su contrato o si api-types esta desactualizado.
@@ -106,3 +106,8 @@ openapi-update:
 	@set -e; for s in $(OPENAPI_NEST); do OPENAPI_UPDATE=1 pnpm --filter $$s test:e2e; done
 	@set -e; for s in $(OPENAPI_SPRING); do (cd services/$$s && OPENAPI_UPDATE=1 ./mvnw -q test -Dtest=OpenApiContratoTest); done
 	@pnpm --filter @sigec/api-types generate
+
+# --- Keycloak: atributos medico_id/especialidad/matricula, eventos y cuentas de servicio (ms1-identidad y agentes de MS7) ---
+# Idempotente. Necesita Keycloak en marcha y MS1_CLIENT_SECRET / MS7_CLIENT_SECRET en .env (sin ellos omite las cuentas de servicio).
+keycloak-aplicar:
+	@node scripts/keycloak-aplicar.mjs

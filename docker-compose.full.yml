@@ -113,6 +113,7 @@ services:
       MS6_URL: http://ms6:8006
       MS7_URL: http://ms7-api:3007
       MS8_URL: http://ms8:3008
+      MS1_URL: http://ms1:3001
     ports: ["8090:8090"]
     healthcheck:
       test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/localhost/8090'"]
@@ -277,6 +278,11 @@ services:
       MS3_URL: http://ms3:3003
       MS6_URL: http://ms6:8006
       ML_URL: http://ms7-ml:8007
+      KEYCLOAK_TOKEN_URL: http://keycloak:8080/realms/sigec/protocol/openid-connect/token
+      MS7_CLIENT_ID: ${MS7_CLIENT_ID:-sigec-ms7}
+      MS7_CLIENT_SECRET: ${MS7_CLIENT_SECRET:-}
+      N8N_BASE_URL: http://n8n:5678
+      N8N_WEBHOOK_SECRET: ${N8N_WEBHOOK_SECRET:-}
       ML_API_KEY: ${ML_API_KEY:-}
       EMBEDDINGS_URL: http://ms7-embeddings:8027
       EMBEDDINGS_API_KEY: ${EMBEDDINGS_API_KEY:-}
@@ -316,6 +322,33 @@ services:
       <<: *node-health
     depends_on:
       init: { condition: service_completed_successfully }
+
+  ms1:
+    build:
+      context: .
+      dockerfile: infra/docker/nest.Dockerfile
+      args: { SERVICE_DIR: services/ms1-identidad, SERVICE_PKG: ms1-identidad }
+    restart: unless-stopped
+    environment:
+      <<: *keycloak
+      PORT: "3001"
+      KEYCLOAK_URL: http://keycloak:8080
+      KEYCLOAK_REALM: sigec
+      MS1_CLIENT_ID: ${MS1_CLIENT_ID:-sigec-identidad}
+      MS1_CLIENT_SECRET: ${MS1_CLIENT_SECRET:-}
+      GATEWAY_URL: http://gateway:8090
+      MS2_URL: http://ms2:8082
+      MS3_URL: http://ms3:3003
+      MS4_URL: http://ms4:8084
+      MS5_URL: http://ms5-api:3005
+      MS6_URL: http://ms6:8006
+      MS7_URL: http://ms7-api:3007
+      MS8_URL: http://ms8:3008
+    ports: ["3001:3001"]
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3001/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      <<: *node-health
+    depends_on: [keycloak]
 
   # ---------------------------------------------------------------- frontends (build de produccion servido con nginx)
   shell:

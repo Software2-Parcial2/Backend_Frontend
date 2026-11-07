@@ -1,0 +1,669 @@
+{
+  "components": {
+    "schemas": {
+      "ActualizarUsuarioDto": {
+        "properties": {},
+        "type": "object"
+      },
+      "CrearUsuarioDto": {
+        "properties": {},
+        "type": "object"
+      },
+      "RolesDto": {
+        "properties": {},
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "bearer": {
+        "bearerFormat": "JWT",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "contact": {},
+    "description": "",
+    "title": "ms1-identidad",
+    "version": "0.1.0"
+  },
+  "openapi": "3.0.0",
+  "paths": {
+    "/api/identidad/auditoria": {
+      "get": {
+        "operationId": "IdentidadController_auditoria",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "identidad"
+        ]
+      }
+    },
+    "/api/identidad/eventos": {
+      "get": {
+        "operationId": "IdentidadController_eventos",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "identidad"
+        ]
+      }
+    },
+    "/api/identidad/sesiones": {
+      "get": {
+        "operationId": "IdentidadController_sesiones",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "identidad"
+        ]
+      }
+    },
+    "/api/identidad/sesiones/{id}": {
+      "delete": {
+        "operationId": "IdentidadController_cerrarSesion",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "identidad"
+        ]
+      }
+    },
+    "/api/identidad/usuarios": {
+      "get": {
+        "operationId": "IdentidadController_listar",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "identidad"
+        ]
+      },
+      "post": {
+        "operationId": "IdentidadController_crear",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearUsuarioDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "identidad"
+        ]
+      }
+    },
+    "/api/identidad/usuarios/{id}": {
+      "get": {
+        "operationId": "IdentidadController_obtener",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "identidad"
+        ]
+      },
+      "put": {
+        "operationId": "IdentidadController_actualizar",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarUsuarioDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "identidad"
+        ]
+      }
+    },
+    "/api/identidad/usuarios/{id}/deshabilitar": {
+      "post": {
+        "operationId": "IdentidadController_deshabilitar",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "identidad"
+        ]
+      }
+    },
+    "/api/identidad/usuarios/{id}/habilitar": {
+      "post": {
+        "operationId": "IdentidadController_habilitar",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "identidad"
+        ]
+      }
+    },
+    "/api/identidad/usuarios/{id}/recuperar": {
+      "post": {
+        "operationId": "IdentidadController_recuperar",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "identidad"
+        ]
+      }
+    },
+    "/api/identidad/usuarios/{id}/revocar-sesiones": {
+      "post": {
+        "operationId": "IdentidadController_revocar",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "identidad"
+        ]
+      }
+    },
+    "/api/identidad/usuarios/{id}/roles": {
+      "put": {
+        "operationId": "IdentidadController_roles",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RolesDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "identidad"
+        ]
+      }
+    },
+    "/api/identidad/usuarios/{id}/sesiones": {
+      "get": {
+        "operationId": "IdentidadController_sesionesDeUsuario",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "identidad"
+        ]
+      }
+    },
+    "/api/salud": {
+      "get": {
+        "operationId": "SaludController_estado",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "salud"
+        ]
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "SaludController_propia",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "details": {
+                      "additionalProperties": {
+                        "additionalProperties": true,
+                        "properties": {
+                          "responseTime": {
+                            "description": "Time the health indicator took to respond, in ms",
+                            "type": "number"
+                          },
+                          "status": {
+                            "enum": [
+                              "up",
+                              "degraded",
+                              "down"
+                            ],
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "status"
+                        ],
+                        "type": "object"
+                      },
+                      "example": {
+                        "database": {
+                          "responseTime": 12,
+                          "status": "up"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "error": {
+                      "additionalProperties": {
+                        "additionalProperties": true,
+                        "properties": {
+                          "responseTime": {
+                            "description": "Time the health indicator took to respond, in ms",
+                            "type": "number"
+                          },
+                          "status": {
+                            "enum": [
+                              "up",
+                              "degraded",
+                              "down"
+                            ],
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "status"
+                        ],
+                        "type": "object"
+                      },
+                      "example": {},
+                      "nullable": true,
+                      "type": "object"
+                    },
+                    "info": {
+                      "additionalProperties": {
+                        "additionalProperties": true,
+                        "properties": {
+                          "responseTime": {
+                            "description": "Time the health indicator took to respond, in ms",
+                            "type": "number"
+                          },
+                          "status": {
+                            "enum": [
+                              "up",
+                              "degraded",
+                              "down"
+                            ],
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "status"
+                        ],
+                        "type": "object"
+                      },
+                      "example": {
+                        "database": {
+                          "responseTime": 12,
+                          "status": "up"
+                        }
+                      },
+                      "nullable": true,
+                      "type": "object"
+                    },
+                    "status": {
+                      "enum": [
+                        "ok",
+                        "degraded"
+                      ],
+                      "example": "ok",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The Health Check is successful"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "details": {
+                      "additionalProperties": {
+                        "additionalProperties": true,
+                        "properties": {
+                          "responseTime": {
+                            "description": "Time the health indicator took to respond, in ms",
+                            "type": "number"
+                          },
+                          "status": {
+                            "enum": [
+                              "up",
+                              "degraded",
+                              "down"
+                            ],
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "status"
+                        ],
+                        "type": "object"
+                      },
+                      "example": {
+                        "database": {
+                          "responseTime": 12,
+                          "status": "up"
+                        },
+                        "redis": {
+                          "message": "Could not connect",
+                          "responseTime": 3005,
+                          "status": "down"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "error": {
+                      "additionalProperties": {
+                        "additionalProperties": true,
+                        "properties": {
+                          "responseTime": {
+                            "description": "Time the health indicator took to respond, in ms",
+                            "type": "number"
+                          },
+                          "status": {
+                            "enum": [
+                              "up",
+                              "degraded",
+                              "down"
+                            ],
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "status"
+                        ],
+                        "type": "object"
+                      },
+                      "example": {
+                        "redis": {
+                          "message": "Could not connect",
+                          "responseTime": 3005,
+                          "status": "down"
+                        }
+                      },
+                      "nullable": true,
+                      "type": "object"
+                    },
+                    "info": {
+                      "additionalProperties": {
+                        "additionalProperties": true,
+                        "properties": {
+                          "responseTime": {
+                            "description": "Time the health indicator took to respond, in ms",
+                            "type": "number"
+                          },
+                          "status": {
+                            "enum": [
+                              "up",
+                              "degraded",
+                              "down"
+                            ],
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "status"
+                        ],
+                        "type": "object"
+                      },
+                      "example": {
+                        "database": {
+                          "responseTime": 12,
+                          "status": "up"
+                        }
+                      },
+                      "nullable": true,
+                      "type": "object"
+                    },
+                    "status": {
+                      "enum": [
+                        "error",
+                        "shutting_down"
+                      ],
+                      "example": "error",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The Health Check is not successful"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "salud"
+        ]
+      }
+    }
+  },
+  "servers": [],
+  "tags": []
+}

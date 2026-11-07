@@ -1,4 +1,5 @@
 // Generado por scripts/generate.mjs. No editar.
+export type { paths as Ms1IdentidadPaths, components as Ms1IdentidadComponents } from './ms1-identidad.js';
 export type { paths as Ms2PacientesPaths, components as Ms2PacientesComponents } from './ms2-pacientes.js';
 export type { paths as Ms3CitasPaths, components as Ms3CitasComponents } from './ms3-citas.js';
 export type { paths as Ms4HistoriasPaths, components as Ms4HistoriasComponents } from './ms4-historias.js';

@@ -18,6 +18,7 @@ done <"$ROOT/.env"
 
 # servicio|puerto|directorio|comando|ruta-de-salud
 SERVICES=(
+  "ms1|3001|services/ms1-identidad|pnpm start:dev|/health"
   "gateway|8090|services/gateway|./mvnw -q spring-boot:run|/actuator/health"
   "ms2|8082|services/ms2-pacientes|./mvnw -q spring-boot:run|/actuator/health"
   "ms4|8084|services/ms4-historias|./mvnw -q spring-boot:run|/actuator/health"

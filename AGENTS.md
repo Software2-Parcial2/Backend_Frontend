@@ -21,6 +21,7 @@ DDD + Arquitectura Hexagonal + Clean Architecture en cada servicio.
 | Keycloak | Keycloak 26 | 8080 |
 | Gateway | Spring Cloud Gateway | 8090 |
 | MS2 Pacientes | Spring Boot 4, Java 21 | 8082 |
+| MS1 Identidad (usuarios, roles, sesiones, salud) | NestJS | 3001 |
 | MS3 Citas | NestJS | 3003 |
 | MS4 Historias clínicas | Spring Boot 4, Java 21 | 8084 |
 | MS5 Imágenes (API) | NestJS | 3005 |

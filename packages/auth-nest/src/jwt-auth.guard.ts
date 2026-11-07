@@ -51,9 +51,11 @@ export class JwtAuthGuard implements CanActivate {
       const { payload } = await jwtVerify(token, this.jwks, {
         issuer: this.options.issuer,
       });
+      // Sin `sub` no hay identidad: se rechaza en vez de usar "undefined" (todos los usuarios compartirian su clave de idempotencia y su rastro).
+      if (typeof payload.sub !== 'string' || payload.sub === '') throw new Error('token sin sub');
       const realmAccess = payload['realm_access'] as { roles?: string[] } | undefined;
       request.user = {
-        sub: String(payload.sub),
+        sub: payload.sub,
         username: payload['preferred_username'] as string | undefined,
         email: payload['email'] as string | undefined,
         roles: realmAccess?.roles ?? [],

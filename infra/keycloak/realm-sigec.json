@@ -56,6 +56,7 @@
         "post.logout.redirect.uris": "+"
       },
       "defaultClientScopes": [
+        "basic",
         "web-origins",
         "acr",
         "profile",
@@ -75,6 +76,45 @@
           "config": {
             "user.attribute": "paciente_id",
             "claim.name": "paciente_id",
+            "jsonType.label": "String",
+            "access.token.claim": "true",
+            "id.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        },
+        {
+          "name": "medico_id",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "config": {
+            "user.attribute": "medico_id",
+            "claim.name": "medico_id",
+            "jsonType.label": "String",
+            "access.token.claim": "true",
+            "id.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        },
+        {
+          "name": "especialidad",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "config": {
+            "user.attribute": "especialidad",
+            "claim.name": "especialidad",
+            "jsonType.label": "String",
+            "access.token.claim": "true",
+            "id.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        },
+        {
+          "name": "matricula",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "config": {
+            "user.attribute": "matricula",
+            "claim.name": "matricula",
             "jsonType.label": "String",
             "access.token.claim": "true",
             "id.token.claim": "true",
@@ -105,6 +145,7 @@
         "post.logout.redirect.uris": "+"
       },
       "defaultClientScopes": [
+        "basic",
         "web-origins",
         "acr",
         "profile",
@@ -124,6 +165,45 @@
           "config": {
             "user.attribute": "paciente_id",
             "claim.name": "paciente_id",
+            "jsonType.label": "String",
+            "access.token.claim": "true",
+            "id.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        },
+        {
+          "name": "medico_id",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "config": {
+            "user.attribute": "medico_id",
+            "claim.name": "medico_id",
+            "jsonType.label": "String",
+            "access.token.claim": "true",
+            "id.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        },
+        {
+          "name": "especialidad",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "config": {
+            "user.attribute": "especialidad",
+            "claim.name": "especialidad",
+            "jsonType.label": "String",
+            "access.token.claim": "true",
+            "id.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        },
+        {
+          "name": "matricula",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "config": {
+            "user.attribute": "matricula",
+            "claim.name": "matricula",
             "jsonType.label": "String",
             "access.token.claim": "true",
             "id.token.claim": "true",
@@ -155,6 +235,7 @@
         "post.logout.redirect.uris": "+"
       },
       "defaultClientScopes": [
+        "basic",
         "web-origins",
         "acr",
         "profile",
@@ -174,6 +255,45 @@
           "config": {
             "user.attribute": "paciente_id",
             "claim.name": "paciente_id",
+            "jsonType.label": "String",
+            "access.token.claim": "true",
+            "id.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        },
+        {
+          "name": "medico_id",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "config": {
+            "user.attribute": "medico_id",
+            "claim.name": "medico_id",
+            "jsonType.label": "String",
+            "access.token.claim": "true",
+            "id.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        },
+        {
+          "name": "especialidad",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "config": {
+            "user.attribute": "especialidad",
+            "claim.name": "especialidad",
+            "jsonType.label": "String",
+            "access.token.claim": "true",
+            "id.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        },
+        {
+          "name": "matricula",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "config": {
+            "user.attribute": "matricula",
+            "claim.name": "matricula",
             "jsonType.label": "String",
             "access.token.claim": "true",
             "id.token.claim": "true",
@@ -286,10 +406,32 @@
         "providerId": "declarative-user-profile",
         "config": {
           "kc.user.profile.config": [
-            "{\"attributes\": [{\"name\": \"username\", \"displayName\": \"${username}\", \"validations\": {\"length\": {\"min\": 3, \"max\": 255}}, \"permissions\": {\"view\": [\"admin\", \"user\"], \"edit\": [\"admin\", \"user\"]}}, {\"name\": \"email\", \"displayName\": \"${email}\", \"validations\": {\"email\": {}}, \"permissions\": {\"view\": [\"admin\", \"user\"], \"edit\": [\"admin\", \"user\"]}}, {\"name\": \"firstName\", \"displayName\": \"${firstName}\", \"permissions\": {\"view\": [\"admin\", \"user\"], \"edit\": [\"admin\", \"user\"]}}, {\"name\": \"lastName\", \"displayName\": \"${lastName}\", \"permissions\": {\"view\": [\"admin\", \"user\"], \"edit\": [\"admin\", \"user\"]}}, {\"name\": \"paciente_id\", \"displayName\": \"Paciente vinculado\", \"validations\": {\"pattern\": {\"pattern\": \"^[0-9a-fA-F-]{36}$\", \"error-message\": \"UUID\"}}, \"permissions\": {\"view\": [\"admin\"], \"edit\": [\"admin\"]}}]}"
+            "{\"attributes\": [{\"name\": \"username\", \"displayName\": \"${username}\", \"validations\": {\"length\": {\"min\": 3, \"max\": 255}}, \"permissions\": {\"view\": [\"admin\", \"user\"], \"edit\": [\"admin\", \"user\"]}}, {\"name\": \"email\", \"displayName\": \"${email}\", \"validations\": {\"email\": {}}, \"permissions\": {\"view\": [\"admin\", \"user\"], \"edit\": [\"admin\", \"user\"]}}, {\"name\": \"firstName\", \"displayName\": \"${firstName}\", \"permissions\": {\"view\": [\"admin\", \"user\"], \"edit\": [\"admin\", \"user\"]}}, {\"name\": \"lastName\", \"displayName\": \"${lastName}\", \"permissions\": {\"view\": [\"admin\", \"user\"], \"edit\": [\"admin\", \"user\"]}}, {\"name\": \"paciente_id\", \"displayName\": \"Paciente vinculado\", \"validations\": {\"pattern\": {\"pattern\": \"^[0-9a-fA-F-]{36}$\", \"error-message\": \"UUID\"}}, \"permissions\": {\"view\": [\"admin\"], \"edit\": [\"admin\"]}}, {\"name\": \"medico_id\", \"displayName\": \"Medico vinculado\", \"permissions\": {\"view\": [\"admin\"], \"edit\": [\"admin\"]}, \"validations\": {\"pattern\": {\"pattern\": \"^[0-9a-fA-F-]{36}$\", \"error-message\": \"formato invalido\"}}}, {\"name\": \"especialidad\", \"displayName\": \"Especialidad\", \"permissions\": {\"view\": [\"admin\"], \"edit\": [\"admin\"]}, \"validations\": {\"pattern\": {\"pattern\": \"^[A-Za-z0-9_ -]{1,100}$\", \"error-message\": \"formato invalido\"}}}, {\"name\": \"matricula\", \"displayName\": \"Matricula\", \"permissions\": {\"view\": [\"admin\"], \"edit\": [\"admin\"]}, \"validations\": {\"pattern\": {\"pattern\": \"^[A-Za-z0-9._/-]{1,50}$\", \"error-message\": \"formato invalido\"}}}]}"
           ]
         }
       }
     ]
-  }
+  },
+  "eventsEnabled": true,
+  "eventsExpiration": 2592000,
+  "enabledEventTypes": [
+    "LOGIN",
+    "LOGIN_ERROR",
+    "LOGOUT",
+    "LOGOUT_ERROR",
+    "UPDATE_PASSWORD",
+    "UPDATE_PASSWORD_ERROR",
+    "RESET_PASSWORD",
+    "RESET_PASSWORD_ERROR",
+    "REGISTER",
+    "REMOVE_TOTP",
+    "UPDATE_TOTP",
+    "USER_DISABLED_BY_PERMANENT_LOCKOUT",
+    "USER_DISABLED_BY_TEMPORARY_LOCKOUT"
+  ],
+  "eventsListeners": [
+    "jboss-logging"
+  ],
+  "adminEventsEnabled": true,
+  "adminEventsDetailsEnabled": false
 }

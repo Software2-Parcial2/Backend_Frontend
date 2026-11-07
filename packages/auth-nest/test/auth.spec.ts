@@ -94,6 +94,15 @@ describe('AuthModule', () => {
       .set('Authorization', `Bearer ${await sign({}, privateKey, ISSUER, '-1m')}`)
       .expect(401));
 
+  it('rechaza un token sin sub (401): sin identidad no se distingue a un usuario de otro', async () => {
+    const sinSub = await new SignJWT({ realm_access: { roles: ['administrador'] } })
+      .setProtectedHeader({ alg: 'RS256', kid: 'k1' })
+      .setIssuer(ISSUER)
+      .setExpirationTime('5m')
+      .sign(privateKey);
+    await request(app.getHttpServer()).get('/protegida').set('Authorization', `Bearer ${sinSub}`).expect(401);
+  });
+
   it('expone usuario y roles con un token valido', async () => {
     const token = await sign({
       preferred_username: 'recepcion',

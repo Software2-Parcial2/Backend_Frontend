@@ -4,6 +4,7 @@ packages:
   - "apps/pwa-paciente"
   - "packages/*"
   - "scripts"
+  - "services/ms1-identidad"
   - "services/ms3-citas"
   - "services/ms5-imagenes/api"
   - "services/ms7-inteligencia/api"
