@@ -130,7 +130,7 @@ export function generar(hoy = new Date()) {
   const tarifas = ESPECIALIDADES.map((e, i) => ({ id: TAR(i + 1), especialidad: e.codigo, monto: e.tarifa, desde: '2026-01-01' }));
 
   // --- MS4: historias, consultas (de las citas a las que asistieron), antecedentes y consentimientos ---
-  const historias = PACIENTES.map((p, i) => ({ id: HIST(i + 1), pacienteId: p.id }));
+  const historias = PACIENTES.map((p, i) => ({ id: HIST(i + 1), pacienteId: p.id, numero: `HC-${String(i + 1).padStart(6, '0')}`, nombre: p.nombre }));
   const historiaDe = new Map(historias.map((h) => [h.pacienteId, h.id]));
   let nc = 1;
   const consultas = citas
@@ -139,6 +139,7 @@ export function generar(hoy = new Date()) {
     .map((c) => ({
       id: CONS(nc++), historiaId: historiaDe.get(c.pacienteId), medicoId: c.medicoId, citaId: c.id, fecha: c.fechaHora, motivo: c.motivo,
       diagnostico: DIAGNOSTICOS[nc % DIAGNOSTICOS.length], tratamiento: 'Indicaciones generales y control (dato ficticio)',
+      firmada: nc - 1 <= 24, // las 6 ultimas quedan en BORRADOR para probar la edicion
     }));
   const antecedentes = [
     { id: ANT(1), historiaId: HIST(1), tipo: 'ALERGIA', descripcion: 'Alergia a la penicilina (dato ficticio)' },

@@ -124,9 +124,9 @@ async function sembrar() {
   });
 
   await conBase('ms4_historias', async (c) => {
-    for (const h of D.historias) await c.query('INSERT INTO historias_clinicas (id, paciente_id) VALUES ($1,$2) ON CONFLICT DO NOTHING', [h.id, h.pacienteId]);
+    for (const h of D.historias) await c.query('INSERT INTO historias_clinicas (id, paciente_id, numero_historia, paciente_nombre) VALUES ($1,$2,$3,$4) ON CONFLICT (id) DO UPDATE SET numero_historia = EXCLUDED.numero_historia, paciente_nombre = EXCLUDED.paciente_nombre', [h.id, h.pacienteId, h.numero, h.nombre]);
     for (const k of D.consultas)
-      await c.query('INSERT INTO consultas (id, historia_id, medico_id, cita_id, fecha, motivo, diagnostico, tratamiento) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT DO NOTHING', [k.id, k.historiaId, k.medicoId, k.citaId, k.fecha, k.motivo, k.diagnostico, k.tratamiento]);
+      await c.query('INSERT INTO consultas (id, historia_id, medico_id, cita_id, fecha, motivo, diagnostico, tratamiento, estado, firmada_en, firmada_por) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) ON CONFLICT (id) DO UPDATE SET estado = EXCLUDED.estado, firmada_en = EXCLUDED.firmada_en, firmada_por = EXCLUDED.firmada_por', [k.id, k.historiaId, k.medicoId, k.citaId, k.fecha, k.motivo, k.diagnostico, k.tratamiento, k.firmada ? 'FIRMADA' : 'BORRADOR', k.firmada ? k.fecha : null, k.firmada ? k.medicoId : null]);
     for (const a of D.antecedentes) await c.query('INSERT INTO antecedentes (id, historia_id, tipo, descripcion) VALUES ($1,$2,$3,$4) ON CONFLICT DO NOTHING', [a.id, a.historiaId, a.tipo, a.descripcion]);
     for (const k of D.consentimientos) await c.query('INSERT INTO consentimientos (id, paciente_id, tipo, version_texto) VALUES ($1,$2,$3,$4) ON CONFLICT DO NOTHING', [k.id, k.pacienteId, k.tipo, k.version]);
   });
