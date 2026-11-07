@@ -1,5 +1,427 @@
 {
-  "components" : { },
+  "components" : {
+    "schemas" : {
+      "AccesoResponse" : {
+        "properties" : {
+          "accion" : {
+            "type" : "string"
+          },
+          "historiaId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "ocurridoEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "pacienteId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "recurso" : {
+            "type" : "string"
+          },
+          "rol" : {
+            "type" : "string"
+          },
+          "usuarioId" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "AntecedenteEdicionRequest" : {
+        "properties" : {
+          "activo" : {
+            "type" : "boolean"
+          },
+          "descripcion" : {
+            "maxLength" : 2000,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "required" : [ "descripcion" ],
+        "type" : "object"
+      },
+      "AntecedenteRequest" : {
+        "properties" : {
+          "descripcion" : {
+            "maxLength" : 2000,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "tipo" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "descripcion", "tipo" ],
+        "type" : "object"
+      },
+      "AntecedenteResponse" : {
+        "properties" : {
+          "activo" : {
+            "type" : "boolean"
+          },
+          "creado" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "descripcion" : {
+            "type" : "string"
+          },
+          "historiaId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "tipo" : {
+            "type" : "string"
+          },
+          "version" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "ConsentimientoRequest" : {
+        "properties" : {
+          "tipo" : {
+            "type" : "string"
+          },
+          "versionTexto" : {
+            "maxLength" : 20,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "required" : [ "tipo" ],
+        "type" : "object"
+      },
+      "ConsentimientoResponse" : {
+        "properties" : {
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "otorgadoEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "pacienteId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "revocadoEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "tipo" : {
+            "type" : "string"
+          },
+          "versionTexto" : {
+            "type" : "string"
+          },
+          "vigente" : {
+            "type" : "boolean"
+          }
+        },
+        "type" : "object"
+      },
+      "ConsultaResponse" : {
+        "properties" : {
+          "citaId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "diagnostico" : {
+            "type" : "string"
+          },
+          "estado" : {
+            "type" : "string"
+          },
+          "fecha" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "firmadaEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "historiaId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "indicaciones" : {
+            "type" : "string"
+          },
+          "medicoId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "motivo" : {
+            "type" : "string"
+          },
+          "receta" : {
+            "items" : {
+              "$ref" : "#/components/schemas/RecetaItem"
+            },
+            "type" : "array"
+          },
+          "signosVitales" : {
+            "additionalProperties" : { },
+            "type" : "object"
+          },
+          "tratamiento" : {
+            "type" : "string"
+          },
+          "version" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "EditarConsultaRequest" : {
+        "properties" : {
+          "diagnostico" : {
+            "maxLength" : 4000,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "indicaciones" : {
+            "maxLength" : 4000,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "motivo" : {
+            "maxLength" : 2000,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "receta" : {
+            "items" : {
+              "$ref" : "#/components/schemas/RecetaItemDto"
+            },
+            "maxItems" : 50,
+            "minItems" : 0,
+            "type" : "array"
+          },
+          "signosVitales" : {
+            "additionalProperties" : { },
+            "type" : "object"
+          },
+          "tratamiento" : {
+            "maxLength" : 4000,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "required" : [ "motivo" ],
+        "type" : "object"
+      },
+      "EvolucionRequest" : {
+        "properties" : {
+          "nota" : {
+            "maxLength" : 4000,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "required" : [ "nota" ],
+        "type" : "object"
+      },
+      "EvolucionResponse" : {
+        "properties" : {
+          "consultaId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "fecha" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "medicoId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "nota" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "HistoriaResponse" : {
+        "properties" : {
+          "creada" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "numeroHistoria" : {
+            "type" : "string"
+          },
+          "pacienteId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "pacienteNombre" : {
+            "type" : "string"
+          },
+          "version" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "IniciarConsultaRequest" : {
+        "properties" : {
+          "citaId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "motivo" : {
+            "maxLength" : 2000,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "signosVitales" : {
+            "additionalProperties" : { },
+            "type" : "object"
+          }
+        },
+        "required" : [ "motivo" ],
+        "type" : "object"
+      },
+      "PaginaResponseAccesoResponse" : {
+        "properties" : {
+          "items" : {
+            "items" : {
+              "$ref" : "#/components/schemas/AccesoResponse"
+            },
+            "type" : "array"
+          },
+          "siguiente" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "PaginaResponseConsultaResponse" : {
+        "properties" : {
+          "items" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ConsultaResponse"
+            },
+            "type" : "array"
+          },
+          "siguiente" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "RecetaItem" : {
+        "properties" : {
+          "dosis" : {
+            "type" : "string"
+          },
+          "duracion" : {
+            "type" : "string"
+          },
+          "frecuencia" : {
+            "type" : "string"
+          },
+          "medicamento" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "RecetaItemDto" : {
+        "properties" : {
+          "dosis" : {
+            "maxLength" : 100,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "duracion" : {
+            "maxLength" : 100,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "frecuencia" : {
+            "maxLength" : 100,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "medicamento" : {
+            "maxLength" : 200,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "required" : [ "medicamento" ],
+        "type" : "object"
+      },
+      "RecetaResponse" : {
+        "properties" : {
+          "consultaId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "fecha" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "firmadaEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "indicaciones" : {
+            "type" : "string"
+          },
+          "items" : {
+            "items" : {
+              "$ref" : "#/components/schemas/RecetaItem"
+            },
+            "type" : "array"
+          },
+          "medicoId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "numeroHistoria" : {
+            "type" : "string"
+          },
+          "pacienteNombre" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      }
+    }
+  },
   "info" : {
     "title" : "OpenAPI definition",
     "version" : "v0"
@@ -42,6 +464,635 @@
           }
         },
         "tags" : [ "idempotency-test-controller" ]
+      }
+    },
+    "/api/historias/antecedentes/{id}" : {
+      "delete" : {
+        "operationId" : "desactivarAntecedente",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "header",
+          "name" : "If-Match",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AntecedenteResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "historia-controller" ]
+      },
+      "put" : {
+        "operationId" : "editarAntecedente",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "header",
+          "name" : "If-Match",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AntecedenteEdicionRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AntecedenteResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "historia-controller" ]
+      }
+    },
+    "/api/historias/consentimientos/{id}/revocar" : {
+      "post" : {
+        "operationId" : "revocar",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ConsentimientoResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "historia-controller" ]
+      }
+    },
+    "/api/historias/consultas/{id}" : {
+      "get" : {
+        "operationId" : "consulta",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ConsultaResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "historia-controller" ]
+      },
+      "put" : {
+        "operationId" : "editar",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "header",
+          "name" : "If-Match",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/EditarConsultaRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ConsultaResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "historia-controller" ]
+      }
+    },
+    "/api/historias/consultas/{id}/evoluciones" : {
+      "get" : {
+        "operationId" : "evoluciones",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/EvolucionResponse"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "historia-controller" ]
+      },
+      "post" : {
+        "operationId" : "agregarEvolucion",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/EvolucionRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/EvolucionResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "historia-controller" ]
+      }
+    },
+    "/api/historias/consultas/{id}/firmar" : {
+      "post" : {
+        "operationId" : "firmar",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "header",
+          "name" : "If-Match",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ConsultaResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "historia-controller" ]
+      }
+    },
+    "/api/historias/consultas/{id}/receta" : {
+      "get" : {
+        "operationId" : "receta",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RecetaResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "historia-controller" ]
+      }
+    },
+    "/api/historias/paciente/{pacienteId}" : {
+      "get" : {
+        "operationId" : "porPaciente",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "pacienteId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/HistoriaResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "historia-controller" ]
+      }
+    },
+    "/api/historias/paciente/{pacienteId}/consentimientos" : {
+      "get" : {
+        "operationId" : "consentimientos",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "pacienteId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/ConsentimientoResponse"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "historia-controller" ]
+      },
+      "post" : {
+        "operationId" : "otorgar",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "pacienteId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ConsentimientoRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ConsentimientoResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "historia-controller" ]
+      }
+    },
+    "/api/historias/{id}" : {
+      "get" : {
+        "operationId" : "porId",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/HistoriaResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "historia-controller" ]
+      }
+    },
+    "/api/historias/{id}/antecedentes" : {
+      "get" : {
+        "operationId" : "antecedentes",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "soloActivos",
+          "required" : false,
+          "schema" : {
+            "default" : true,
+            "type" : "boolean"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/AntecedenteResponse"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "historia-controller" ]
+      },
+      "post" : {
+        "operationId" : "crearAntecedente",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AntecedenteRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AntecedenteResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "historia-controller" ]
+      }
+    },
+    "/api/historias/{id}/auditoria" : {
+      "get" : {
+        "operationId" : "auditoria",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "tipo",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "limite",
+          "required" : false,
+          "schema" : {
+            "default" : 25,
+            "format" : "int32",
+            "maximum" : 100,
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        }, {
+          "in" : "query",
+          "name" : "cursor",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PaginaResponseAccesoResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "historia-controller" ]
+      }
+    },
+    "/api/historias/{id}/consultas" : {
+      "get" : {
+        "operationId" : "listarConsultas",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "estado",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "limite",
+          "required" : false,
+          "schema" : {
+            "default" : 25,
+            "format" : "int32",
+            "maximum" : 100,
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        }, {
+          "in" : "query",
+          "name" : "cursor",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PaginaResponseConsultaResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "historia-controller" ]
+      },
+      "post" : {
+        "operationId" : "iniciarConsulta",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/IniciarConsultaRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ConsultaResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "historia-controller" ]
       }
     }
   },

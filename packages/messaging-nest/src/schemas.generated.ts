@@ -204,6 +204,64 @@ export const SCHEMAS: readonly Record<string, unknown>[] = [
   },
   {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://sigec.local/contracts/events/consulta.firmada.schema.json",
+    "title": "consulta.firmada",
+    "description": "Evento de dominio MS4 -> varios (exchange sigec.eventos). Una consulta quedo firmada y ya no se edita. Solo lleva ids: nunca contenido clinico.",
+    "allOf": [
+      {
+        "$ref": "envelope.schema.json"
+      },
+      {
+        "properties": {
+          "type": {
+            "const": "consulta.firmada"
+          },
+          "payload": {
+            "type": "object",
+            "required": [
+              "consultaId",
+              "historiaId",
+              "pacienteId",
+              "medicoId",
+              "firmadaEn"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "consultaId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "historiaId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "pacienteId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "medicoId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "citaId": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "uuid"
+              },
+              "firmadaEn": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
     "$id": "https://sigec.local/contracts/events/envelope.schema.json",
     "title": "Sobre de mensaje SIGEC",
     "type": "object",

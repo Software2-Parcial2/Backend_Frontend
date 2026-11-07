@@ -13,7 +13,7 @@ GW="${GATEWAY_URL:-http://localhost:8090}"
 KC="http://localhost:8080/realms/sigec/protocol/openid-connect/token"
 MGMT="http://localhost:15672/api"
 AUTH="$RABBITMQ_USER:$RABBITMQ_PASSWORD"
-Q_PAC="ms4.eventos.pacientes"
+Q_PAC="test.outbox.pacientes"
 Q_FAC="test.outbox.facturas"
 fail=0
 
@@ -44,6 +44,8 @@ count_unique() { sort -u | grep -c . ; }
 echo "== Preparacion"
 # Cola de verificacion para facturas y purga de las colas
 curl -s -u "$AUTH" -X PUT "$MGMT/queues/%2F/$Q_FAC" -H 'content-type: application/json' -d '{"durable":true}' -o /dev/null
+curl -s -u "$AUTH" -X PUT "$MGMT/queues/%2F/$Q_PAC" -H 'content-type: application/json' -d '{"durable":true}' -o /dev/null
+curl -s -u "$AUTH" -X POST "$MGMT/bindings/%2F/e/sigec.eventos/q/$Q_PAC" -H 'content-type: application/json' -d '{"routing_key":"paciente.creado"}' -o /dev/null
 curl -s -u "$AUTH" -X POST "$MGMT/bindings/%2F/e/sigec.eventos/q/$Q_FAC" -H 'content-type: application/json' -d '{"routing_key":"factura.#"}' -o /dev/null
 # Relay de MS6 (proceso aparte; el de MS2 va dentro del servicio)
 mkdir -p /tmp/sigec-logs
@@ -95,6 +97,6 @@ check "...y ningun id repetido" 2 "$(queue_ids $Q_FAC | count_unique)"
 echo "== Limpieza"
 kill "$(cat /tmp/sigec-ms6-relay.pid 2>/dev/null)" 2>/dev/null
 curl -s -u "$AUTH" -X DELETE "$MGMT/queues/%2F/$Q_FAC" -o /dev/null
-purge "$Q_PAC"
+curl -s -u "$AUTH" -X DELETE "$MGMT/queues/%2F/$Q_PAC" -o /dev/null
 
 [ "$fail" -eq 0 ] && echo "TODO OK" || { echo "HAY FALLOS"; exit 1; }

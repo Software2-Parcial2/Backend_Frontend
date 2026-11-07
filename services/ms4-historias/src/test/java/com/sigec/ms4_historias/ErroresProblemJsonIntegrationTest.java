@@ -39,10 +39,10 @@ class ErroresProblemJsonIntegrationTest {
 
 	@Test
 	void noEncontradoTieneCodeDeDominio() throws Exception {
-		MockHttpServletResponse r = mvc.perform(get("/api/historias/" + UUID.randomUUID()).with(como("recepcion"))).andReturn().getResponse();
+		MockHttpServletResponse r = mvc.perform(get("/api/historias/" + UUID.randomUUID()).with(como("medico"))).andReturn().getResponse();
 		JsonNode p = cuerpo(r);
 		assertThat(r.getStatus()).isEqualTo(404);
-		assertThat(p.get("code").asString()).isEqualTo("NO_ENCONTRADO");
+		assertThat(p.get("code").asString()).isEqualTo("HISTORIA_NO_ENCONTRADA");
 	}
 
 	@Test

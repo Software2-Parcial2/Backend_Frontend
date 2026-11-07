@@ -36,10 +36,358 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/historias/antecedentes/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["editarAntecedente"];
+        post?: never;
+        delete: operations["desactivarAntecedente"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/historias/consentimientos/{id}/revocar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["revocar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/historias/consultas/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["consulta"];
+        put: operations["editar"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/historias/consultas/{id}/evoluciones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["evoluciones"];
+        put?: never;
+        post: operations["agregarEvolucion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/historias/consultas/{id}/firmar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["firmar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/historias/consultas/{id}/receta": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["receta"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/historias/paciente/{pacienteId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["porPaciente"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/historias/paciente/{pacienteId}/consentimientos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["consentimientos"];
+        put?: never;
+        post: operations["otorgar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/historias/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["porId"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/historias/{id}/antecedentes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["antecedentes"];
+        put?: never;
+        post: operations["crearAntecedente"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/historias/{id}/auditoria": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["auditoria"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/historias/{id}/consultas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listarConsultas"];
+        put?: never;
+        post: operations["iniciarConsulta"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
-    schemas: never;
+    schemas: {
+        AccesoResponse: {
+            accion?: string;
+            /** Format: uuid */
+            historiaId?: string;
+            /** Format: int64 */
+            id?: number;
+            /** Format: date-time */
+            ocurridoEn?: string;
+            /** Format: uuid */
+            pacienteId?: string;
+            recurso?: string;
+            rol?: string;
+            usuarioId?: string;
+        };
+        AntecedenteEdicionRequest: {
+            activo?: boolean;
+            descripcion: string;
+        };
+        AntecedenteRequest: {
+            descripcion: string;
+            tipo: string;
+        };
+        AntecedenteResponse: {
+            activo?: boolean;
+            /** Format: date-time */
+            creado?: string;
+            descripcion?: string;
+            /** Format: uuid */
+            historiaId?: string;
+            /** Format: uuid */
+            id?: string;
+            tipo?: string;
+            /** Format: int64 */
+            version?: number;
+        };
+        ConsentimientoRequest: {
+            tipo: string;
+            versionTexto?: string;
+        };
+        ConsentimientoResponse: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: date-time */
+            otorgadoEn?: string;
+            /** Format: uuid */
+            pacienteId?: string;
+            /** Format: date-time */
+            revocadoEn?: string;
+            tipo?: string;
+            versionTexto?: string;
+            vigente?: boolean;
+        };
+        ConsultaResponse: {
+            /** Format: uuid */
+            citaId?: string;
+            diagnostico?: string;
+            estado?: string;
+            /** Format: date-time */
+            fecha?: string;
+            /** Format: date-time */
+            firmadaEn?: string;
+            /** Format: uuid */
+            historiaId?: string;
+            /** Format: uuid */
+            id?: string;
+            indicaciones?: string;
+            /** Format: uuid */
+            medicoId?: string;
+            motivo?: string;
+            receta?: components["schemas"]["RecetaItem"][];
+            signosVitales?: {
+                [key: string]: unknown;
+            };
+            tratamiento?: string;
+            /** Format: int64 */
+            version?: number;
+        };
+        EditarConsultaRequest: {
+            diagnostico?: string;
+            indicaciones?: string;
+            motivo: string;
+            receta?: components["schemas"]["RecetaItemDto"][];
+            signosVitales?: {
+                [key: string]: unknown;
+            };
+            tratamiento?: string;
+        };
+        EvolucionRequest: {
+            nota: string;
+        };
+        EvolucionResponse: {
+            /** Format: uuid */
+            consultaId?: string;
+            /** Format: date-time */
+            fecha?: string;
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            medicoId?: string;
+            nota?: string;
+        };
+        HistoriaResponse: {
+            /** Format: date-time */
+            creada?: string;
+            /** Format: uuid */
+            id?: string;
+            numeroHistoria?: string;
+            /** Format: uuid */
+            pacienteId?: string;
+            pacienteNombre?: string;
+            /** Format: int64 */
+            version?: number;
+        };
+        IniciarConsultaRequest: {
+            /** Format: uuid */
+            citaId?: string;
+            motivo: string;
+            signosVitales?: {
+                [key: string]: unknown;
+            };
+        };
+        PaginaResponseAccesoResponse: {
+            items?: components["schemas"]["AccesoResponse"][];
+            siguiente?: string;
+        };
+        PaginaResponseConsultaResponse: {
+            items?: components["schemas"]["ConsultaResponse"][];
+            siguiente?: string;
+        };
+        RecetaItem: {
+            dosis?: string;
+            duracion?: string;
+            frecuencia?: string;
+            medicamento?: string;
+        };
+        RecetaItemDto: {
+            dosis?: string;
+            duracion?: string;
+            frecuencia?: string;
+            medicamento: string;
+        };
+        RecetaResponse: {
+            /** Format: uuid */
+            consultaId?: string;
+            /** Format: date-time */
+            fecha?: string;
+            /** Format: date-time */
+            firmadaEn?: string;
+            indicaciones?: string;
+            items?: components["schemas"]["RecetaItem"][];
+            /** Format: uuid */
+            medicoId?: string;
+            numeroHistoria?: string;
+            pacienteNombre?: string;
+        };
+    };
     responses: never;
     parameters: never;
     requestBodies: never;
@@ -88,6 +436,444 @@ export interface operations {
                     "*/*": {
                         [key: string]: unknown;
                     };
+                };
+            };
+        };
+    };
+    editarAntecedente: {
+        parameters: {
+            query?: never;
+            header?: {
+                "If-Match"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AntecedenteEdicionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AntecedenteResponse"];
+                };
+            };
+        };
+    };
+    desactivarAntecedente: {
+        parameters: {
+            query?: never;
+            header?: {
+                "If-Match"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AntecedenteResponse"];
+                };
+            };
+        };
+    };
+    revocar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ConsentimientoResponse"];
+                };
+            };
+        };
+    };
+    consulta: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ConsultaResponse"];
+                };
+            };
+        };
+    };
+    editar: {
+        parameters: {
+            query?: never;
+            header?: {
+                "If-Match"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EditarConsultaRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ConsultaResponse"];
+                };
+            };
+        };
+    };
+    evoluciones: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["EvolucionResponse"][];
+                };
+            };
+        };
+    };
+    agregarEvolucion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EvolucionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["EvolucionResponse"];
+                };
+            };
+        };
+    };
+    firmar: {
+        parameters: {
+            query?: never;
+            header?: {
+                "If-Match"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ConsultaResponse"];
+                };
+            };
+        };
+    };
+    receta: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["RecetaResponse"];
+                };
+            };
+        };
+    };
+    porPaciente: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pacienteId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["HistoriaResponse"];
+                };
+            };
+        };
+    };
+    consentimientos: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pacienteId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ConsentimientoResponse"][];
+                };
+            };
+        };
+    };
+    otorgar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pacienteId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConsentimientoRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ConsentimientoResponse"];
+                };
+            };
+        };
+    };
+    porId: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["HistoriaResponse"];
+                };
+            };
+        };
+    };
+    antecedentes: {
+        parameters: {
+            query?: {
+                soloActivos?: boolean;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AntecedenteResponse"][];
+                };
+            };
+        };
+    };
+    crearAntecedente: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AntecedenteRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AntecedenteResponse"];
+                };
+            };
+        };
+    };
+    auditoria: {
+        parameters: {
+            query?: {
+                tipo?: string;
+                limite?: number;
+                cursor?: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PaginaResponseAccesoResponse"];
+                };
+            };
+        };
+    };
+    listarConsultas: {
+        parameters: {
+            query?: {
+                estado?: string;
+                limite?: number;
+                cursor?: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PaginaResponseConsultaResponse"];
+                };
+            };
+        };
+    };
+    iniciarConsulta: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IniciarConsultaRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ConsultaResponse"];
                 };
             };
         };

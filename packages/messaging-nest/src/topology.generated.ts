@@ -86,13 +86,17 @@ export const TOPOLOGY = {
       ]
     },
     {
-      "name": "ms4.eventos.pacientes",
+      "name": "ms4.eventos",
       "owner": "MS4",
       "bindings": [
         {
           "exchange": "sigec.eventos",
           "routingKeys": [
-            "paciente.creado"
+            "paciente.creado",
+            "paciente.actualizado",
+            "cita.confirmada",
+            "cita.cancelada",
+            "cita.asistencia-registrada"
           ]
         }
       ]

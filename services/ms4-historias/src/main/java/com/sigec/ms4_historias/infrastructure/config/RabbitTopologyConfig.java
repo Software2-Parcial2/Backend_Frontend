@@ -27,6 +27,7 @@ public class RabbitTopologyConfig {
 	public static final String EXCHANGE_EVENTOS = "sigec.eventos";
 	public static final String EXCHANGE_RETRY = "sigec.retry";
 	public static final String EXCHANGE_DLX = "sigec.dlx";
+	public static final String COLA_EVENTOS = "ms4.eventos";
 
 	/** Niveles de espera de los reintentos: sufijo y TTL en milisegundos. */
 	private static final String[] TIER_SUFFIX = { "retry.5s", "retry.30s", "retry.2m" };
@@ -52,11 +53,14 @@ public class RabbitTopologyConfig {
 		return new DirectExchange(EXCHANGE_DLX, true, false);
 	}
 
-	/** MS4 es duena de ms4.eventos.pacientes (recibe paciente.creado). */
+	/** MS4 es duena de ms4.eventos: pacientes (crean la historia) y citas (habilitan la consulta). */
 	@Bean
-	Declarables ms4EventosPacientesQueue() {
-		List<Declarable> all = new ArrayList<>(consumerQueue("ms4.eventos.pacientes"));
-		all.add(bind("ms4.eventos.pacientes", EXCHANGE_EVENTOS, "paciente.creado", true));
+	Declarables ms4EventosQueue() {
+		List<Declarable> all = new ArrayList<>(consumerQueue(COLA_EVENTOS));
+		for (String clave : List.of("paciente.creado", "paciente.actualizado", "cita.confirmada", "cita.cancelada",
+				"cita.asistencia-registrada")) {
+			all.add(bind(COLA_EVENTOS, EXCHANGE_EVENTOS, clave, true));
+		}
 		return new Declarables(all);
 	}
 
