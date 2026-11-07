@@ -87,14 +87,24 @@ export function RemoteContainer({ remote, title }: Props) {
   }, [token]);
 
   return (
-    <section aria-label={title}>
-      {status === 'loading' && <p>Cargando {title}…</p>}
+    <section aria-label={title} className="sigec-remote">
+      {status === 'loading' && (
+        <div className="page">
+          <p className="muted" role="status">Cargando {title}…</p>
+        </div>
+      )}
       {status === 'error' && (
-        <div role="alert">
-          <p>No se pudo cargar {title}: {error}</p>
-          <button type="button" onClick={() => setAttempt((n) => n + 1)}>
-            Reintentar
-          </button>
+        <div className="page">
+          <div className="banner err" role="alert">
+            <div>
+              <b>Servicio no disponible</b>
+              <span>No se pudo cargar {title}: {error}</span>
+            </div>
+            <span className="sp" />
+            <button type="button" className="btn s" onClick={() => setAttempt((n) => n + 1)}>
+              Reintentar
+            </button>
+          </div>
         </div>
       )}
       <div ref={hostRef} data-remote={remote} />

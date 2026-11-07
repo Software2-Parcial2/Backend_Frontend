@@ -12,6 +12,7 @@
   "dependencies": {
     "@apollo/client": "^4.3.5",
     "@module-federation/vite": "^1.23.7",
+    "@sigec/design-tokens": "workspace:*",
     "@sigec/mfe-contract": "workspace:*",
     "echarts": "^6.1.0",
     "graphql": "^17.0.2",

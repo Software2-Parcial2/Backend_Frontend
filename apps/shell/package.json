@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@module-federation/enhanced": "^2.9.2",
+    "@sigec/design-tokens": "workspace:*",
     "@sigec/mfe-contract": "workspace:*",
     "@softarc/native-federation-orchestrator": "^4.9.0",
     "@tanstack/react-query": "^5.105.0",

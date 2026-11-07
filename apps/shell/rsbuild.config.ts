@@ -34,6 +34,19 @@ export default defineConfig({
       },
     },
   },
+  html: {
+    title: 'SIGEC',
+    tags: [
+      { tag: 'link', attrs: { rel: 'preconnect', href: 'https://fonts.googleapis.com' } },
+      {
+        tag: 'link',
+        attrs: {
+          rel: 'stylesheet',
+          href: 'https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap',
+        },
+      },
+    ],
+  },
   server: {
     port: 5173,
     strictPort: true,
