@@ -76,8 +76,26 @@ Detalle de estados, tiempos y compensaciones: `docs/saga-citas.md`.
 
 - **REST:** `contracts/openapi/<servicio>.json`. Nest y Spring lo generan desde el código; MS6 (Laravel) está escrito a mano y un test compara sus rutas con las del código. Los servicios FastAPI (ML, embeddings, Whisper, inferencia) exponen su `/openapi.json` en ejecución y **no** están versionados (internos, no pasan por el gateway).
 - **Verificar deriva:** `make openapi-check` (falla si un servicio se desvió o si `api-types` está desactualizado). **Regenerar:** `make openapi-update` y revisar el diff: un cambio de contrato es un cambio de API.
-- **Tipos para los frontends:** `packages/api-types/src/<servicio>.d.ts` (generados con `openapi-typescript`); aún sin consumidores.
+- **Tipos para los frontends:** `packages/api-types/src/<servicio>.d.ts` (generados con `openapi-typescript`). Las pantallas declaran por ahora las formas que usan (`apps/remote-angular/src/app/api/tipos.ts`, `apps/pwa-paciente/src/pages/tipos.ts`); migrarlas a `@sigec/api-types` queda pendiente.
 - **Eventos:** `contracts/events/*.schema.json` + `topology.json` (`contracts/events/README.md`).
+
+## Qué pantalla usa qué endpoint
+
+Cliente comun: `packages/api-client` (token del contexto en cada peticion, `Idempotency-Key`, `If-Match`, problem+json, cursor). Los frontends lo reciben configurado: `apiUrl` en `mount()` (shell → remotos), `VITE_API_URL` (PWA y Vue independiente), `EXPO_PUBLIC_API_URL` (movil).
+
+| App / pantalla | Endpoints |
+|---|---|
+| Shell · Inicio por rol | `/api/citas/agenda`, `/api/citas/resumen`, `/api/facturacion/balance`, `/api/inteligencia/alertas` |
+| Shell · Usuarios, Nuevo usuario, Seguridad, Servicios | `/api/identidad/usuarios*`, `/sesiones`, `/eventos`, `/api/salud` |
+| Angular · Pacientes (lista, nuevo/editar, ficha, solicitudes) | `/api/pacientes*`, `/contactos`, `/solicitudes` |
+| Angular · Citas (agenda, reservar, detalle, reprogramar, cancelar, compensacion, mi agenda, horarios) | `/api/citas*`, `/disponibilidad`, `/historial`, `/asistencia`, `/medicos/{id}/horario*`, `/api/medicos`, `/api/especialidades` |
+| Angular · Historias (historia, antecedentes y estudios, consulta, conflicto, receta, auditoria) | `/api/historias/paciente/{id}`, `/{id}/consultas`, `/consultas/{id}` (+`If-Match`, `/firmar`, `/evoluciones`, `/receta`), `/{id}/antecedentes`, `/{id}/estudios`, `/{id}/auditoria?tipo=` |
+| Angular · Estudios (bandeja, cargar, resultado) | `/api/imagenes` (multipart), `/{id}`, `/{id}/url`, `/{id}/gradcam-url`, `/{id}/validacion` |
+| Angular · Caja (cargos, cobro, anular, movimientos, tarifario) | `/api/facturacion/facturas*`, `/pagos`, `/anular`, `/comprobante`, `/balance`, `/movimientos`, `/tarifas` |
+| Angular · Notificaciones (historial, plantillas, preferencias del personal) | `/api/notificaciones?pacienteId`, `/resumen`, `/{id}/reenviar`, `/plantillas*` (+`If-Match`, `/vista-previa`), `/preferencias/personal/me` |
+| Vue · Dashboard y asistente | `/graphql`, `/api/inteligencia/agente/*`, `/reportes` |
+| Vue · Alertas, detalle, ML, politicas | `/api/inteligencia/alertas*`, `/agentes*`, `/ml/modelo`, `/graphql` (`riesgoInasistencia`, `demandaEspecialidades`), `/rag/estado`, `/agente/consulta` |
+| PWA y movil · paciente | `/api/pacientes/me`, `/contactos`, `/solicitudes`; `/api/citas*` (crear con clave guardada, cancelar, reprogramar); `/api/imagenes`; `/api/notificaciones*` (preferencias, Telegram, leidas); `/api/facturacion/facturas/{id}` |
 
 ## Pendiente (ver el plan del backend en `docs/PENDIENTES.md`)
 

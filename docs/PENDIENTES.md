@@ -222,8 +222,8 @@ Origen: diseno "Mapa de pantallas SIGEC" (Claude Design, ~90 artboards). Tokens 
 - **Angular:** se retiro el tema global de Material (pisaba `html`/`body` del shell); Material sigue instalado sin uso. Presupuesto `anyComponentStyle` 16/24 kB; build sin inlining de fuentes (no depende de la red).
 - **Rutas por hash** (`/clinica#/...`, `/gestion#/...`): el shell sigue siendo dueno de la URL y el contrato `mount/unmount` no cambia.
 - **Menu duplicado en Vue:** el remoto Vue conserva sus pestanas internas (sirven en modo independiente) ademas del menu del shell.
-- **Movil:** login es una maqueta (no llama a Keycloak); navegacion por pila propia sin React Navigation; iconos de la barra son glifos de texto.
-- **Todo con datos de ejemplo:** las pantallas no llaman a las APIs de MS2/MS3/MS4/MS5/MS6/MS8 (salvo el dashboard y el asistente de MS7 que ya las usaban). Conectarlas es el siguiente paso.
+- **Movil:** navegacion por pila propia sin React Navigation; iconos de la barra son glifos de texto. (El login ya llama a Keycloak: ver el bloque de frontends conectados.)
+- **Datos de ejemplo:** resuelto en el bloque «Frontends conectados a las APIs» (mas abajo).
 
 ## Datos (auditoria y modelo de datos, `docs/datos/`)
 
@@ -254,3 +254,23 @@ login por Keycloak y llamadas por el gateway (200 con token, 401 sin él), cola 
 - Las imágenes Nest conservan dependencias de desarrollo y el repo completo (simple, pesada: `ms7-api` ~1,5 GB). Una imagen de producción mínima (`pnpm deploy`) queda pendiente.
 - Keycloak sigue en `start-dev`, sin TLS, con usuarios y contraseñas de ejemplo: solo desarrollo.
 - MS6 monta `contracts/events/topology.json` como volumen (su imagen no contiene el monorepo); cualquier otro archivo de `contracts/` que MS6 llegue a leer en tiempo de ejecución necesitará lo mismo.
+
+## Frontends conectados a las APIs (`docs/frontends-conexion.md`)
+
+Hecho (un commit por bloque): paquete `packages/api-client` (sin dependencias; 24 pruebas), `apiUrl` en el contrato `mount()`, shell (33 comprobaciones en navegador), remoto Angular completo (**118**: pacientes, citas y agenda, horarios, historias, estudios, caja y tarifario, notificaciones), remoto Vue (**19**: alertas, agentes, ML, politicas), PWA del paciente en linea y sin conexion (**29**) y app movil (compilada, **sin probar en dispositivo**).
+Barrido final: `node scripts/e2e-frontends/index.mjs` = **199/199** (Chromium por CDP, Keycloak real, pila real, `make seed`) y `scripts/e2e-flujos.sh` del backend.
+
+**Correcciones de backend hechas de paso (con su prueba):** MS6 devolvia dos `Access-Control-Allow-Origin` (Laravel + gateway) y el navegador rechazaba las respuestas (`SinCorsTest`); MS6 `?porCobrar=true` daba 400 (`CajaTest`); MS8 `PUT /preferencias/personal/me` daba 500 porque el DTO llegaba como instancia de clase y DynamoDB no la marshala (`notificaciones.service.spec`).
+
+**Huecos decididos por falta de endpoint o de rol (no se inventaron datos):**
+- `Recuperar` (shell, publica): usa el flujo `reset-credentials` de Keycloak; el endpoint de ms1 es solo del administrador.
+- Vue `VistaMl`: sin mapa de calor dia x franja (no hay datos por franja): se muestran segmentos K-means reales; las importancias del Random Forest llegan `null` desde el servicio ML (`/ml/modelo`), por eso no se grafican (revisar `ml/no-show`). `VistaPoliticas` pasa por el agente (no hay REST directo del RAG) y su calidad depende del LLM; con `LLM_PROVIDER=simulated` se verifico. `VistaVoz` (ruta de ejemplo) y `VistaReportePdf` siguen siendo vistas de ejemplo del diseno; el asistente real las usa por dentro.
+- Vue: el aviso por Telegram al personal no tiene interruptor propio (MS8 solo guarda 3 alertas internas; el vinculo de Telegram del personal sigue siendo por la API).
+- Angular `Estudios`: subir exige rol `medico`/`administrador`/`paciente` (la recepcion no puede, como define MS5); la carga no corre el validador MobileNet local (el servidor clasifica); no hay ruta de «imagen rechazada» por contenido (solo por formato/tamano).
+- Angular `Historial de envios`: MS8 lo consulta por paciente; los KPIs son del dia en toda la clinica. `Consulta`: sin «anamnesis» ni «CIE-10» como campos propios.
+- PWA: sin validador TFLite/TF.js local; el ultimo `beforeinstallprompt` no se maneja; fuentes de Google (ver mas arriba).
+- Movil: **no se probo en dispositivo ni emulador** (solo `tsc` y `expo export`). Falta: `expo prebuild --clean` (el plugin `plugins/con-app-auth.js` pone `appAuthRedirectScheme` y HTTP en claro), probar el login nativo con Keycloak (el issuer visible desde el emulador debe coincidir con el de los servicios; `10.0.2.2`), SQLite y SecureStore, y subir estudios (falta `expo-image-picker` y el validador TFLite).
+
+**Para correr la verificacion:** ver `docs/frontends-conexion.md`. Notas de entorno que costaron tiempo: si el puerto 5432 esta ocupado, Postgres de SIGEC en 5440 (`POSTGRES_HOST_PORT`, `POSTGRES_PORT`, `DB_PORT` y `DB_URL` para ms2/ms4); `pnpm_config_strict_dep_builds=false` si `pnpm install --offline` pide aprobar builds; `LLM_PROVIDER=simulated` y `NOTIF_SENDER=simulated` (Mailtrap sin credenciales hace que la SAGA espere a MS8); `make n8n-import` si se recrea el contenedor de n8n.
+
+**Deudas que siguen:** pruebas de componentes del remoto Angular (solo hay pruebas de funciones puras y el arnes de navegador), lint de la PWA con TS 7, `paciente.actualizado`, fila de MS2 para el paciente demo, Ajv en MS6/Spring, fijar version de n8n y Postgres 17, desplegar la Lambda `lambda-outbox`.

@@ -12,11 +12,11 @@ Actor: personal de la clinica (recepcion, medico, caja, direccion). Sistema visu
 | Diseno | Ruta / componente | Nota |
 |---|---|---|
 | m1-login, estado-sesion | `pages/Login.tsx` (`expirada`) | con enlace a recuperar contrasena |
-| m1-recuperar | `/recuperar` · `pages/Recuperar.tsx` | publica (sin sidebar); el envio real lo haria Keycloak |
-| shell-recepcion / medico / caja / direccion | `/` · `pages/Home.tsx` | datos de ejemplo por rol |
-| m1-usuarios / m1-usuario-nuevo | `/admin/usuarios`, `/admin/usuarios/nuevo` · `pages/admin/` | solo rol `administrador`; datos de ejemplo |
-| m1-seguridad | `/admin/seguridad` · `pages/admin/Seguridad.tsx` | revocar sesiones y filtrar eventos (en memoria) |
-| sys-servicios | `/admin/servicios` · `pages/admin/Servicios.tsx` | datos de ejemplo |
+| m1-recuperar | `/recuperar` · `pages/Recuperar.tsx` | publica (sin sidebar); el envio lo hace Keycloak (flujo `reset-credentials`): ms1 solo recupera cuentas desde el panel del administrador |
+| shell-recepcion / medico / caja / direccion | `/` · `pages/Home.tsx` | KPIs y listas reales por rol (agenda, caja, resumen, alertas) |
+| m1-usuarios / m1-usuario-nuevo | `/admin/usuarios`, `/admin/usuarios/nuevo` · `pages/admin/` | solo rol `administrador`; `GET/POST /api/identidad/usuarios`, habilitar, roles, recuperar; errores por campo (`USUARIO_DUPLICADO`, `ROLES_INCOMPATIBLES`) |
+| m1-seguridad | `/admin/seguridad` · `pages/admin/Seguridad.tsx` | sesiones, revocar y eventos reales de Keycloak |
+| sys-servicios | `/admin/servicios` · `pages/admin/Servicios.tsx` | `GET /api/salud` (estado de la pila) |
 | m1-perfil | `/perfil` · `pages/Perfil.tsx` | usuario/rol/correo reales del token; la contrasena se cambia en Keycloak |
 | estado-403, estado-error-red (503), 404 | `pages/Estados.tsx` | 503 se muestra cuando falla la carga de un remoto |
 | web-sin-conexion | aviso global en `App.tsx` (`useOnline`) | banner cuando el navegador queda sin red |
@@ -27,3 +27,6 @@ Actor: personal de la clinica (recepcion, medico, caja, direccion). Sistema visu
 - Fuentes por `html.tags` en `rsbuild.config.ts` (Google Fonts).
 - Mantener los `data-testid` `username`, `roles`, `session-user`.
 - Accesibilidad: `nav` con `aria-label`, `aria-current="page"`, botones reales, foco visible.
+
+## Datos (`src/api/`)
+`ApiProvider` crea el cliente comun `@sigec/api-client` (token del `useAuth()` en cada peticion, `signinSilent` ante un 401) y un `QueryClient`; hooks `useGet/useLista/useAccion`. `components/Estado.tsx` pinta cargando / error (codigo de soporte) / vacio. A los remotos se les pasa `apiUrl` en `mount()` (`PUBLIC_API_URL`, por defecto `http://localhost:8090`).
