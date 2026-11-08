@@ -31,7 +31,7 @@ Los workflows de n8n se importan con `make n8n-import` (una vez, tras el primer 
 > Dentro de la red de Docker los servicios siempre usan los puertos normales.
 >
 > Lo que **no** está en Docker: la app móvil (Expo, se ejecuta en un dispositivo/emulador) y la Lambda `lambda-outbox` en AWS (aquí la reemplaza el contenedor `outbox-poller`).
-> Sin claves de Gemini/Claude, MS7 usa `LLM_PROVIDER=simulated`; sin Mailtrap/Telegram las notificaciones reales no funcionan (ver `docs/PENDIENTES.md`).
+> Sin claves de Gemini/Claude, MS7 usa `LLM_PROVIDER=simulated`; sin Mailtrap/Telegram las notificaciones reales no funcionan (ver `docs/PENDIENTES.md`). **Lo que tienes que hacer tú (claves, bot de Telegram, Kaggle, móvil): [`docs/tu-parte.md`](docs/tu-parte.md).**
 
 ## Mapa de servicios y bases de datos
 
