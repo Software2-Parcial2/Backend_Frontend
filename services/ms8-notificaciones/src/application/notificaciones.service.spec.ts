@@ -406,6 +406,14 @@ describe('NotificacionesService', () => {
       expect((await t.service.obtenerPreferenciasPersonal('u1')).alertas.sagaCompensada).toBe(false);
     });
 
+    it('preferencias del personal: guarda un objeto plano aunque llegue una instancia de clase (DynamoDB no marshala instancias)', async () => {
+      const t = setup();
+      class AlertasDto { sagaCompensada = true; notificacionFallida = false; colaDeErrores = true; }
+      const r = await t.service.guardarPreferenciasPersonal('u2', new AlertasDto());
+      expect(Object.getPrototypeOf(r.alertas)).toBe(Object.prototype);
+      expect(r.alertas).toEqual({ sagaCompensada: true, notificacionFallida: false, colaDeErrores: true });
+    });
+
     describe('plantillas editables', () => {
       const asunto = 'Tu cita';
       it('muestra la de fabrica (version 0), guarda versiones y las usa al enviar', async () => {

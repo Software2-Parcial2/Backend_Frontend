@@ -287,7 +287,9 @@ export class NotificacionesService {
   }
 
   async guardarPreferenciasPersonal(usuarioId: string, alertas: PreferenciasPersonal['alertas']): Promise<PreferenciasPersonal> {
-    const p: PreferenciasPersonal = { usuarioId, alertas, actualizadaEn: new Date(this.now()).toISOString() };
+    // Objeto plano: el DTO validado llega como instancia de clase y el cliente de DynamoDB no marshala instancias.
+    const plano = { sagaCompensada: alertas.sagaCompensada, notificacionFallida: alertas.notificacionFallida, colaDeErrores: alertas.colaDeErrores };
+    const p: PreferenciasPersonal = { usuarioId, alertas: plano, actualizadaEn: new Date(this.now()).toISOString() };
     await this.d.personal.guardar(p);
     return p;
   }

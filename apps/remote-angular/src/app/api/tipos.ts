@@ -181,3 +181,13 @@ export function estadoFactura(e: string): { texto: string; tono: string } {
     default: return { texto: e, tono: '' };
   }
 }
+
+// --- MS8: notificaciones ---
+export interface Notificacion { id: string; citaId: string; pacienteId: string; tipo: string; estado: 'PENDIENTE' | 'ENVIADA' | 'FALLIDA'; canales: string[]; intentos: number; ultimoError: string | null; fechaHora: string | null; leida: boolean; creadaEn: string; actualizadaEn: string }
+export interface ResumenNotificaciones { fecha: string; total: number; enviadas: number; pendientes: number; fallidas: number; tasaEntrega: number; porTipo: Record<string, number>; porCanal: Record<string, number> }
+export interface Plantilla { tipo: string; canal: 'EMAIL' | 'TELEGRAM'; asunto: string; cuerpo: string; version: number; actualizadoPor: string; actualizadoEn: string; deFabrica: boolean }
+export interface VistaPrevia { plantilla: string; asunto: string; texto: string; html: string }
+export const TIPOS_AVISO: Record<string, string> = {
+  CITA_CONFIRMADA: 'Confirmación de cita', CITA_CANCELADA: 'Cancelación', CITA_REPROGRAMADA: 'Reprogramación', RECORDATORIO: 'Recordatorio', RECORDATORIO_REFUERZO: 'Recordatorio de refuerzo', ESTUDIO_VALIDADO: 'Estudio validado',
+};
+export const textoTipoAviso = (t: string): string => TIPOS_AVISO[t] ?? t;

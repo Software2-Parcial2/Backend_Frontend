@@ -574,6 +574,76 @@ async function caja() {
   }
 }
 
+async function notificaciones() {
+  seccion('Angular · Notificaciones (administrador)');
+  const ta = await token('administrador');
+  const a = await abrirNavegador({ nombre: 'admin-notificaciones' });
+  const original = (await api('GET', '/api/notificaciones/plantillas/CITA_CONFIRMADA?canal=EMAIL', ta)).datos;
+  const prefOriginal = (await api('GET', '/api/notificaciones/preferencias/personal/me', ta)).datos;
+  try {
+    await a.ir(SHELL);
+    await a.login('administrador');
+    await irA(a, '/historial', 'Historial de envíos');
+    await a.esperar(`document.querySelector('[data-testid=kpi-total]')?.innerText>=0`, 15000, 'resumen');
+    comprobar('Historial: KPIs reales del día', /^\d+$/.test(await a.texto('[data-testid=kpi-total]')));
+    await a.escribir('input[aria-label="Buscar paciente"]', 'Quispe');
+    await a.esperar(`document.querySelectorAll('[data-testid=candidato]').length>=1`, 10000, 'candidatos');
+    await a.clic('[data-testid=candidato]');
+    await a.esperar(`document.querySelectorAll('[data-testid=aviso]').length>=1`, 15000, 'avisos del paciente');
+    comprobar('Historial: lista los avisos del paciente elegido', (await a.cuenta('[data-testid=aviso]')) >= 1);
+    await a.clic('.seg button', 'Telegram');
+    await a.esperar(`document.querySelectorAll('[data-testid=aviso]').length===0`, 10000, 'filtro por canal');
+    comprobar('Historial: el filtro de canal llega al servidor', true);
+    sinProblemas(a, 'Historial');
+
+    // Plantillas: editar con If-Match, vista previa y conflicto de versión
+    await irA(a, '/historial/plantillas', 'Plantillas y alertas internas');
+    await a.esperar(`document.querySelectorAll('[data-testid=plantilla]').length>=6`, 15000, 'plantillas');
+    comprobar('Plantillas: lista tipo y canal', (await a.cuenta('[data-testid=plantilla]')) >= 6);
+    await a.esperar(`!!document.querySelector('#cu')`, 10000);
+    const marca = `Prueba e2e ${Date.now() % 100000}`;
+    await a.escribir('#cu', `Hola {{nombre}}. ${marca}. Tu cita: {{cuando}}.`);
+    await a.esperar(`document.querySelector('[data-testid=previa-texto]')?.innerText.includes(${JSON.stringify(marca)})`, 10000, 'vista previa');
+    comprobar('Plantillas: la vista previa se renderiza en el servidor', true);
+    await a.clic('[data-testid=guardar-plantilla]');
+    await a.esperar(`document.body.innerText.includes('Plantilla guardada')`, 10000, 'guardado');
+    const tras = (await api('GET', '/api/notificaciones/plantillas/CITA_CONFIRMADA?canal=EMAIL', ta)).datos;
+    comprobar('Plantillas: guarda con If-Match y sube la versión', tras.cuerpo.includes(marca) && tras.version === original.version + 1, JSON.stringify(tras));
+    // Otro administrador la cambia: el guardado con la versión vieja debe fallar con 409.
+    await api('PUT', '/api/notificaciones/plantillas/CITA_CONFIRMADA', ta, { canal: 'EMAIL', asunto: tras.asunto, cuerpo: `Hola {{nombre}}. Cambio externo. {{cuando}}` }, { 'If-Match': String(tras.version) });
+    await a.escribir('#cu', `Hola {{nombre}}. Mi cambio. {{cuando}}`);
+    await a.clic('[data-testid=guardar-plantilla]');
+    await a.esperar(`!!document.querySelector('[role=alert]')`, 10000, 'error de versión');
+    comprobar('Plantillas: la versión vieja es rechazada (409)', true);
+    await a.clic('[data-testid=cargar-vigente]');
+    await a.esperar(`document.querySelector('#cu')?.value.includes('Cambio externo')`, 10000, 'version vigente cargada');
+    comprobar('Plantillas: «Cargar la versión vigente» trae el cambio de otro administrador', true);
+    // Contenido clínico rechazado
+    await a.escribir('#cu', 'Hola {{nombre}}. Su diagnóstico de neumonía está listo. {{cuando}}');
+    await a.clic('[data-testid=guardar-plantilla]');
+    await a.esperar(`[...document.querySelectorAll('[role=alert]')].some(x=>/cl[ií]nic|diagn/i.test(x.innerText))`, 10000, 'rechazo por contenido clinico');
+    comprobar('Plantillas: el contenido clínico se rechaza', true);
+    sinProblemas(a, 'Plantillas', [409, 400, 422]);
+
+    // Preferencias del personal
+    await irA(a, '/historial/preferencias', 'Mis preferencias de aviso');
+    await a.esperar(`!!document.querySelector('[data-alerta=colaDeErrores]')`, 10000);
+    const antes = prefOriginal.alertas.colaDeErrores;
+    await a.clic('[data-alerta=colaDeErrores]');
+    await a.clic('[data-testid=guardar-pref]');
+    await a.esperar(`document.body.innerText.includes('Preferencias guardadas')`, 10000, 'guardado');
+    const pref = (await api('GET', '/api/notificaciones/preferencias/personal/me', ta)).datos;
+    comprobar('Preferencias: el cambio llega a MS8', pref.alertas.colaDeErrores === !antes, JSON.stringify(pref.alertas));
+    sinProblemas(a, 'Preferencias');
+  } finally {
+    // Se devuelve lo que habia (texto y preferencias).
+    const actual = (await api('GET', '/api/notificaciones/plantillas/CITA_CONFIRMADA?canal=EMAIL', ta)).datos;
+    await api('PUT', '/api/notificaciones/plantillas/CITA_CONFIRMADA', ta, { canal: 'EMAIL', asunto: original.asunto, cuerpo: original.cuerpo }, { 'If-Match': String(actual.version) });
+    await api('PUT', '/api/notificaciones/preferencias/personal/me', ta, { alertas: prefOriginal.alertas });
+    a.cerrar();
+  }
+}
+
 export async function angular() {
   const solo = process.env.SOLO; // p. ej. SOLO=historias para correr un modulo
   if (!solo || solo === 'pacientes') await pacientes();
@@ -581,4 +651,5 @@ export async function angular() {
   if (!solo || solo === 'historias') await historias();
   if (!solo || solo === 'estudios') await estudios();
   if (!solo || solo === 'caja') await caja();
+  if (!solo || solo === 'notificaciones') await notificaciones();
 }
