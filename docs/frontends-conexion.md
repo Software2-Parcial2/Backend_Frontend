@@ -18,7 +18,7 @@ El token se lee **en cada peticion** del contexto del shell (evento `sigec:token
 
 ## Verificar en navegador real
 1. Pila: `docker compose up -d` (si el 5432 esta ocupado: `POSTGRES_HOST_PORT=5440`), `make dynamodb-init rabbitmq-declare mongo-init keycloak-aplicar seed`, `make n8n-import` si se recreo n8n, `scripts/dev-services.sh start gateway ms1 ms2 ms3 ms4 ms5 ms6 ms7 ms8 ms5-inference ms7-ml ms7-embeddings`, `poller-start`, `workers-start`. Variables utiles: `NOTIF_SENDER=simulated LLM_PROVIDER=simulated` (sin Mailtrap ni API de LLM) y, con Postgres en 5440, `POSTGRES_PORT=5440 DB_PORT=5440 DB_URL=jdbc:postgresql://localhost:5440/<base>` para ms2/ms4.
-2. Frontends: shell `cd apps/shell && npx rsbuild dev` (`:5173`), Angular `cd apps/remote-angular && npx ng build && node scripts/serve-estatico.mjs apps/remote-angular/dist/remote-angular/browser 4201`, Vue `cd apps/remote-vue && pnpm build && npx vite preview --port 5175`, PWA `cd apps/pwa-paciente && pnpm build && npx vite preview` (`:5174`).
+2. Frontends: shell `cd apps/shell && npx rsbuild dev` (`:5173`), Angular `cd apps/remote-angular && pnpm build && npx vite preview` (`:4201`), Vue `cd apps/remote-vue && pnpm build && npx vite preview --port 5175`, PWA `cd apps/pwa-paciente && pnpm build && npx vite preview` (`:5174`).
 3. `(set -a; source .env; set +a; node scripts/e2e-frontends/index.mjs [shell|angular|vue|pwa])`. `SOLO=historias node scripts/e2e-frontends/index.mjs angular` corre un modulo. Cada escenario inicia sesion con Keycloak, recorre las pantallas con los datos sembrados, comprueba el estado en el backend por la API y falla ante cualquier `console.error` o HTTP inesperado.
 4. Backend: `scripts/e2e-flujos.sh` (88 comprobaciones).
 

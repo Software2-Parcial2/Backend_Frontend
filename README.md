@@ -70,7 +70,7 @@ Detalle completo, diagramas ER y patrones de acceso en [`docs/datos/`](docs/dato
 |---|---|---|---|
 | `apps/shell` | 5173 | React + Rsbuild (Module Federation) | Contenedor: login con Keycloak (PKCE) y carga de los remotos |
 | `apps/remote-vue` | 5175 | Vue + Vite | Remoto: dashboard de inteligencia (GraphQL, gráficos, voz) |
-| `apps/remote-angular` | 4201 | Angular (Native Federation) | Remoto Angular (esqueleto) |
+| `apps/remote-angular` | 4201 | Angular (Module Federation 2 con Vite) | Remoto Angular (esqueleto) |
 | `apps/pwa-paciente` | 5174 | React + Vite PWA | Portal del paciente, instalable (sin lógica offline de datos aún) |
 | `apps/mobile` | — | React Native (Expo) | App móvil (esqueleto; se ejecuta en dispositivo) |
 

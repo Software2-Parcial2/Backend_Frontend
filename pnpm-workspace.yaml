@@ -16,3 +16,8 @@ allowBuilds:
   '@scarf/scarf': true
   protobufjs: true
 injectWorkspacePackages: true
+# @analogjs/vite-plugin-angular usa la API de TypeScript 6 sin declararla como dependencia; sin esto pnpm le da la 7.x del workspace (ts.createPrinter no existe).
+packageExtensions:
+  "@analogjs/vite-plugin-angular":
+    dependencies:
+      typescript: "~6.0.3"

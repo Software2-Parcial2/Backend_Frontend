@@ -214,3 +214,14 @@ export async function crearMedicoDePrueba(medicoId = 'd0000000-0000-4000-8000-00
   await fetch(`${KEYCLOAK}/admin/realms/sigec/users/${r.datos.id}/reset-password`, { method: 'PUT', headers: { Authorization: `Bearer ${t}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'password', value: clave, temporary: false }) });
   return { username, clave, medicoId };
 }
+
+/** Borra los usuarios temporales `e2e.*` que dejo una corrida interrumpida (rompen los conteos de usuarios del shell). */
+export async function limpiarUsuariosE2E() {
+  const env = process.env;
+  const m = await fetch(`${KEYCLOAK}/realms/master/protocol/openid-connect/token`, { method: 'POST', body: new URLSearchParams({ grant_type: 'password', client_id: 'admin-cli', username: env.KEYCLOAK_ADMIN ?? 'admin', password: env.KEYCLOAK_ADMIN_PASSWORD ?? '' }) });
+  const t = (await m.json()).access_token;
+  const us = await (await fetch(`${KEYCLOAK}/admin/realms/sigec/users?search=e2e.&max=100`, { headers: { Authorization: `Bearer ${t}` } })).json();
+  let n = 0;
+  for (const u of us.filter((x) => x.username.startsWith('e2e.'))) { await fetch(`${KEYCLOAK}/admin/realms/sigec/users/${u.id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${t}` } }); n++; }
+  return n;
+}

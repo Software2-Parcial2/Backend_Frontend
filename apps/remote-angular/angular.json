@@ -19,42 +19,8 @@
       "prefix": "app",
       "architect": {
         "build": {
-          "builder": "@angular-architects/native-federation:build",
-          "options": {
-            "cacheExternalArtifacts": true,
-            "tsConfig": "tsconfig.federation.json",
-            "styles": []
-          },
-          "configurations": {
-            "production": {
-              "target": "remote-angular:esbuild:production"
-            },
-            "development": {
-              "target": "remote-angular:esbuild:development",
-              "dev": true
-            }
-          },
-          "defaultConfiguration": "production"
-        },
-        "serve": {
-          "builder": "@angular-architects/native-federation:build",
-          "options": {
-            "target": "remote-angular:serve-original:development",
-            "tsConfig": "tsconfig.federation.json",
-            "rebuildDelay": 500,
-            "cacheExternalArtifacts": true,
-            "dev": true,
-            "devServer": true,
-            "port": 0
-          }
-        },
-        "test": {
-          "builder": "@angular/build:unit-test"
-        },
-        "esbuild": {
           "builder": "@angular/build:application",
           "options": {
-            "browser": "src/main.ts",
             "tsConfig": "tsconfig.app.json",
             "inlineStyleLanguage": "scss",
             "assets": [
@@ -63,8 +29,11 @@
                 "input": "public"
               }
             ],
-            "styles": ["src/styles.scss"],
-            "polyfills": ["es-module-shims"]
+            "styles": [
+              "src/styles.css"
+            ],
+            "polyfills": [],
+            "browser": "src/main.ts"
           },
           "configurations": {
             "production": {
@@ -81,7 +50,16 @@
                 }
               ],
               "outputHashing": "all",
-              "optimization": { "scripts": true, "styles": { "minify": true, "inlineCritical": true }, "fonts": { "inline": false } }
+              "optimization": {
+                "scripts": true,
+                "styles": {
+                  "minify": true,
+                  "inlineCritical": true
+                },
+                "fonts": {
+                  "inline": false
+                }
+              }
             },
             "development": {
               "optimization": false,
@@ -91,23 +69,8 @@
           },
           "defaultConfiguration": "production"
         },
-        "serve-original": {
-          "builder": "@angular/build:dev-server",
-          "configurations": {
-            "production": {
-              "buildTarget": "remote-angular:esbuild:production"
-            },
-            "development": {
-              "buildTarget": "remote-angular:esbuild:development"
-            }
-          },
-          "defaultConfiguration": "development",
-          "options": {
-            "port": 4201,
-            "headers": {
-              "Access-Control-Allow-Origin": "http://localhost:5173"
-            }
-          }
+        "test": {
+          "builder": "@angular/build:unit-test"
         }
       }
     }

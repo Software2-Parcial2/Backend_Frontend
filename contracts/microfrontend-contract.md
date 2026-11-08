@@ -18,7 +18,7 @@ unmount(): void | Promise<void>
 | Remoto | Tecnologia | Federacion | Entrada | Modulo |
 |---|---|---|---|---|
 | `remoteVue` (`/gestion`) | Vue 3 + Vite | Module Federation (`@module-federation/vite`) | `http://localhost:5175/mf-manifest.json` | `remoteVue/mount` |
-| `remoteAngular` (`/clinica`) | Angular | Native Federation | `http://localhost:4201/remoteEntry.json` | `./mount` |
+| `remoteAngular` (`/clinica`) | Angular (compilado con Vite + `@analogjs/vite-plugin-angular`) | Module Federation 2 | `http://localhost:4201/mf-manifest.json` | `./mount` |
 
 Cada remoto tambien debe poder abrirse **solo** en su puerto (modo standalone, sin contexto).
 

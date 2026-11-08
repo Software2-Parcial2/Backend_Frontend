@@ -17,8 +17,7 @@ Cada entrada indica bloque, comando, error y que se probo.
 - **`apps/mobile`**: `app.json` ya tiene `scheme: sigec` y `com.sigec.mobile`, pero las carpetas generadas `ios/` y `android/`
   (ignoradas por Git) conservan `com.anonymous.mobile`. Hay que regenerarlas con `npx expo prebuild --clean` antes de compilar. No se compilo el movil.
 - **Verificacion en navegador**: se hizo con Firefox 159 (headless, via puppeteer-core/WebDriver BiDi). No se probo en Chrome/Edge/Safari.
-  El remoto Angular depende de import maps dinamicos: en el shell se usa `es-module-shims` en modo shim.
-- **Native Federation en dev**: el servidor de `ng serve` responde `Access-Control-Allow-Origin: *`; la opcion `headers` anadida en `angular.json` no tiene efecto visible.
+  (Historico: el remoto Angular usaba Native Federation con import maps; ya no, ver «Remoto Angular en Module Federation 2» al final.)
 - **PWA offline**: solo hay service worker (generateSW), manifest y el indicador "en linea / sin conexion". La logica offline de datos queda pendiente.
   El manifest usa un icono SVG; para instalar en todos los navegadores hacen falta iconos PNG de 192 y 512 px.
   El estado "sin conexion" se verifico disparando el evento `offline` del navegador, no cortando la red real.
@@ -274,3 +273,11 @@ Barrido final: `node scripts/e2e-frontends/index.mjs` = **199/199** (Chromium po
 **Para correr la verificacion:** ver `docs/frontends-conexion.md`. Notas de entorno que costaron tiempo: si el puerto 5432 esta ocupado, Postgres de SIGEC en 5440 (`POSTGRES_HOST_PORT`, `POSTGRES_PORT`, `DB_PORT` y `DB_URL` para ms2/ms4); `pnpm_config_strict_dep_builds=false` si `pnpm install --offline` pide aprobar builds; `LLM_PROVIDER=simulated` y `NOTIF_SENDER=simulated` (Mailtrap sin credenciales hace que la SAGA espere a MS8); `make n8n-import` si se recrea el contenedor de n8n.
 
 **Deudas que siguen:** pruebas de componentes del remoto Angular (solo hay pruebas de funciones puras y el arnes de navegador), lint de la PWA con TS 7, `paciente.actualizado`, fila de MS2 para el paciente demo, Ajv en MS6/Spring, fijar version de n8n y Postgres 17, desplegar la Lambda `lambda-outbox`.
+
+## Remoto Angular en Module Federation 2
+
+El remoto Angular ya no usa Native Federation: se compila con Vite (`@analogjs/vite-plugin-angular`) y se federa con `@module-federation/vite`, igual que el remoto Vue. El shell carga los dos con `loadRemote` (se quitaron `@softarc/native-federation-orchestrator` y `es-module-shims`). Las URLs de los manifiestos ya no estan fijas: `PUBLIC_REMOTE_VUE_URL` y `PUBLIC_REMOTE_ANGULAR_URL` al compilar el shell (por defecto `:5175` y `:4201`).
+- Verificado: barrido de navegador **198/199 en la primera corrida completa** (el fallo fue `Cobro: sin errores...`, no se repitio en 3 corridas aisladas; no se identifico la causa) y `pnpm test` del remoto y del shell.
+- `ng build` ya no se usa para producir el remoto (solo `ng test`): usar `pnpm build` (Vite). El Dockerfile del remoto se unifico con el de los demas frontends (`web.Dockerfile`); **la imagen no se construyo** en esta sesion.
+- Riesgo: `@analogjs/vite-plugin-angular` es un plugin de la comunidad; depende de que `typescript` resuelva a la 6.x (ver `packageExtensions` en `pnpm-workspace.yaml`).
+- Los scripts de arranque de procesos viejos (`nest start:dev` deja procesos hijo vivos tras `dev-services.sh stop`) pueden dejar un ms7/ms8 con el entorno anterior: si una prueba falla por `LLM_PROVIDER`/`NOTIF_SENDER`, matar los procesos del servicio y arrancarlo de nuevo.

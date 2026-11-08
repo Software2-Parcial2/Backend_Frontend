@@ -3,11 +3,12 @@
 Actor: recepcion, medico, caja, administrador. Sistema visual: `packages/design-tokens/design.md`.
 Cubre MS2 pacientes, MS3 agenda/citas, MS4 historias, MS5 estudios, MS6 caja y MS8 historial, todo bajo `/clinica` del shell.
 
-## Module Federation (Native Federation)
+## Module Federation 2 (Vite)
+- Mismo plugin y runtime que el remoto Vue: `@module-federation/vite` + `@analogjs/vite-plugin-angular` (Angular compilado por Vite; ver `vite.config.ts`). Genera `mf-manifest.json` y `remoteEntry.js`; el shell lo carga con `loadRemote('remoteAngular/mount')`. Angular va dentro del remoto (no se comparte con React ni con Vue). `ng test` sigue usando el builder de Angular (target `build` solo para las pruebas). `pnpm-workspace.yaml` fija `typescript ~6.0` para el plugin de Analog (con la 7.x falla `ts.createPrinter`).
 - Expone `./mount` (`src/mount.ts`). El **sidebar y la barra superior los pone el shell**; el remoto solo dibuja el contenido (`.page`).
 - **Estilos:** `App` usa `ViewEncapsulation.None` y `styleUrl` -> `packages/design-tokens/sigec.css`. Los estilos viajan en el JS del remoto
   (los estilos globales de la compilacion no se cargan cuando lo monta el shell) y todo queda bajo `.sigec`; no se toca `html`/`body`.
-  `src/styles.scss` (solo `body`) vale unicamente para el modo independiente (`ng serve`, 4201).
+  `src/styles.css` (solo `body`) vale unicamente para el modo independiente (`vite`, 4201).
 - Se retiro el tema global de Angular Material (`material-theme.scss`), que pisaba `html`/`body` del shell. Material sigue instalado pero no se usa.
 - Presupuesto `anyComponentStyle` subido a 16/24 kB porque el CSS compartido pesa ~12 kB.
 - **Rutas por hash** (`withHashLocation`): el shell es dueno de la URL (`/clinica#/pacientes`). Dentro del remoto se navega con `<a href="#/ruta">`;
