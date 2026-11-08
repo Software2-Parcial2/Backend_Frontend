@@ -35,14 +35,16 @@ Los problemas y limites conocidos por bloque estan en `docs/PENDIENTES.md`. Este
 | **Diseno** | Diseno visual trasladado a los frontends: `packages/design-tokens`, `design.md` por app, pantallas clave con datos de ejemplo | Hecho: todas las pantallas del diseno; shell+remotos verificados en Chromium con Keycloak; PWA/movil solo compilados (ver `docs/PENDIENTES.md`) |
 | **Backend limpio** | Plan de 10 fases (docs/api.md): convenciones comunes (problem+json, cursor, camelCase, OpenAPI + api-types), MS2 catalogo y edicion, MS3 cancelar/reprogramar/horarios/asistencia, MS6 pagos y caja, MS4 historias clinicas, MS5 validacion de estudios, MS8 historial/plantillas, MS7 alertas, nuevo `ms1-identidad` | Hecho; **`scripts/e2e-flujos.sh` 88/88**; ver `docs/PENDIENTES.md` (Fases 0-9). Los frontends siguen con datos de ejemplo |
 | **L5** | MS7: voz (Whisper), dashboard Vue, `scripts/e2e-ms7.sh` | Hecho; **E2E 37/37 en stack real** (ver `docs/inteligencia.md`) |
+| **Frontends conectados** | `packages/api-client` + `apiUrl` en `mount()`; shell, remoto Angular (todas las pantallas), remoto Vue, PWA en linea y sin conexion (cola con `Idempotency-Key`), app movil | Hecho; **`node scripts/e2e-frontends/index.mjs` = 199/199** en navegador real y `e2e-flujos.sh` 88/88; **la app movil solo esta compilada (`tsc`, `expo export`), sin probar en dispositivo**. Ver `docs/frontends-conexion.md` y `docs/PENDIENTES.md` |
 
 ## Donde estamos
 
-Bloques 0-L terminados en el repo (commits locales, sin push). **Pendiente de verificar con credenciales o hardware que no hay aqui:**
-1. `scripts/e2e-imagenes.sh` (bloque K): ejecutarlo; si el puerto 5432 esta ocupado usa `POSTGRES_HOST_PORT=5440 POSTGRES_PORT=5440 DB_PORT=5440` (ver `docs/PENDIENTES.md`).
-2. Entrenar los modelos reales: `ml/pneumonia/train.py` y `ml/no-show/train.py` (ambos piden `~/.kaggle/kaggle.json`; los modelos actuales son sinteticos / `stub-no-clinico`).
+Bloques 0-L, el backend limpio y la conexion de los frontends terminados en el repo (commits locales, sin push). **Pendiente de verificar con credenciales o hardware que no hay aqui:**
+1. `scripts/e2e-imagenes.sh` (bloque K): ejecutarlo; si el puerto 5432 esta ocupado usa `POSTGRES_HOST_PORT=5440 POSTGRES_PORT=5440 DB_PORT=5440` (ver `docs/PENDIENTES.md` y `docs/frontends-conexion.md`).
+2. Entrenar los modelos reales: `ml/pneumonia/train.py` y `ml/no-show/train.py` (ambos piden `~/.kaggle/kaggle.json`; los modelos actuales son sinteticos / `stub-no-clinico`; las importancias del Random Forest llegan `null`).
 3. Probar Gemini y Claude reales (`GEMINI_API_KEY` / `ANTHROPIC_API_KEY`, `LLM_PROVIDER`) y el microfono real en el navegador.
 4. Mailtrap y Telegram reales (bloque J).
+5. **App movil** en emulador/dispositivo: `expo prebuild --clean`, login nativo contra Keycloak (`10.0.2.2`), SQLite, SecureStore; subir estudios (falta `expo-image-picker` y el validador TFLite).
 
 ## Al actualizar el repo (backend)
 
@@ -50,8 +52,7 @@ Ejecutar en este orden: `make dynamodb-init rabbitmq-declare mongo-init`, defini
 
 ## Siguientes fases (inferidas, no hay plan escrito)
 
-- **Frontends:** conectar las pantallas a las APIs ya listas (contratos en `contracts/openapi`, tipos en `@sigec/api-types`, mapa en `docs/api.md`).
-- **MS7:** mensajeria/idempotencia (no las usa), registrar asistencia en MS3 para entrenar el modelo de inasistencia con datos propios, pantalla integrada en el shell.
-- **Frontends:** conectar las pantallas (hoy con datos de ejemplo) a las APIs, PWA offline de datos, iconos PNG, `expo prebuild --clean`, lint de la PWA (TS 7), validador local TFLite/TF.js.
+- **Frontends:** pruebas de componentes del remoto Angular, migrar los tipos escritos a mano a `@sigec/api-types`, validador local TFLite/TF.js (carga de estudios), iconos PNG de la PWA, lint de la PWA (TS 7), `beforeinstallprompt`.
+- **MS7:** mensajeria/idempotencia (no las usa), registrar asistencia en MS3 para entrenar el modelo de inasistencia con datos propios; vinculo de Telegram del personal.
 - **AWS:** desplegar y probar la Lambda `lambda-outbox`.
 - **Deudas:** `paciente.actualizado`, fila de MS2 para el paciente demo, Ajv en MS6/Spring, fijar version de n8n y Postgres 17.

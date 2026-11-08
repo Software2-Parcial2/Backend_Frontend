@@ -48,7 +48,11 @@ cmd_start() {
     wanted "$name" "$@" || continue
     if [ -n "$(pid_on_port "$port")" ]; then echo "$name ya esta en el puerto $port"; continue; fi
     # `;` y no `&&`: con `cd && nohup ... &` toda la lista queda en un subshell que retiene la salida (y las tuberias).
-    (cd "$ROOT/$dir"; nohup bash -c "$command" >"$LOGS/$name.log" 2>&1 </dev/null &)
+    # Los servicios Spring (ms2/ms4) toman la base de DB_URL: si Postgres no esta en el 5432 (POSTGRES_PORT), se deriva de ese puerto.
+    db_url=""
+    case "$name" in ms2) db_url="ms2_pacientes" ;; ms4) db_url="ms4_historias" ;; esac
+    [ -n "$db_url" ] && [ -z "${DB_URL:-}" ] && db_url="jdbc:postgresql://${POSTGRES_HOST:-localhost}:${POSTGRES_PORT:-5432}/$db_url" || db_url="${DB_URL:-}"
+    (cd "$ROOT/$dir"; DB_URL="$db_url" nohup bash -c "$command" >"$LOGS/$name.log" 2>&1 </dev/null &)
   done
   for entry in "${SERVICES[@]}"; do
     IFS='|' read -r name port dir command health <<<"$entry"
