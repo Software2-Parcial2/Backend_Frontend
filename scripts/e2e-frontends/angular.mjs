@@ -425,9 +425,69 @@ async function historias() {
   }
 }
 
+async function estudios() {
+  seccion('Angular · Estudios (médico sube y valida)');
+  const PAC = 'a0000000-0000-4000-8000-000000000003';
+  const dr = await crearMedicoDePrueba();
+  const r = await abrirNavegador({ nombre: 'medico-estudios' });
+  let id;
+  try {
+    await r.ir(SHELL);
+    await r.login(dr.username, dr.clave);
+    await irA(r, '/estudios', 'Estudios radiológicos');
+    await r.esperar(`document.querySelectorAll('[data-testid=estudio]').length>=1`, 15000, 'bandeja');
+    comprobar('Estudios: la bandeja lista estudios reales', (await r.cuenta('[data-testid=estudio]')) >= 1);
+    await r.clic('.seg button', 'Validados');
+    await r.esperar(`(()=>{const c=[...document.querySelectorAll('[data-testid=estudio] .chip')];return c.length>0&&c.every(x=>x.innerText==='Informe validado')})()`, 10000, 'filtro validados');
+    comprobar('Estudios: el filtro «Validados» usa validacion=VALIDADO', true);
+    sinProblemas(r, 'Bandeja');
+
+    await irA(r, `/estudios/cargar?paciente=${PAC}`, 'Cargar radiografía');
+    await r.esperar(`!!document.querySelector('[data-testid=paciente-elegido]')`, 10000, 'paciente');
+    comprobar('Cargar: toma el paciente de la URL', (await r.texto('[data-testid=paciente-elegido]')).includes('Maria Elena'));
+    await r.adjuntarPng('[data-testid=archivo]', 'torax_e2e.png');
+    await r.esperar(`/^[0-9a-f]{64}$/.test(document.querySelector('[data-testid=huella]')?.innerText??'')`, 10000, 'huella SHA-256');
+    comprobar('Cargar: calcula la huella SHA-256 en el navegador', true);
+    await r.clic('[data-testid=subir]');
+    await r.esperar(`location.hash.includes('/resultado')`, 20000, 'resultado');
+    id = await r.ev(`new URLSearchParams(location.hash.split('?')[1]).get('id')`);
+    comprobar('Cargar: sube y abre el estudio', !!id);
+    // Un archivo que no es imagen se rechaza en el equipo, sin llegar al servidor.
+    await irA(r, '/estudios/cargar', 'Cargar radiografía');
+    await r.adjuntarPng('[data-testid=archivo]', 'cedula.pdf', 'application/pdf');
+    await r.esperar(`location.hash.includes('/estudios/rechazada')`, 10000, 'pantalla de rechazo');
+    comprobar('Cargar: un PDF se rechaza en el equipo con el motivo', (await r.texto('[data-testid=motivo]')).includes('Formato no admitido'));
+    sinProblemas(r, 'Carga', [409]);
+  } finally {
+    r.cerrar();
+  }
+  if (!id) { await borrarUsuarioKeycloak(dr.username); return; }
+
+  const m = await abrirNavegador({ nombre: 'medico-estudios-2' });
+  try {
+    await m.ir(SHELL);
+    await m.login(dr.username, dr.clave);
+    await irA(m, `/resultado?id=${id}`, 'Radiografía de tórax');
+    await m.esperar(`!!document.querySelector('[data-testid=prob]')`, 60000, 'analisis terminado');
+    comprobar('Resultado: muestra la clasificación del modelo', /\d+ %/.test(await m.texto('[data-testid=prob]')));
+    await m.esperar(`document.querySelector('[data-testid=img-original]')?.complete && document.querySelector('[data-testid=img-original]').naturalWidth>0`, 15000, 'imagen original por URL prefirmada');
+    comprobar('Resultado: la imagen carga desde la URL prefirmada', true);
+    await m.escribir('#inf', 'Sin hallazgos agudos (e2e).');
+    await m.clic('[data-testid=validar]');
+    await m.esperar(`location.hash.startsWith('#/estudios')`, 15000, 'volver a la bandeja');
+    const v = (await api('GET', `/api/imagenes/${id}`, await token(dr.username, dr.clave))).datos;
+    comprobar('Resultado: la validación queda firmada en MS5', v.validacion === 'VALIDADO' && v.informe?.texto === 'Sin hallazgos agudos (e2e).', JSON.stringify(v.informe));
+    sinProblemas(m, 'Validación');
+  } finally {
+    m.cerrar();
+    await borrarUsuarioKeycloak(dr.username);
+  }
+}
+
 export async function angular() {
   const solo = process.env.SOLO; // p. ej. SOLO=historias para correr un modulo
   if (!solo || solo === 'pacientes') await pacientes();
   if (!solo || solo === 'citas') await citas();
   if (!solo || solo === 'historias') await historias();
+  if (!solo || solo === 'estudios') await estudios();
 }

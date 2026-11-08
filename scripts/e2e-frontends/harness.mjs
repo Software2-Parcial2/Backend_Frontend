@@ -123,6 +123,8 @@ export async function abrirNavegador({ nombre = 'p', ancho = 1280, alto = 900, p
       await p.ev(`location.hash = ${JSON.stringify(h)}`);
       await dormir(200);
     },
+    /** Pone en un <input type=file> un PNG generado en el navegador (ruido unico por ejecucion, para no chocar con IMAGEN_DUPLICADA). `tipo` cambia el MIME. */
+    adjuntarPng: (sel, nombre = 'torax.png', tipo = 'image/png') => p.ev(`(async()=>{const c=document.createElement('canvas');c.width=64;c.height=64;const x=c.getContext('2d');for(let i=0;i<64;i++)for(let j=0;j<64;j++){const v=Math.floor(Math.random()*256);x.fillStyle='rgb('+v+','+v+','+v+')';x.fillRect(i,j,1,1)}const b=await new Promise(r=>c.toBlob(r,'image/png'));const f=new File([b],${JSON.stringify(nombre)},{type:${JSON.stringify(tipo)}});const dt=new DataTransfer();dt.items.add(f);const e=document.querySelector(${JSON.stringify(sel)});e.files=dt.files;e.dispatchEvent(new Event('change',{bubbles:true}));return true})()`),
     texto: (sel = 'body') => p.ev(`document.querySelector(${JSON.stringify(sel)})?.innerText ?? ''`),
     existe: (sel) => p.ev(`!!document.querySelector(${JSON.stringify(sel)})`),
     cuenta: (sel) => p.ev(`document.querySelectorAll(${JSON.stringify(sel)}).length`),

@@ -147,3 +147,20 @@ export const TIPOS_ANTECEDENTE: { valor: Antecedente['tipo']; texto: string }[] 
   { valor: 'QUIRURGICO', texto: 'Quirúrgico' }, { valor: 'MEDICACION', texto: 'Medicación' },
 ];
 export const textoAntecedente = (t: string): string => TIPOS_ANTECEDENTE.find((x) => x.valor === t)?.texto ?? t;
+
+// --- MS5: imagenes y estudios ---
+export interface Imagen {
+  id: string; pacienteId: string; estudio: string; estado: string; hashSha256: string; mime: string; bytes: number; origen?: string;
+  validacion: 'PENDIENTE' | 'VALIDADO' | 'DESCARTADO'; observaciones: string | null; pacienteNombre: string | null; numeroHistoria: string | null; tieneGradcam: boolean;
+  informe: { decision: string; texto: string; validadoPor: string; validadoEn: string; huella: string; versionModelo: string } | null;
+  resultado: { probabilidad_neumonia?: number; clase?: string; version_modelo?: string; modelo?: string; aviso?: string } | null;
+  error: string | null; aviso: string; creadaEn: string; actualizadaEn: string;
+}
+/** Estado de un estudio para la bandeja: texto, tono del chip y si tiene sentido abrirlo para validar. */
+export function estadoEstudio(i: Pick<Imagen, 'estado' | 'validacion'>): { texto: string; tono: string; revisar: boolean } {
+  if (i.validacion === 'VALIDADO') return { texto: 'Informe validado', tono: 'ok', revisar: false };
+  if (i.validacion === 'DESCARTADO') return { texto: 'Descartado', tono: '', revisar: false };
+  if (i.estado === 'ANALIZADA') return { texto: 'Resultado por validar', tono: 'warn', revisar: true };
+  if (/ERROR|FALL|RECHAZ|INVALID/.test(i.estado)) return { texto: 'Análisis fallido', tono: 'err', revisar: false };
+  return { texto: 'Procesando', tono: 'info', revisar: false };
+}
