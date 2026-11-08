@@ -31,6 +31,7 @@ if (['prod', 'production', 'produccion'].includes(entorno) || !local(pgHost) || 
 }
 
 const D = generar(new Date());
+const NUMERO_HC = new Map();
 const pgConfig = (database) => ({
   host: pgHost, port: Number(env('POSTGRES_PORT', env('POSTGRES_HOST_PORT', '5432'))), user: env('POSTGRES_USER', 'sigec'), password: env('POSTGRES_PASSWORD', ''), database,
 });
@@ -121,10 +122,12 @@ async function sembrar() {
          ON CONFLICT (id) DO UPDATE SET nombre = EXCLUDED.nombre, documento = EXCLUDED.documento, fecha_nacimiento = EXCLUDED.fecha_nacimiento, telefono = EXCLUDED.telefono, email = EXCLUDED.email, beca = EXCLUDED.beca, tipo_seguro = EXCLUDED.tipo_seguro`,
         [p.id, p.nombre, p.documento, p.nacimiento, p.telefono, p.email, p.beca, p.seguro],
       );
+    // El N.° de historia lo asigna MS2 (secuencia): MS4 y la proyeccion de MS3 usan ese mismo valor.
+    for (const r of (await c.query('SELECT id, numero_historia FROM pacientes WHERE id = ANY($1)', [PACIENTES.map((p) => p.id)])).rows) NUMERO_HC.set(r.id, r.numero_historia);
   });
 
   await conBase('ms4_historias', async (c) => {
-    for (const h of D.historias) await c.query('INSERT INTO historias_clinicas (id, paciente_id, numero_historia, paciente_nombre) VALUES ($1,$2,$3,$4) ON CONFLICT (id) DO UPDATE SET numero_historia = EXCLUDED.numero_historia, paciente_nombre = EXCLUDED.paciente_nombre', [h.id, h.pacienteId, h.numero, h.nombre]);
+    for (const h of D.historias) await c.query('INSERT INTO historias_clinicas (id, paciente_id, numero_historia, paciente_nombre) VALUES ($1,$2,$3,$4) ON CONFLICT (id) DO UPDATE SET numero_historia = EXCLUDED.numero_historia, paciente_nombre = EXCLUDED.paciente_nombre', [h.id, h.pacienteId, NUMERO_HC.get(h.pacienteId) ?? h.numero, h.nombre]);
     for (const k of D.consultas)
       await c.query('INSERT INTO consultas (id, historia_id, medico_id, cita_id, fecha, motivo, diagnostico, tratamiento, estado, firmada_en, firmada_por) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) ON CONFLICT (id) DO UPDATE SET estado = EXCLUDED.estado, firmada_en = EXCLUDED.firmada_en, firmada_por = EXCLUDED.firmada_por', [k.id, k.historiaId, k.medicoId, k.citaId, k.fecha, k.motivo, k.diagnostico, k.tratamiento, k.firmada ? 'FIRMADA' : 'BORRADOR', k.firmada ? k.fecha : null, k.firmada ? k.medicoId : null]);
     for (const a of D.antecedentes) await c.query('INSERT INTO antecedentes (id, historia_id, tipo, descripcion) VALUES ($1,$2,$3,$4) ON CONFLICT DO NOTHING', [a.id, a.historiaId, a.tipo, a.descripcion]);
@@ -152,7 +155,7 @@ async function sembrar() {
     const esp = ESPECIALIDADES.find((e) => e.codigo === m.esp);
     return put({ pk: `MEDICO#${m.id}`, sk: 'PERFIL', medicoId: m.id, nombre: m.nombre, especialidad: m.esp, especialidadNombre: esp.nombre, activo: true, usuarioKeycloak: m.usuario, ocurridoEn: 0, gsi4pk: 'MEDICO', gsi4sk: 0 });
   });
-  await lote(T.citas, PACIENTES, (p) => put({ pk: `PACIENTE#${p.id}`, sk: 'PERFIL', pacienteId: p.id, nombre: p.nombre, numeroHistoria: '', ocurridoEn: 0 }));
+  await lote(T.citas, PACIENTES, (p) => put({ pk: `PACIENTE#${p.id}`, sk: 'PERFIL', pacienteId: p.id, nombre: p.nombre, numeroHistoria: NUMERO_HC.get(p.id) ?? '', ocurridoEn: 0 }));
 
   await lote(T.notificaciones, D.contactos, (c) => put({ pk: `PACIENTE#${c.pacienteId}`, sk: 'CONTACTO', ...c }));
   await lote(T.notificaciones, D.notificaciones, (n) => {
