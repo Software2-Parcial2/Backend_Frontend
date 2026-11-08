@@ -13,6 +13,7 @@ try {
 const escenarios = {
   shell: () => import('./shell.mjs').then((m) => m.shell()),
   angular: () => import('./angular.mjs').then((m) => m.angular()),
+  pwa: () => import('./pwa.mjs').then((m) => m.pwa()),
   vue: () => import('./vue.mjs').then((m) => m.vue()),
 };
 const pedidos = process.argv.slice(2);

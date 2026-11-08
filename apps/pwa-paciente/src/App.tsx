@@ -7,13 +7,13 @@ import './portal.css'
 
 function Pantalla({ route, online }: { route: string; online: boolean }) {
   switch (route) {
-    case 'citas': return <Citas />
+    case 'citas': return <Citas online={online} />
     case 'solicitar': return <Solicitar online={online} />
-    case 'pendientes': return <Pendientes />
+    case 'pendientes': return <Pendientes online={online} />
     case 'confirmada': return <Confirmada />
-    case 'datos': return <Datos />
-    case 'estudios': return <Estudios />
-    case 'preferencias': return <Preferencias />
+    case 'datos': return <Datos online={online} />
+    case 'estudios': return <Estudios online={online} />
+    case 'preferencias': return <Preferencias online={online} />
     case 'instalar': return <Instalar />
     default: return <Inicio online={online} />
   }
