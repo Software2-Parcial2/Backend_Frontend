@@ -13,6 +13,7 @@ try {
 const escenarios = {
   shell: () => import('./shell.mjs').then((m) => m.shell()),
   angular: () => import('./angular.mjs').then((m) => m.angular()),
+  vue: () => import('./vue.mjs').then((m) => m.vue()),
 };
 const pedidos = process.argv.slice(2);
 const cuales = pedidos.length ? pedidos : Object.keys(escenarios);

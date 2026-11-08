@@ -26,3 +26,12 @@ export function rangoDias(dias: number, hoy = new Date()): { desde: string; hast
   const f = (d: Date) => d.toISOString().slice(0, 10)
   return { desde: f(new Date(hoy.getTime() - dias * 86_400_000)), hasta: f(new Date(hoy.getTime() + 30 * 86_400_000)) }
 }
+
+export const RIESGO_INASISTENCIA = gql`
+  query Riesgo($dias: Int!, $limite: Int!) {
+    riesgoInasistencia(dias: $dias, limite: $limite) {
+      citaId especialidad fechaHora
+      riesgo { probabilidad riesgo sintetico versionModelo }
+    }
+  }
+`

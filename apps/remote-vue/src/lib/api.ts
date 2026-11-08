@@ -1,4 +1,9 @@
 import { ApolloClient, HttpLink, InMemoryCache } from '@apollo/client'
+import { ApiError, crearCliente as crearClienteHttp, type ClienteApi, type Problema } from '@sigec/api-client'
+import type { MfeContext } from '@sigec/mfe-contract'
+
+export { ApiError }
+export type { ClienteApi }
 
 /** Base del gateway. Se puede cambiar al compilar con VITE_API_URL. */
 export const API_URL: string = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:8090'
@@ -17,18 +22,19 @@ export function crearCliente(token: ObtenerToken, baseUrl = API_URL): ApolloClie
   })
 }
 
-export class ApiError extends Error {
-  readonly estado: number
-  constructor(estado: number, mensaje: string) {
-    super(mensaje)
-    this.estado = estado
-  }
+/** Lee un `application/problem+json` (o un cuerpo de otro formato) y lo convierte en el ApiError comun. */
+async function leerError(res: Response): Promise<ApiError> {
+  const cuerpo = (await res.json().catch(() => ({}))) as Problema & { message?: string | string[] }
+  const msg = Array.isArray(cuerpo.message) ? cuerpo.message.join('; ') : cuerpo.message
+  return new ApiError(res.status, cuerpo, msg ?? `Error ${res.status}`)
 }
 
-async function leerError(res: Response): Promise<ApiError> {
-  const cuerpo = (await res.json().catch(() => ({}))) as { message?: string | string[] }
-  const msg = Array.isArray(cuerpo.message) ? cuerpo.message.join('; ') : cuerpo.message
-  return new ApiError(res.status, msg ?? `Error ${res.status}`)
+/** Cliente REST de la clinica: lee el token y la `apiUrl` del contexto del shell en cada peticion. */
+export function crearApi(contexto: () => MfeContext | undefined): ClienteApi {
+  return crearClienteHttp({
+    baseUrl: () => contexto()?.apiUrl ?? API_URL,
+    token: () => contexto()?.token,
+  })
 }
 
 export interface ReporteResultado {
