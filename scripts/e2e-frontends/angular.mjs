@@ -1,5 +1,5 @@
 // Escenarios del remoto Angular (clinica) dentro del shell: cada modulo con datos reales del gateway.
-import { abrirNavegador, api, comprobar, dormir, SHELL, seccion, token } from './harness.mjs';
+import { abrirNavegador, api, borrarUsuarioKeycloak, comprobar, crearMedicoDePrueba, dormir, SHELL, seccion, token } from './harness.mjs';
 
 const sinProblemas = (p, nombre, permitidos = []) => {
   const { consola, http } = p.problemas();
@@ -337,7 +337,97 @@ async function citas() {
 }
 const hDiaFuturo = (n) => new Date(Date.now() + n * 86_400_000).toISOString().slice(0, 10);
 
+
+async function historias() {
+  seccion('Angular · Historias clínicas (médico)');
+  const PAC = 'a0000000-0000-4000-8000-000000000001'; // alergia a la penicilina
+  const PAC2 = 'a0000000-0000-4000-8000-000000000004';
+  const dr = await crearMedicoDePrueba();
+  const tm = await token(dr.username, dr.clave);
+  const m = await abrirNavegador({ nombre: 'medico-historias' });
+  try {
+    await m.ir(SHELL);
+    await m.login(dr.username, dr.clave);
+    await irA(m, `/historia?paciente=${PAC}`, 'Historial de atención');
+    await m.esperar(`document.querySelectorAll('[data-testid=consulta]').length>=1`, 15000, 'consultas');
+    comprobar('Historia: muestra nombre y N.° de historia reales', (await m.texto()).includes('Carla Mendoza Rojas') && /HC-\d+/.test(await m.texto()));
+    comprobar('Historia: chip de alergia desde los antecedentes', (await m.texto('[data-testid=alergia]')).includes('penicilina'));
+    comprobar('Historia: lista consultas con su estado', (await m.cuenta('[data-testid=consulta]')) >= 1);
+    sinProblemas(m, 'Historia');
+
+    await irA(m, `/historia/detalle?paciente=${PAC}`, 'Indicaciones vigentes');
+    await m.esperar(`document.querySelectorAll('[data-testid=antecedente]').length>=1`, 15000, 'antecedentes');
+    const texto = `Antecedente e2e ${Date.now() % 100000}`;
+    await m.escribir('#ad', texto);
+    await m.clic('[data-testid=agregar-antecedente]');
+    await m.esperar(`document.body.innerText.includes(${JSON.stringify(texto)})`, 10000, 'antecedente nuevo');
+    comprobar('Detalle: agrega un antecedente', true);
+    await m.ev(`[...document.querySelectorAll('[data-testid=antecedente]')].find(x=>x.innerText.includes(${JSON.stringify(texto)})).querySelector('button').click()`);
+    await m.esperar(`!document.body.innerText.includes(${JSON.stringify(texto)})`, 10000, 'antecedente quitado');
+    comprobar('Detalle: da de baja el antecedente (If-Match)', true);
+    sinProblemas(m, 'Detalle');
+
+    // Nueva consulta -> guardar -> conflicto -> reaplicar -> firmar
+    await irA(m, `/consulta?paciente=${PAC2}`, 'Motivo de consulta');
+    await m.esperar(`!!document.querySelector('#mo') && document.body.innerText.includes('Consulta ·')`, 15000, 'formulario');
+    await m.escribir('#mo', 'Control e2e');
+    await m.escribir('#dx', 'Diagnóstico e2e');
+    await m.clic('[data-testid=agregar-fila]');
+    await m.esperar(`!!document.querySelector('[data-testid=fila-receta] input')`, 5000);
+    await m.escribir('[data-testid=fila-receta] input', 'Paracetamol');
+    await m.clic('[data-testid=guardar]');
+    await m.esperar(`location.hash.includes('id=')`, 15000, 'consulta creada');
+    const id = await m.ev(`new URLSearchParams(location.hash.split('?')[1]).get('id')`);
+    await m.esperar(`document.querySelector('[data-testid=version]')?.innerText==='v1' || document.querySelector('[data-testid=version]')?.innerText==='v0'`, 10000, 'version');
+    const c0 = (await api('GET', `/api/historias/consultas/${id}`, tm)).datos;
+    comprobar('Consulta: crea el borrador con diagnóstico y receta', c0.estado === 'BORRADOR' && c0.diagnostico === 'Diagnóstico e2e' && c0.receta?.[0]?.medicamento === 'Paracetamol', JSON.stringify(c0));
+
+    // Otro profesional (la API) modifica antes de que el médico guarde.
+    const otro = await api('PUT', `/api/historias/consultas/${id}`, tm, { motivo: 'Control e2e', diagnostico: 'Cambiado por otro', receta: [] }, { 'If-Match': String(c0.version) });
+    comprobar('Consulta: la edicion externa se acepta', otro.estado === 200, String(otro.estado));
+    await m.escribir('#tr', 'Mi tratamiento');
+    await m.clic('[data-testid=guardar]');
+    await m.esperar(`location.hash.includes('/consulta/conflicto')`, 15000, 'pantalla de conflicto');
+    await m.esperar(`!!document.querySelector('[data-testid=version-vigente]')`, 10000);
+    comprobar('Conflicto: 409 real con ambas versiones', (await m.texto('[data-testid=version-vigente]')).includes('v') && (await m.texto()).includes('Cambiado por otro') && (await m.texto()).includes('Mi tratamiento'));
+    await m.clic('[data-testid=reaplicar]');
+    await m.esperar(`document.body.innerText.includes('Sus cambios se reaplicaron')`, 15000, 'cambios reaplicados');
+    await m.escribir('#dx', 'Diagnóstico final e2e');
+    await m.clic('[data-testid=firmar]');
+    await m.esperar(`location.hash.startsWith('#/historia?') || location.hash.startsWith('#/historia?paciente')`, 15000, 'volver a la historia');
+    const c1 = (await api('GET', `/api/historias/consultas/${id}`, tm)).datos;
+    comprobar('Consulta: firmada con la versión reaplicada', c1.estado === 'FIRMADA' && c1.diagnostico === 'Diagnóstico final e2e' && c1.tratamiento === 'Mi tratamiento', JSON.stringify(c1));
+    sinProblemas(m, 'Consulta', [409]);
+
+    await irA(m, `/historia/receta?id=${id}`, 'Receta médica');
+    await m.esperar(`!!document.querySelector('[data-testid=receta-paciente]')`, 15000, 'receta');
+    comprobar('Receta: muestra paciente e indicaciones firmadas', (await m.texto('[data-testid=receta-paciente]')).includes('HC-') && (await m.texto('[data-testid=receta-items]')).includes('Paracetamol'));
+    sinProblemas(m, 'Receta');
+  } finally {
+    m.cerrar();
+    await borrarUsuarioKeycloak(dr.username);
+  }
+
+  seccion('Angular · Auditoría de historia (administrador)');
+  const a = await abrirNavegador({ nombre: 'admin-auditoria' });
+  try {
+    await a.ir(SHELL);
+    await a.login('administrador');
+    await irA(a, `/historia/auditoria?paciente=${PAC2}&h=b0000000-0000-4000-8000-000000000004`, 'Registro inmutable');
+    await a.esperar(`document.querySelectorAll('[data-testid=acceso]').length>=1`, 15000, 'accesos');
+    comprobar('Auditoría: lista accesos reales', (await a.cuenta('[data-testid=acceso]')) >= 1);
+    await a.clic('.seg button', 'Modificaciones');
+    await a.esperar(`(()=>{const c=[...document.querySelectorAll('[data-testid=acceso] .chip')];return c.length>0&&c.every(x=>x.innerText==='MODIFICAR')})()`, 10000, 'filtro');
+    comprobar('Auditoría: el filtro usa tipo=MODIFICAR', (await a.cuenta('[data-testid=acceso]')) >= 1);
+    sinProblemas(a, 'Auditoría');
+  } finally {
+    a.cerrar();
+  }
+}
+
 export async function angular() {
-  await pacientes();
-  await citas();
+  const solo = process.env.SOLO; // p. ej. SOLO=historias para correr un modulo
+  if (!solo || solo === 'pacientes') await pacientes();
+  if (!solo || solo === 'citas') await citas();
+  if (!solo || solo === 'historias') await historias();
 }

@@ -177,10 +177,10 @@ export async function token(usuario, clave = 'Sigec123!') {
 }
 
 /** Llamada al gateway con token y Idempotency-Key (para preparar o limpiar datos). */
-export async function api(metodo, ruta, tk, cuerpo) {
+export async function api(metodo, ruta, tk, cuerpo, cabeceras = {}) {
   const r = await fetch(`${GATEWAY}${ruta}`, {
     method: metodo,
-    headers: { Authorization: `Bearer ${tk}`, ...(cuerpo ? { 'Content-Type': 'application/json' } : {}), ...(metodo !== 'GET' ? { 'Idempotency-Key': crypto.randomUUID() } : {}) },
+    headers: { Authorization: `Bearer ${tk}`, ...(cuerpo ? { 'Content-Type': 'application/json' } : {}), ...(metodo !== 'GET' ? { 'Idempotency-Key': crypto.randomUUID() } : {}), ...cabeceras },
     body: cuerpo ? JSON.stringify(cuerpo) : undefined,
   });
   let datos = null;
@@ -196,4 +196,19 @@ export async function borrarUsuarioKeycloak(username) {
   const us = await (await fetch(`${KEYCLOAK}/admin/realms/sigec/users?username=${encodeURIComponent(username)}&exact=true`, { headers: { Authorization: `Bearer ${t}` } })).json();
   for (const u of us) await fetch(`${KEYCLOAK}/admin/realms/sigec/users/${u.id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${t}` } });
   return us.length;
+}
+
+/** Crea (via MS1) un usuario medico vinculado a un medico del catalogo, con contrasena definitiva. Devuelve {username, clave, medicoId}. */
+export async function crearMedicoDePrueba(medicoId = 'd0000000-0000-4000-8000-000000000001') {
+  const ta = await token('administrador');
+  const sufijo = crypto.randomUUID().slice(0, 8);
+  const username = `e2e.medico.${sufijo}`;
+  const clave = 'Definitiva12345!';
+  const r = await api('POST', '/api/identidad/usuarios', ta, { username, email: `e2e.${sufijo}@sigec.test`, nombre: 'E2E', apellido: 'Medico', roles: ['medico'], medicoId, especialidad: 'general', matricula: `E2E-${sufijo}` });
+  if (r.estado !== 201) throw new Error(`No se pudo crear el medico de prueba: ${r.estado} ${JSON.stringify(r.datos)}`);
+  const env = process.env;
+  const m = await fetch(`${KEYCLOAK}/realms/master/protocol/openid-connect/token`, { method: 'POST', body: new URLSearchParams({ grant_type: 'password', client_id: 'admin-cli', username: env.KEYCLOAK_ADMIN ?? 'admin', password: env.KEYCLOAK_ADMIN_PASSWORD ?? '' }) });
+  const t = (await m.json()).access_token;
+  await fetch(`${KEYCLOAK}/admin/realms/sigec/users/${r.datos.id}/reset-password`, { method: 'PUT', headers: { Authorization: `Bearer ${t}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'password', value: clave, temporary: false }) });
+  return { username, clave, medicoId };
 }

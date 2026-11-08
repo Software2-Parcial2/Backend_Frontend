@@ -128,3 +128,22 @@ export function chipPaso(estado: string): { texto: string; tono: string; punto: 
     default: return { texto: 'No ejecutado', tono: '', punto: 'mute' };
   }
 }
+
+// --- MS4: historias clinicas ---
+export interface HistoriaClinica { id: string; pacienteId: string; numeroHistoria: string | null; pacienteNombre: string | null; creada: string; version: number }
+export interface RecetaFila { medicamento: string; dosis?: string | null; frecuencia?: string | null; duracion?: string | null }
+export interface Consulta {
+  id: string; historiaId: string; medicoId: string; citaId: string | null; fecha: string; motivo: string; diagnostico: string | null; tratamiento: string | null;
+  indicaciones: string | null; signosVitales: Record<string, string> | null; receta: RecetaFila[]; estado: 'BORRADOR' | 'FIRMADA'; firmadaEn: string | null; version: number;
+}
+export interface Antecedente { id: string; historiaId: string; tipo: 'ALERGIA' | 'PERSONAL' | 'FAMILIAR' | 'QUIRURGICO' | 'MEDICACION'; descripcion: string; activo: boolean; creado: string; version: number }
+export interface EstudioHistoria { imagenId: string; pacienteId: string; medicoId: string | null; estudio: string; validacion: string; decision: string | null; validadoEn: string | null; versionModelo: string | null; huella: string | null }
+export interface Evolucion { id: string; consultaId: string; medicoId: string; fecha: string; nota: string }
+export interface RecetaImprimible { consultaId: string; fecha: string; firmadaEn: string; indicaciones: string | null; items: RecetaFila[]; medicoId: string; numeroHistoria: string | null; pacienteNombre: string | null }
+export interface AccesoAuditoria { id: number; accion: string; recurso: string; rol: string; usuarioId: string; historiaId: string; pacienteId: string; ocurridoEn: string }
+
+export const TIPOS_ANTECEDENTE: { valor: Antecedente['tipo']; texto: string }[] = [
+  { valor: 'ALERGIA', texto: 'Alergia' }, { valor: 'PERSONAL', texto: 'Personal' }, { valor: 'FAMILIAR', texto: 'Familiar' },
+  { valor: 'QUIRURGICO', texto: 'Quirúrgico' }, { valor: 'MEDICACION', texto: 'Medicación' },
+];
+export const textoAntecedente = (t: string): string => TIPOS_ANTECEDENTE.find((x) => x.valor === t)?.texto ?? t;
