@@ -34,6 +34,13 @@ Cubre MS2 pacientes, MS3 agenda/citas, MS4 historias, MS5 estudios, MS6 caja y M
 ## Reglas
 - Montaje: `mount.ts` llama a `Router.initialNavigation()` a mano (con `createApplication` + `createComponent` no hay bootstrap y el router no navegaba). El router de Angular solo reacciona a `popstate`: el shell emite `popstate` y `hashchange` al cambiar el fragmento.
 - El build de produccion no incrusta fuentes de Google (`optimization.fonts.inline=false`): fallaba sin red.
-- Datos de ejemplo del diseno; conectar a MS2/MS3/... despues (el token esta en `ContextStore`).
+- Todas las pantallas leen y escriben contra el gateway con `ApiService` (`@sigec/api-client`); el token y la `apiUrl` se leen del `ContextStore` en cada peticion. Ya no quedan datos de ejemplo.
 - Componentes standalone con plantilla en linea; `@` en plantillas se escribe `&#64;`; los `{`/`}` literales se evitan.
 - Acciones = `button`/`a` reales; tablas dentro de `.scroll`; ningun estado depende solo del color.
+
+## Datos reales: patrones comunes
+- **Estados de una lectura:** `recurso()`/`lista()` dan `cargando`, `error` y datos; la UI usa `<sigec-cargando>` (esqueleto), `<sigec-error>` (titulo claro, codigo de soporte = `correlationId`, boton Reintentar) y `<sigec-vacio>`. El 403 explica que el rol no incluye la operacion.
+- **Ids por query:** las rutas son estaticas y el id viaja en el hash (`#/cita?id=…`, `#/historia?paciente=…`, `#/resultado?id=…`). Si un mismo componente se reutiliza con otro id, reinicia su formulario y su clave de idempotencia (ver `cobro.ts`).
+- **Escrituras:** una `Idempotency-Key` por intencion (`nuevaIntencion()`), la misma al reintentar; ediciones con `If-Match` y el `409 VERSION_CONFLICTO` se muestra sin perder lo escrito (consulta → `#/consulta/conflicto`, plantillas → «Cargar la version vigente»).
+- **Cambios respecto al diseno por falta de endpoint o de rol:** la consulta no tiene «anamnesis» ni «CIE-10» separados (campos `motivo`, `diagnostico`, `tratamiento`, `indicaciones`, signos vitales y receta); la carga de estudios revisa formato/tamano y calcula el SHA-256 en el navegador, pero **no** corre el validador MobileNet local (la clasificacion de contenido la hace el servidor; pendiente); «Historial de envios» se consulta por paciente (MS8 lo exige) con KPIs globales del dia; las preferencias del personal son las 3 alertas internas reales; la bitacora de auditoria usa la accion real (`LEER/CREAR/MODIFICAR/EXPORTAR`) y el id de historia en la URL porque el administrador no puede leer la historia.
+- **Roles reales:** subir/validar estudios es de `medico` (y administrador/paciente para subir); cobrar y anular es de `caja`/`administrador`; el tarifario solo lo edita `administrador`.
