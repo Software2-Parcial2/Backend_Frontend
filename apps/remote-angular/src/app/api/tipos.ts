@@ -164,3 +164,20 @@ export function estadoEstudio(i: Pick<Imagen, 'estado' | 'validacion'>): { texto
   if (/ERROR|FALL|RECHAZ|INVALID/.test(i.estado)) return { texto: 'Análisis fallido', tono: 'err', revisar: false };
   return { texto: 'Procesando', tono: 'info', revisar: false };
 }
+
+// --- MS6: caja y tarifario ---
+export interface Balance { fecha: string; turno: string | null; moneda: string; totalCobrado: string; porMetodo: Record<'EFECTIVO' | 'TRANSFERENCIA' | 'POS', string>; cobros: number; anulaciones: number; pendiente: { monto: string; cargos: number } }
+export interface Movimiento { en: string; hora: string; comprobante: string | null; cargo: string; facturaId: string; paciente: { id: string; nombre: string | null }; metodo: string | null; monto: string; estado: string; motivo: string | null }
+export interface ComprobanteCaja { anulado: boolean; aviso: string; cajero: string; cambio: string; cargo: string; concepto: string; emitidoEn: string; facturaId: string; fechaCita: string | null; metodo: string; moneda: string; numero: string; paciente: { id?: string; nombre?: string | null }; recibido: string | null; referencia: string | null; total: string }
+export interface PagoRegistrado { comprobante: ComprobanteCaja; factura: Factura; pago: { id: string; metodo: string; monto: string; cambio: string; comprobante: string } }
+export const METODOS_PAGO: { v: 'EFECTIVO' | 'TRANSFERENCIA' | 'POS'; t: string }[] = [{ v: 'EFECTIVO', t: 'Efectivo' }, { v: 'TRANSFERENCIA', t: 'Transferencia interna' }, { v: 'POS', t: 'Terminal POS' }];
+export const textoMetodo = (m: string | null): string => METODOS_PAGO.find((x) => x.v === m)?.t ?? '—';
+export function estadoFactura(e: string): { texto: string; tono: string } {
+  switch (e) {
+    case 'PROVISIONAL': return { texto: 'Provisional', tono: 'warn' };
+    case 'CONFIRMADA': return { texto: 'Confirmado', tono: 'info' };
+    case 'PAGADA': return { texto: 'Pagado', tono: 'ok' };
+    case 'ANULADA': return { texto: 'Anulado', tono: 'err' };
+    default: return { texto: e, tono: '' };
+  }
+}

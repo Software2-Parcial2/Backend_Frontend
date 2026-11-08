@@ -484,10 +484,101 @@ async function estudios() {
   }
 }
 
+async function caja() {
+  seccion('Angular · Caja (cajero)');
+  const tc = await token('caja');
+  const c = await abrirNavegador({ nombre: 'caja' });
+  try {
+    await c.ir(SHELL);
+    await c.login('caja');
+    await irA(c, '/caja', 'Caja y cargos pendientes');
+    await c.esperar(`document.querySelectorAll('[data-testid=cargo]').length>=2`, 15000, 'cargos por cobrar');
+    const antes = (await api('GET', '/api/facturacion/balance', tc)).datos;
+    comprobar('Caja: KPIs reales del día', (await c.texto('[data-testid=kpi-cobrado]')).includes('Bs'));
+    const porCobrar = (await api('GET', '/api/facturacion/facturas?porCobrar=true&limite=5', tc)).datos.items;
+    const [a, b] = [porCobrar[0], porCobrar[1]];
+    // Cobro en efectivo con cambio
+    await irA(c, `/cobro?id=${a.id}`, 'Registrar cobro');
+    await c.esperar(`!!document.querySelector('#mo')`, 10000);
+    const bruto = parseFloat(a.monto);
+    await c.escribir('#mo', String(bruto + 20));
+    await c.esperar(`document.querySelector('[data-testid=cambio]')?.value==='20.00'`, 5000, 'cambio calculado');
+    comprobar('Cobro: calcula el cambio', true);
+    comprobar('Cobro: muestra la Idempotency-Key', /^[0-9a-f-]{36}$/.test(await c.texto('[data-testid=clave]')));
+    await c.clic('[data-testid=cobrar]');
+    await c.esperar(`!!document.querySelector('[data-testid=comprobante]')`, 15000, 'comprobante');
+    comprobar('Cobro: emite el comprobante interno', /CI-\d+/.test(await c.texto('[data-testid=comprobante]')));
+    const fa = (await api('GET', `/api/facturacion/facturas/${a.id}`, tc)).datos;
+    comprobar('Cobro: el cargo queda PAGADA en MS6', fa.estado === 'PAGADA', fa.estado);
+    // Transferencia exige referencia
+    await irA(c, `/cobro?id=${b.id}`, 'Registrar cobro');
+    await c.esperar(`!!document.querySelector('[data-metodo=TRANSFERENCIA]')`, 10000);
+    await c.clic('[data-metodo=TRANSFERENCIA]');
+    await c.esperar(`!!document.querySelector('#rf')`, 5000);
+    comprobar('Cobro: transferencia sin referencia no se puede enviar', await c.ev(`document.querySelector('[data-testid=cobrar]').disabled`));
+    await c.escribir('#rf', `E2E-${Date.now() % 100000}`);
+    await c.clic('[data-testid=cobrar]');
+    await c.esperar(`!!document.querySelector('[data-testid=comprobante]')`, 15000, 'comprobante transferencia');
+    comprobar('Cobro: transferencia con referencia registrada', true);
+    sinProblemas(c, 'Cobro');
+
+    // Movimientos y balance
+    await irA(c, '/movimientos', 'Movimientos y balance diario');
+    await c.esperar(`document.querySelectorAll('[data-testid=movimiento]').length>=2`, 15000, 'movimientos');
+    const despues = (await api('GET', '/api/facturacion/balance', tc)).datos;
+    comprobar('Movimientos: el balance sube con los dos cobros', parseFloat(despues.totalCobrado) - parseFloat(antes.totalCobrado) >= bruto + parseFloat(b.monto) - 0.001, `${antes.totalCobrado} -> ${despues.totalCobrado}`);
+    comprobar('Movimientos: muestra el total del día', (await c.texto('[data-testid=total]')).includes('Bs'));
+    await c.clic('.seg button', 'Anulaciones');
+    await c.esperar(`!document.querySelector('[data-testid=movimiento] a[href*="anular"]')`, 10000);
+    comprobar('Movimientos: el filtro «Anulaciones» no ofrece anular', true);
+    sinProblemas(c, 'Movimientos');
+
+    // Anular un cargo por cobrar
+    const [x] = (await api('GET', '/api/facturacion/facturas?porCobrar=true&limite=3', tc)).datos.items;
+    await irA(c, `/caja/anular?id=${x.id}`, 'Anular cargo');
+    await c.esperar(`!!document.querySelector('#m')`, 10000);
+    comprobar('Anular: sin motivo no se puede', await c.ev(`document.querySelector('[data-testid=anular]').disabled`));
+    await c.escribir('#m', 'Cita cancelada (e2e)');
+    await c.clic('[data-testid=anular]');
+    await c.esperar(`location.hash==='#/caja'`, 15000, 'volver a caja');
+    const fx = (await api('GET', `/api/facturacion/facturas/${x.id}`, tc)).datos;
+    comprobar('Anular: el cargo queda ANULADA con su motivo', fx.estado === 'ANULADA' && fx.motivoAnulacion === 'Cita cancelada (e2e)', JSON.stringify([fx.estado, fx.motivoAnulacion]));
+    sinProblemas(c, 'Anulación');
+  } finally {
+    c.cerrar();
+  }
+
+  seccion('Angular · Tarifario (administrador)');
+  const ta = await token('administrador');
+  const a = await abrirNavegador({ nombre: 'admin-tarifario' });
+  try {
+    await a.ir(SHELL);
+    await a.login('administrador');
+    await irA(a, '/tarifario', 'Tarifario');
+    await a.esperar(`document.querySelectorAll('[data-testid=tarifa]').length>=4`, 15000, 'tarifas');
+    comprobar('Tarifario: lista las tarifas vigentes', (await a.cuenta('[data-testid=tarifa]')) >= 4);
+    const FECHA = '2030-01-01';
+    const existente = (await api('GET', '/api/facturacion/tarifas?especialidad=general', ta)).datos.items.find((t) => t.vigenteDesde === FECHA);
+    const monto = String(200 + (Date.now() % 50));
+    await irA(a, existente ? `/tarifario/nueva?id=${existente.id}` : '/tarifario/nueva', existente ? 'Editar tarifa' : 'Nueva tarifa');
+    await a.esperar(`document.querySelectorAll('#s option').length>=2`, 10000, 'especialidades');
+    if (!existente) { await a.escribir('#s', 'general'); await a.escribir('#v', FECHA); }
+    await a.escribir('#t', monto);
+    await a.clic('[data-testid=guardar-tarifa]');
+    await a.esperar(`location.hash.startsWith('#/tarifario') && !location.hash.includes('nueva')`, 15000, 'volver al tarifario');
+    const t = (await api('GET', '/api/facturacion/tarifas?especialidad=general', ta)).datos.items.find((x) => x.vigenteDesde === FECHA);
+    comprobar('Tarifario: guarda la tarifa programada en MS6', t && parseFloat(t.monto) === parseFloat(monto) && t.estado === 'PROGRAMADA', JSON.stringify(t));
+    sinProblemas(a, 'Tarifario');
+  } finally {
+    a.cerrar();
+  }
+}
+
 export async function angular() {
   const solo = process.env.SOLO; // p. ej. SOLO=historias para correr un modulo
   if (!solo || solo === 'pacientes') await pacientes();
   if (!solo || solo === 'citas') await citas();
   if (!solo || solo === 'historias') await historias();
   if (!solo || solo === 'estudios') await estudios();
+  if (!solo || solo === 'caja') await caja();
 }

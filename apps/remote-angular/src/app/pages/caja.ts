@@ -1,44 +1,68 @@
-import { Component } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { Cargando, ErrorApi, Vacio } from '../api/estado';
+import { FORMATOS } from '../api/formato';
+import { conRetraso, lista, recurso } from '../api/recurso';
+import { estadoFactura, nombreEspecialidad, type Balance, type Factura } from '../api/tipos';
+import { ContextStore } from '../context';
+
+const FILTROS = [{ t: 'Por cobrar', v: 'cobrar' }, { t: 'Pagados', v: 'PAGADA' }, { t: 'Anulados', v: 'ANULADA' }];
 
 @Component({
   selector: 'app-caja',
+  imports: [Cargando, ErrorApi, Vacio, FormsModule, ...FORMATOS],
   template: `
 <div class="page">
-  <div class="ph"><div><h1 class="h1">Caja y cargos pendientes</h1><p class="sub">Toda cita confirmada genera un cargo según la tarifa de su especialidad</p></div><span class="sp"></span><a class="btn" href="#/movimientos">Movimientos y balance</a></div>
+  <div class="ph"><div><h1 class="h1">Caja y cargos pendientes</h1><p class="sub">Toda cita confirmada genera un cargo según la tarifa de su especialidad</p></div><span class="sp"></span>@if (esCaja()) {<a class="btn" href="#/movimientos">Movimientos y balance</a>}</div>
+  @if (balance.datos(); as b) {
   <div class="g3">
-    <div class="card kpi"><span class="v">Bs 1.440</span><span class="l">Cobrado hoy</span></div>
-    <div class="card kpi"><span class="v">Bs 600</span><span class="l">Pendiente de cobro</span></div>
-    <div class="card kpi"><span class="v">4</span><span class="l">Cargos por cobrar</span></div>
+    <div class="card kpi"><span class="v" data-testid="kpi-cobrado">{{ b.totalCobrado | dinero: b.moneda : true }}</span><span class="l">Cobrado hoy</span></div>
+    <div class="card kpi"><span class="v">{{ b.pendiente.monto | dinero: b.moneda : true }}</span><span class="l">Pendiente de cobro</span></div>
+    <div class="card kpi"><span class="v">{{ b.pendiente.cargos }}</span><span class="l">Cargos por cobrar</span></div>
   </div>
+  }
   <div class="fx wrap">
-    <label class="search"><span class="muted">Buscar</span><input type="text" placeholder="Paciente o N.° de cargo" aria-label="Buscar cargo"></label>
-    <div class="seg"><button type="button" class="on">Por cobrar</button><button type="button">Pagados</button><button type="button">Anulados</button></div>
+    <label class="search"><span class="muted">Buscar</span><input type="text" placeholder="Paciente o N.° de cargo" aria-label="Buscar cargo" [ngModel]="q()" (ngModelChange)="q.set($event)"></label>
+    <div class="seg">@for (f of filtros; track f.v) {<button type="button" [class.on]="filtro() === f.v" (click)="filtro.set(f.v)">{{ f.t }}</button>}</div>
   </div>
-  <div class="card flush">
-    <div class="scroll">
-      <table class="tbl">
-        <thead><tr><th>Cargo</th><th>Paciente</th><th>Concepto</th><th>Fecha de cita</th><th>Monto</th><th>Estado</th><th></th></tr></thead>
-        <tbody>
-          @for (c of filas; track c.id) {
-            <tr [class.sel]="c.sel">
-              <td class="mono">{{ c.id }}</td><td class="b">{{ c.paciente }}</td><td>{{ c.concepto }}</td><td>{{ c.fecha }}</td><td class="b">{{ c.monto }}</td>
-              <td><span [class]="'chip ' + c.tono">{{ c.estado }}</span></td>
-              <td class="tr">@if (c.pagado) {<a class="btn s" href="#/movimientos">Comprobante</a>} @else {<a class="btn s pri" href="#/cobro">Cobrar</a>}</td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </div>
-  </div>
+  @if (cargos.error(); as e) { <sigec-error [error]="e" (reintentar)="cargos.recargar()" /> }
+  @else if (cargos.cargando()) { <sigec-cargando [filas]="4" etiqueta="Cargando cargos…" /> }
+  @else if (!cargos.items().length) { <sigec-vacio texto="No hay cargos para este filtro." /> }
+  @else {
+  <div class="card flush"><div class="scroll"><table class="tbl">
+    <thead><tr><th>Cargo</th><th>Paciente</th><th>Concepto</th><th>Fecha de cita</th><th>Monto</th><th>Estado</th><th></th></tr></thead>
+    <tbody>
+      @for (c of cargos.items(); track c.id) {
+        <tr data-testid="cargo">
+          <td class="mono">{{ c.numeroCargo }}</td><td class="b">{{ c.pacienteNombre ?? 'Paciente' }}</td><td>{{ esp(c.especialidad) }}</td>
+          <td>{{ c.fechaCita ? (c.fechaCita | fecha) + ' ' + (c.fechaCita | hora) : '—' }}</td><td class="b">{{ c.monto | dinero: c.moneda : true }}</td>
+          <td><span [class]="'chip ' + est(c.estado).tono">{{ est(c.estado).texto }}</span></td>
+          <td class="tr">
+            @if (c.estado === 'PAGADA') { <a class="btn s" [attr.href]="'#/cobro?id=' + c.id">Comprobante</a> }
+            @else if (c.estado !== 'ANULADA' && esCaja()) { <a class="btn s pri" [attr.href]="'#/cobro?id=' + c.id">Cobrar</a> }
+            @else { <span class="muted">—</span> }
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table></div></div>
+  @if (cargos.hayMas()) { <button type="button" class="btn" [disabled]="cargos.cargandoMas()" (click)="cargos.cargarMas()">Cargar más</button> }
+  }
   <div class="sm muted">Un cargo provisional pasa a confirmado cuando la SAGA confirma la cita, y se anula si la cita se cancela o la reserva no se completa.</div>
 </div>`,
 })
 export class Caja {
-  readonly filas = [
-    { id: 'CG-20261103-0412', paciente: 'Carla Rojas Vaca', concepto: 'Cardiología', fecha: '03 nov 10:00', monto: 'Bs 180', estado: 'Provisional', tono: 'warn', pagado: false, sel: true },
-    { id: 'CG-20261103-0409', paciente: 'Wilma Justiniano', concepto: 'Neumología', fecha: '03 nov 10:00', monto: 'Bs 160', estado: 'Provisional', tono: 'warn', pagado: false, sel: false },
-    { id: 'CG-20261103-0405', paciente: 'Teresa Mendoza', concepto: 'Medicina general', fecha: '03 nov 10:30', monto: 'Bs 120', estado: 'Confirmado', tono: 'info', pagado: false, sel: false },
-    { id: 'CG-20261103-0401', paciente: 'Valentina Roca', concepto: 'Pediatría', fecha: '03 nov 10:30', monto: 'Bs 140', estado: 'Confirmado', tono: 'info', pagado: false, sel: false },
-    { id: 'CG-20261103-0388', paciente: 'Mario Vargas', concepto: 'Cardiología', fecha: '03 nov 08:00', monto: 'Bs 180', estado: 'Pagado', tono: 'ok', pagado: true, sel: false },
-  ];
+  private readonly ctx = inject(ContextStore);
+  readonly filtros = FILTROS;
+  readonly q = signal('');
+  readonly filtro = signal('cobrar');
+  private readonly qRetraso = conRetraso(this.q);
+  readonly esCaja = computed(() => (this.ctx.ctx()?.roles ?? []).some((r) => r === 'caja' || r === 'administrador'));
+  readonly balance = recurso<Balance | undefined>((api, signal) => (this.esCaja() ? api.get<Balance>('/api/facturacion/balance', { signal }).catch(() => undefined) : null));
+  readonly cargos = lista<Factura>(() => ({
+    ruta: '/api/facturacion/facturas',
+    query: { porCobrar: this.filtro() === 'cobrar' ? true : undefined, estado: this.filtro() !== 'cobrar' ? this.filtro() : undefined, q: this.qRetraso().trim() || undefined },
+  }), 25);
+  est = estadoFactura;
+  esp = nombreEspecialidad;
 }
