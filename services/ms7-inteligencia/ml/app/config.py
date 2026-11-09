@@ -2,7 +2,8 @@ from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-RAIZ = Path(__file__).resolve().parents[4]  # raiz del monorepo (en Docker se sobreescribe por entorno)
+_P = Path(__file__).resolve().parents
+RAIZ = _P[4] if len(_P) > 4 else Path("/")  # raiz del monorepo (en Docker se sobreescribe por entorno)
 
 AVISO = (
     "Prediccion estadistica de apoyo a la gestion (no clinica). Se calcula solo con atributos administrativos "

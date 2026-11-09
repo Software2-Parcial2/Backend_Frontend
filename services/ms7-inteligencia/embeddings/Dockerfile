@@ -1,6 +1,6 @@
 # MS7 embeddings (FastAPI + sentence-transformers, CPU). Construccion desde la RAIZ del repo:
 #   docker compose --profile ml build ms7-embeddings
-FROM python:3.11-slim
+FROM python:3.13-slim
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 HF_HOME=/models/hf
 WORKDIR /srv
 COPY services/ms7-inteligencia/embeddings/requirements.txt ./requirements.txt

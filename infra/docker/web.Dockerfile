@@ -10,7 +10,8 @@ ARG OUT_DIR=dist
 COPY . .
 RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile --config.strict-dep-builds=false --filter "${APP_PKG}..." \
- && pnpm --filter "${APP_PKG}" build \
+ && pnpm --filter @sigec/api-client build \
+ && pnpm --filter "${APP_PKG}" --config.enable-pre-post-scripts=false build \
  && mkdir /out && cp -r "${APP_DIR}/${OUT_DIR}/." /out/
 
 FROM nginx:1.27-alpine

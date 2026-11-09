@@ -24,7 +24,35 @@ La primera construcción tarda (Maven, pnpm, Composer, TensorFlow). Los modelos 
 
 Guía completa (crear usuarios, tiempos, operación diaria, problemas conocidos): [`docs/docker.md`](docs/docker.md). Tras la primera vez, `make up-core` basta para volver a levantar todo.
 
-**Una vez arriba**, abre <http://localhost:5173> (shell). Usuarios de prueba (uno por rol: `administrador`, `medico`, `recepcion`, `caja`, `paciente`), contraseña `Sigec123!`.
+**Una vez arriba**, abre <http://localhost:5173> (shell). Inicia sesión con el **nombre de usuario** (no con el correo). Usuarios de prueba del realm `sigec` (solo para desarrollo):
+
+| Usuario | Contraseña | Rol | Correo |
+|---|---|---|---|
+| `administrador` | `Sigec123!` | administrador | administrador@sigec.test |
+| `medico` | `Sigec123!` | medico | medico@sigec.test |
+| `recepcion` | `Sigec123!` | recepcion | recepcion@sigec.test |
+| `caja` | `Sigec123!` | caja | caja@sigec.test |
+| `paciente` | `Sigec123!` | paciente | paciente@sigec.test |
+
+Para crear más usuarios, mira `docs/docker.md`.
+
+### Dónde entra cada quien (URLs)
+
+| URL | A dónde lleva | Para qué / quién |
+|---|---|---|
+| <http://localhost:5173> | Shell (login con Keycloak y menú por rol) | **Personal de SIGEC**: `administrador`, `medico`, `recepcion`, `caja` |
+| <http://localhost:5173/gestion> | Dashboard de inteligencia (ML, asistente de reportes, alertas, políticas) | `administrador`; se abre dentro del shell |
+| <http://localhost:5173/admin/usuarios> | Usuarios y roles | `administrador` |
+| <http://localhost:5173/clinica> | Pantallas clínicas (pacientes, agenda, historias, caja, tarifario…) | Según el rol; se abre desde el menú del shell |
+| <http://localhost:5174> | PWA del paciente (inicio, citas, solicitar cita, estudios); instalable | **Pacientes**: usuario `paciente` |
+| <http://localhost:8080> | Keycloak (consola de administración y login) | Administrar realm, usuarios y roles (`KEYCLOAK_ADMIN` del `.env`) |
+| <http://localhost:8080/realms/sigec/account> | Cuenta del usuario en Keycloak | Opcional; no hace falta para usar SIGEC |
+| <http://localhost:8090> | Gateway (API, exige token; sin él responde 401) | Lo usan los frontends; no se abre a mano |
+| <http://localhost:5175> / <http://localhost:4201> | Remotos Vue (dashboard) y Angular (clínica) | Los carga el shell; no se abren directamente |
+| <http://localhost:15672> | Consola de RabbitMQ | Ver colas y eventos (desarrollo) |
+| <http://localhost:5678> | n8n | Flujos de notificaciones (correo/Telegram) |
+
+La app móvil (`apps/mobile`) no tiene URL: corre en un emulador o dispositivo.
 Los workflows de n8n se importan con `make n8n-import` (una vez, tras el primer arranque).
 
 > Si el 5432, 27017 o 8000 están ocupados por otros proyectos, define `POSTGRES_HOST_PORT`, `MONGO_HOST_PORT` o `DYNAMODB_HOST_PORT` en `.env`.

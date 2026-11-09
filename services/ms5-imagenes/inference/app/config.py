@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     rabbitmq_host: str = "localhost"
     rabbitmq_port: int = 5672
     rabbitmq_url: str | None = None
-    topology_file: Path = Path(__file__).resolve().parents[4] / "contracts" / "events" / "topology.json"
+    topology_file: Path = (Path(__file__).resolve().parents[4] if len(Path(__file__).resolve().parents) > 4 else Path("/")) / "contracts" / "events" / "topology.json"
     enable_consumer: bool = True
     consumer_prefetch: int = 2
     queue_name: str = "ms5.inferencia.comandos"

@@ -13,9 +13,9 @@ ENV NODE_ENV=development
 
 COPY . .
 RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
-    pnpm install --frozen-lockfile --filter "${SERVICE_PKG}..." \
+    pnpm install --frozen-lockfile --config.strict-dep-builds=false --filter "${SERVICE_PKG}..." \
  && pnpm --filter "${SERVICE_PKG}^..." build \
- && pnpm install --offline --frozen-lockfile --filter "${SERVICE_PKG}..." \
+ && pnpm install --offline --frozen-lockfile --config.strict-dep-builds=false --filter "${SERVICE_PKG}..." \
  && pnpm --filter "${SERVICE_PKG}" exec nest build
 
 ENV NODE_ENV=production
