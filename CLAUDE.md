@@ -35,7 +35,7 @@ Los problemas y limites conocidos por bloque estan en `docs/PENDIENTES.md`. Este
 | **Diseno** | Diseno visual trasladado a los frontends: `packages/design-tokens`, `design.md` por app, pantallas clave con datos de ejemplo | Hecho: todas las pantallas del diseno; shell+remotos verificados en Chromium con Keycloak; PWA/movil solo compilados (ver `docs/PENDIENTES.md`) |
 | **Backend limpio** | Plan de 10 fases (docs/api.md): convenciones comunes (problem+json, cursor, camelCase, OpenAPI + api-types), MS2 catalogo y edicion, MS3 cancelar/reprogramar/horarios/asistencia, MS6 pagos y caja, MS4 historias clinicas, MS5 validacion de estudios, MS8 historial/plantillas, MS7 alertas, nuevo `ms1-identidad` | Hecho; **`scripts/e2e-flujos.sh` 88/88**; ver `docs/PENDIENTES.md` (Fases 0-9). |
 | **L5** | MS7: voz (Whisper), dashboard Vue, `scripts/e2e-ms7.sh` | Hecho; **E2E 37/37 en stack real** (ver `docs/inteligencia.md`) |
-| **Frontends conectados** | `packages/api-client` + `apiUrl` en `mount()`; shell, remoto Angular (todas las pantallas), remoto Vue, PWA en linea y sin conexion (cola con `Idempotency-Key`), app movil | Hecho; **`node scripts/e2e-frontends/index.mjs` = 199/199** en navegador real y `e2e-flujos.sh` 88/88; **la app movil solo esta compilada (`tsc`, `expo export`), sin probar en dispositivo**. Ver `docs/frontends-conexion.md` y `docs/PENDIENTES.md` |
+| **Frontends conectados** | `packages/api-client` + `apiUrl` en `mount()`; shell, remoto Angular (todas las pantallas), remoto Vue, PWA en linea y sin conexion (cola con `Idempotency-Key`), app movil (Flutter, `apps/mobile_flutter`) | Hecho; **`node scripts/e2e-frontends/index.mjs` = 199/199** en navegador real y `e2e-flujos.sh` 88/88; **la app movil Flutter** (port de la RN: 9 pantallas, login OIDC, cache SQLite y cola offline) tiene `flutter analyze` limpio, 29 pruebas, APK debug compilado y el login de Keycloak abre en un telefono real; **falta recorrer el flujo completo en dispositivo**. `apps/mobile` (RN) queda hasta confirmarlo. Ver `docs/frontends-conexion.md` y `docs/PENDIENTES.md` |
 
 ## Donde estamos
 
@@ -44,7 +44,7 @@ Bloques 0-L, el backend limpio y la conexion de los frontends terminados en el r
 2. Entrenar los modelos reales: `ml/pneumonia/train.py` y `ml/no-show/train.py` (ambos piden `~/.kaggle/kaggle.json`; los modelos actuales son sinteticos / `stub-no-clinico`; las importancias del Random Forest llegan `null`).
 3. Probar Gemini y Claude reales (`GEMINI_API_KEY` / `ANTHROPIC_API_KEY`, `LLM_PROVIDER`) y el microfono real en el navegador.
 4. Mailtrap y Telegram reales (bloque J).
-5. **App movil** en emulador/dispositivo: `expo prebuild --clean`, login nativo contra Keycloak (`10.0.2.2`), SQLite, SecureStore; subir estudios (falta `expo-image-picker` y el validador TFLite).
+5. **App movil Flutter** en emulador/dispositivo: recorrer login → citas → solicitar sin red → avisos → perfil (ver `docs/tu-parte.md` §6); subir estudios (falta selector de imagen y validador TFLite). Tras confirmarlo, borrar `apps/mobile` (React Native).
 
 ## Al actualizar el repo (backend)
 

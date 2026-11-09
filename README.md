@@ -52,13 +52,13 @@ Para crear más usuarios, mira `docs/docker.md`.
 | <http://localhost:15672> | Consola de RabbitMQ | Ver colas y eventos (desarrollo) |
 | <http://localhost:5678> | n8n | Flujos de notificaciones (correo/Telegram) |
 
-La app móvil (`apps/mobile`) no tiene URL: corre en un emulador o dispositivo.
+La app móvil (`apps/mobile_flutter`) no tiene URL: corre en un emulador o dispositivo.
 Los workflows de n8n se importan con `make n8n-import` (una vez, tras el primer arranque).
 
 > Si el 5432, 27017 o 8000 están ocupados por otros proyectos, define `POSTGRES_HOST_PORT`, `MONGO_HOST_PORT` o `DYNAMODB_HOST_PORT` en `.env`.
 > Dentro de la red de Docker los servicios siempre usan los puertos normales.
 >
-> Lo que **no** está en Docker: la app móvil (Expo, se ejecuta en un dispositivo/emulador) y la Lambda `lambda-outbox` en AWS (aquí la reemplaza el contenedor `outbox-poller`).
+> Lo que **no** está en Docker: la app móvil (Flutter, se ejecuta en un dispositivo/emulador) y la Lambda `lambda-outbox` en AWS (aquí la reemplaza el contenedor `outbox-poller`).
 > Sin claves de Gemini/Claude, MS7 usa `LLM_PROVIDER=simulated`; sin Mailtrap/Telegram las notificaciones reales no funcionan (ver `docs/PENDIENTES.md`). **Lo que tienes que hacer tú (claves, bot de Telegram, Kaggle, móvil): [`docs/tu-parte.md`](docs/tu-parte.md).**
 
 ## Mapa de servicios y bases de datos
@@ -100,7 +100,7 @@ Detalle completo, diagramas ER y patrones de acceso en [`docs/datos/`](docs/dato
 | `apps/remote-vue` | 5175 | Vue + Vite | Remoto: dashboard de inteligencia (GraphQL, gráficos, voz) |
 | `apps/remote-angular` | 4201 | Angular (Module Federation 2 con Vite) | Remoto Angular (esqueleto) |
 | `apps/pwa-paciente` | 5174 | React + Vite PWA | Portal del paciente, instalable (sin lógica offline de datos aún) |
-| `apps/mobile` | — | React Native (Expo) | App móvil (esqueleto; se ejecuta en dispositivo) |
+| `apps/mobile_flutter` | — | Flutter (Riverpod + go_router) | App móvil del paciente (se ejecuta en dispositivo/emulador) |
 
 ## Cómo se comunican
 

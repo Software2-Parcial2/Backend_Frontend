@@ -58,7 +58,7 @@ Medidos en esta máquina durante el desarrollo (la red hacia el registro de npm 
 
 `make up-all` añade `ms7-ml`, `ms7-embeddings`, `ms7-whisper` (perfil `ml`) y `ms5-inference` (perfil `inferencia`).
 Sin ellos, MS7 no tiene RAG, voz ni predicción de inasistencia, y MS5 no analiza radiografías.
-La app móvil (Expo) no corre en Docker.
+La app móvil (Flutter) no corre en Docker.
 
 ## Usuarios y cómo crear uno para verificar
 

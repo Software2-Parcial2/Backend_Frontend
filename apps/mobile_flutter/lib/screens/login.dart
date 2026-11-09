@@ -13,9 +13,9 @@ class LoginScreen extends ConsumerWidget {
     final s = ref.watch(sesionProvider);
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
-      child: Container(
-        color: Col.side,
-        child: SafeArea(
+      child: Scaffold(
+        backgroundColor: Col.side,
+        body: SafeArea(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(28, 28, 28, 28),
             child: Column(mainAxisAlignment: MainAxisAlignment.spaceBetween, crossAxisAlignment: CrossAxisAlignment.start, children: [

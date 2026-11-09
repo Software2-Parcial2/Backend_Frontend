@@ -81,7 +81,7 @@ Detalle de estados, tiempos y compensaciones: `docs/saga-citas.md`.
 
 ## Qué pantalla usa qué endpoint
 
-Cliente comun: `packages/api-client` (token del contexto en cada peticion, `Idempotency-Key`, `If-Match`, problem+json, cursor). Los frontends lo reciben configurado: `apiUrl` en `mount()` (shell → remotos), `VITE_API_URL` (PWA y Vue independiente), `EXPO_PUBLIC_API_URL` (movil).
+Cliente comun: `packages/api-client` (token del contexto en cada peticion, `Idempotency-Key`, `If-Match`, problem+json, cursor). Los frontends lo reciben configurado: `apiUrl` en `mount()` (shell → remotos), `VITE_API_URL` (PWA y Vue independiente), `--dart-define=API_URL` (movil Flutter).
 
 | App / pantalla | Endpoints |
 |---|---|

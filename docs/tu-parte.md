@@ -179,11 +179,14 @@ Para el validador local de la PWA/móvil: `ml/pneumonia/convertir.py` (genera TF
 
 ## 6. App móvil (opcional, es lo único sin probar en dispositivo)
 
-1. Instala Android Studio (emulador) o conecta un teléfono con depuración USB.
-2. `cd apps/mobile && npx expo prebuild --clean` (regenera `android/` y aplica el plugin `plugins/con-app-auth.js`).
-3. En `apps/mobile/.env` o al arrancar: `EXPO_PUBLIC_API_URL=http://10.0.2.2:8090` y `EXPO_PUBLIC_KEYCLOAK_URL=http://10.0.2.2:8080`
-   (`10.0.2.2` es el “localhost” del emulador; en un teléfono real usa la IP de tu PC).
-4. `npx expo run:android`. Entra con `paciente` / `Sigec123!`.
+1. Instala Android Studio (emulador) o conecta un teléfono con depuración USB (acepta el diálogo en el teléfono).
+2. `cd apps/mobile_flutter && flutter pub get`.
+3. Emulador: `flutter run --dart-define=API_URL=http://10.0.2.2:8090 --dart-define=KEYCLOAK_URL=http://10.0.2.2:8080`
+   (`10.0.2.2` es el “localhost” del emulador).
+   Teléfono por USB: `adb reverse tcp:8080 tcp:8080 && adb reverse tcp:8090 tcp:8090` y
+   `flutter run --dart-define=API_URL=http://localhost:8090 --dart-define=KEYCLOAK_URL=http://localhost:8080`
+   (así el *issuer* que ve el teléfono es el mismo `localhost` que ven los servicios).
+4. Entra con `paciente` / `Sigec123!`.
 5. Prueba: ver citas, solicitar una cita **con el modo avión activado** (queda “Pendiente”), desactivarlo y ver que se confirma.
 
 Si el login falla, lo más probable es que el *issuer* de Keycloak que ve el emulador (`10.0.2.2`) no coincida con el que ven los servicios: dímelo y lo ajusto.

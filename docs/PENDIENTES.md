@@ -14,7 +14,7 @@ Cada entrada indica bloque, comando, error y que se probo.
 
 - **`pnpm lint` en `apps/pwa-paciente` falla** (ya fallaba antes de este bloque): `typescript-eslint does not support TS 7.0`.
   El proyecto usa `typescript ~7.0.2`. Opciones: fijar `typescript` a 6.x en esa app o esperar soporte de typescript-eslint para TS 7.x.
-- **`apps/mobile`**: `app.json` ya tiene `scheme: sigec` y `com.sigec.mobile`, pero las carpetas generadas `ios/` y `android/`
+- **`apps/mobile` (React Native, sustituida por `apps/mobile_flutter`)**: `app.json` ya tiene `scheme: sigec` y `com.sigec.mobile`, pero las carpetas generadas `ios/` y `android/`
   (ignoradas por Git) conservan `com.anonymous.mobile`. Hay que regenerarlas con `npx expo prebuild --clean` antes de compilar. No se compilo el movil.
 - **Verificacion en navegador**: se hizo con Firefox 159 (headless, via puppeteer-core/WebDriver BiDi). No se probo en Chrome/Edge/Safari.
   (Historico: el remoto Angular usaba Native Federation con import maps; ya no, ver «Remoto Angular en Module Federation 2» al final.)
@@ -268,7 +268,7 @@ Barrido final: `node scripts/e2e-frontends/index.mjs` = **199/199** (Chromium po
 - Angular `Estudios`: subir exige rol `medico`/`administrador`/`paciente` (la recepcion no puede, como define MS5); la carga no corre el validador MobileNet local (el servidor clasifica); no hay ruta de «imagen rechazada» por contenido (solo por formato/tamano).
 - Angular `Historial de envios`: MS8 lo consulta por paciente; los KPIs son del dia en toda la clinica. `Consulta`: sin «anamnesis» ni «CIE-10» como campos propios.
 - PWA: sin validador TFLite/TF.js local; el ultimo `beforeinstallprompt` no se maneja; fuentes de Google (ver mas arriba).
-- Movil: **no se probo en dispositivo ni emulador** (solo `tsc` y `expo export`). Falta: `expo prebuild --clean` (el plugin `plugins/con-app-auth.js` pone `appAuthRedirectScheme` y HTTP en claro), probar el login nativo con Keycloak (el issuer visible desde el emulador debe coincidir con el de los servicios; `10.0.2.2`), SQLite y SecureStore, y subir estudios (falta `expo-image-picker` y el validador TFLite).
+- Movil (RN, reemplazada por Flutter; para Flutter ver `apps/mobile_flutter/design.md`): **no se probo en dispositivo ni emulador** (solo `tsc` y `expo export`). Falta: `expo prebuild --clean` (el plugin `plugins/con-app-auth.js` pone `appAuthRedirectScheme` y HTTP en claro), probar el login nativo con Keycloak (el issuer visible desde el emulador debe coincidir con el de los servicios; `10.0.2.2`), SQLite y SecureStore, y subir estudios (falta `expo-image-picker` y el validador TFLite).
 
 **Para correr la verificacion:** ver `docs/frontends-conexion.md`. Notas de entorno que costaron tiempo: si el puerto 5432 esta ocupado, Postgres de SIGEC en 5440 (`POSTGRES_HOST_PORT`, `POSTGRES_PORT`, `DB_PORT` y `DB_URL` para ms2/ms4); `pnpm_config_strict_dep_builds=false` si `pnpm install --offline` pide aprobar builds; `LLM_PROVIDER=simulated` y `NOTIF_SENDER=simulated` (Mailtrap sin credenciales hace que la SAGA espere a MS8); `make n8n-import` si se recrea el contenedor de n8n.
 

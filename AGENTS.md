@@ -12,7 +12,7 @@ DDD + Arquitectura Hexagonal + Clean Architecture en cada servicio.
 - **Outbox:** tabla `outbox` en PostgreSQL para MS2/MS4/MS6; DynamoDB Streams + Lambda para MS3/MS8.
 - **Idempotencia:** cabecera `Idempotency-Key` en operaciones de escritura.
 - **Datos:** PostgreSQL (una base por servicio + keycloak + n8n; pgvector en `ms7_inteligencia`), MongoDB (metadatos de imágenes), DynamoDB (citas, claves de idempotencia, notificaciones), S3 local con SeaweedFS.
-- **Frontends:** shell React (Rsbuild + Module Federation) que carga por Module Federation 2 los remotos Angular (compilado con Vite + Analog) y Vue; PWA React offline; app móvil React Native (Expo, dev build). GraphQL solo en el módulo de gestión de MS7.
+- **Frontends:** shell React (Rsbuild + Module Federation) que carga por Module Federation 2 los remotos Angular (compilado con Vite + Analog) y Vue; PWA React offline; app móvil Flutter (`apps/mobile_flutter`, Riverpod + go_router). GraphQL solo en el módulo de gestión de MS7.
 
 ## Servicios y puertos
 

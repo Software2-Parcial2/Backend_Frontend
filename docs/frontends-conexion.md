@@ -7,7 +7,7 @@ Todas las pantallas leen y escriben contra el gateway (`:8090`). Cliente comun: 
 |---|---|---|
 | Shell (Rsbuild) | `PUBLIC_API_URL` → la entrega a los remotos como `apiUrl` en `mount()` | `http://localhost:8090` |
 | PWA y Vue en modo independiente (Vite) | `VITE_API_URL`, `VITE_KEYCLOAK_URL` (PWA) | `:8090`, `:8080` |
-| Movil (Expo) | `EXPO_PUBLIC_API_URL`, `EXPO_PUBLIC_KEYCLOAK_URL` | `:8090`, `:8080` (emulador Android: `10.0.2.2`) |
+| Movil (Flutter) | `--dart-define=API_URL=…`, `--dart-define=KEYCLOAK_URL=…` | `http://10.0.2.2:8090`, `http://10.0.2.2:8080` (emulador Android; con `adb reverse` usa `localhost`) |
 
 El token se lee **en cada peticion** del contexto del shell (evento `sigec:token-refreshed`) o de la sesion de la app; nunca se copia.
 
