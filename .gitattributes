@@ -1,0 +1,11 @@
+# Scripts que corren dentro de contenedores Linux: SIEMPRE con finales de linea LF,
+# aunque en Windows core.autocrlf=true. Si quedan en CRLF se rompe el shebang y el
+# contenedor falla (p. ej. sigec-init-1 sale con exit 127 y no arrancan ms2..ms8).
+*.sh text eol=lf
+
+# Dockerfiles e imagenes relacionadas tambien en LF (RUN/heredoc).
+Dockerfile text eol=lf
+*.Dockerfile text eol=lf
+
+# Entrypoints y scripts de shell sin extension conocidos.
+docker-entrypoint.sh text eol=lf
