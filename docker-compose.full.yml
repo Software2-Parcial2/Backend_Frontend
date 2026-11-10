@@ -290,7 +290,7 @@ services:
       WHISPER_API_KEY: ${WHISPER_API_KEY:-}
       LLM_PROVIDER: ${LLM_PROVIDER:-simulated}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
-      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.5-flash}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       CLAUDE_MODEL: ${CLAUDE_MODEL:-claude-sonnet-5-5}
       RAG_AUTO_MIGRATE: "true"

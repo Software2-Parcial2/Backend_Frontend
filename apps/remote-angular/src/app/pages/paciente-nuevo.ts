@@ -37,6 +37,13 @@ import type { Contacto, Paciente } from '../api/tipos';
           <div class="field"><label for="tel">Teléfono</label><input class="in" id="tel" type="text" formControlName="telefono" [attr.aria-invalid]="invalido('telefono')">@if (msg('telefono'); as m) {<span class="hint" style="color:var(--err)" role="alert">{{ m }}</span>}</div>
           <div class="field"><label for="co">Correo electrónico</label><input class="in" id="co" type="email" formControlName="email" [attr.aria-invalid]="invalido('email')">@if (msg('email'); as m) {<span class="hint" style="color:var(--err)" role="alert">{{ m }}</span>}</div>
           <div class="field" style="grid-column:1/-1"><label for="di">Dirección</label><input class="in" id="di" type="text" formControlName="direccion"></div>
+          @if (!editando()) {
+          <label class="fx" style="grid-column:1/-1;gap:10px;align-items:flex-start;cursor:pointer" for="inv">
+            <input id="inv" type="checkbox" formControlName="invitar" style="margin-top:3px" data-testid="invitar-portal">
+            <span><span class="b">Enviar invitación a la web y la app</span><br>
+              <span class="sm muted">@if (f.controls.email.value.trim()) { El paciente recibirá un correo para crear su contraseña y ver sus citas. } @else { Escriba un correo para poder invitar al paciente. }</span></span>
+          </label>
+          }
         </div>
       </div>
       @if (!editando()) {
@@ -89,6 +96,7 @@ export class PacienteNuevo {
     contactoNombre: [''],
     contactoParentesco: ['Madre'],
     contactoTelefono: [''],
+    invitar: [true],
   });
 
   readonly existente = recurso<{ p: Paciente; version: string | null }>((api, signal) =>
@@ -179,7 +187,7 @@ export class PacienteNuevo {
       : null;
     const r = await this.guardando.ejecutar(cuerpo, contacto);
     if (!r) return;
-    if (r.nuevo) await this.router.navigate(['/pacientes/guardado'], { queryParams: { id: r.paciente.id }, state: { clave: this.clave(), repetida: r.repetida } });
+    if (r.nuevo) await this.router.navigate(['/pacientes/guardado'], { queryParams: { id: r.paciente.id }, state: { clave: this.clave(), repetida: r.repetida, invitar: v.invitar && Boolean(v.email.trim()) } });
     else await this.router.navigate(['/pacientes/ficha'], { queryParams: { id: r.paciente.id } });
   }
 }

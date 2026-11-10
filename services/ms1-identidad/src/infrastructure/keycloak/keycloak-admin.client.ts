@@ -21,6 +21,8 @@ export interface KeycloakOpciones {
   timeoutMs?: number;
   /** Clientes con sesiones de usuario (para listar las del reino). */
   clientesSesion?: string[];
+  /** A donde vuelve el paciente al terminar la activacion (cliente y URL de la PWA). */
+  invitacion?: { clientId: string; redirectUri: string; vidaSegundos?: number };
   fetchFn?: typeof fetch;
 }
 
@@ -153,6 +155,28 @@ export class KeycloakAdminClient implements KeycloakAdminPort {
     const r = await this.pedir('PUT', `/users/${encodeURIComponent(id)}/execute-actions-email`, undefined, ['UPDATE_PASSWORD']);
     if (r.status === 500) throw new KeycloakNoDisponibleError('Keycloak no pudo enviar el correo (revisa la configuracion SMTP del reino)');
     this.exigirOk(r, 'enviar el correo de recuperacion');
+  }
+
+  async enviarInvitacion(id: string): Promise<void> {
+    const inv = this.o.invitacion;
+    const query = inv ? { lifespan: inv.vidaSegundos ?? 259_200, client_id: inv.clientId, redirect_uri: inv.redirectUri } : { lifespan: 259_200 };
+    const r = await this.pedir('PUT', `/users/${encodeURIComponent(id)}/execute-actions-email`, query, ['VERIFY_EMAIL', 'UPDATE_PASSWORD']);
+    if (r.status === 500) throw new KeycloakNoDisponibleError('Keycloak no pudo enviar el correo (revisa la configuracion SMTP del reino)');
+    if (r.status === 400) throw new ReglaIdentidadError('INVITACION_RECHAZADA', 422, await this.mensaje(r));
+    this.exigirOk(r, 'enviar la invitacion');
+  }
+
+  async buscarPorPaciente(pacienteId: string): Promise<Usuario | null> {
+    const lista = await this.json<UsuarioKc[]>('GET', '/users', { q: `paciente_id:${pacienteId}`, exact: true, briefRepresentation: false, max: 2 });
+    const u = lista.find((x) => x.attributes?.paciente_id?.[0] === pacienteId);
+    if (!u) return null;
+    const [conRol] = await this.conRoles([u]);
+    return conRol ?? null;
+  }
+
+  async tieneContrasena(id: string): Promise<boolean> {
+    const creds = await this.json<{ type: string }[]>('GET', `/users/${encodeURIComponent(id)}/credentials`);
+    return creds.some((c) => c.type === 'password');
   }
 
   // --- sesiones --------------------------------------------------------------------------------------------

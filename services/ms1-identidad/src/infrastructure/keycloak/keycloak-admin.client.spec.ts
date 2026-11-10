@@ -38,7 +38,8 @@ function falsoKeycloak(opts: { rechazaToken?: boolean } = {}) {
     }
     if (ruta === '/users' && metodo === 'GET') {
       const q = url.searchParams.get('search')?.toLowerCase();
-      const filtrados = [...usuarios.values()].filter((u) => !q || u.username.includes(q));
+      const [attr, valor] = (url.searchParams.get('q') ?? '').split(':');
+      const filtrados = [...usuarios.values()].filter((u) => (!q || u.username.includes(q)) && (!attr || u.attributes?.[attr]?.[0] === valor));
       const first = Number(url.searchParams.get('first') ?? 0);
       return json(filtrados.slice(first, first + Number(url.searchParams.get('max') ?? 100)));
     }
@@ -70,6 +71,7 @@ function falsoKeycloak(opts: { rechazaToken?: boolean } = {}) {
       return json([...usuarios.values()].filter((u) => (mapeos.get(u.id) ?? []).includes(m![1]!)));
     }
     if ((m = ruta.match(/^\/users\/([^/]+)\/execute-actions-email$/))) return vacio(usuarios.get(m[1]!)?.email === 'smtp@falla.com' ? 500 : 204);
+    if ((m = ruta.match(/^\/users\/([^/]+)\/credentials$/))) return json(usuarios.get(m[1]!)?.credentials ?? []);
     if ((m = ruta.match(/^\/users\/([^/]+)\/logout$/))) return vacio();
     if ((m = ruta.match(/^\/users\/([^/]+)\/sessions$/))) {
       return json([{ id: 's1', username: usuarios.get(m[1]!)?.username, userId: m[1], ipAddress: '10.0.0.1', start: 1_700_000_000_000, lastAccess: 1_700_000_100_000, clients: { c1: 'sigec-shell' } }]);
@@ -176,6 +178,33 @@ describe('KeycloakAdminClient', () => {
     const c = cliente(kc);
     const u = await c.crearUsuario({ username: 'sm', email: 'smtp@falla.com', nombre: 'S', apellido: 'S', roles: ['caja'] });
     await expect(c.enviarRecuperacion(u.id)).rejects.toThrow(/SMTP/);
+  });
+
+  it('invitacion: pide verificar correo y definir contrasena, con vida y vuelta a la PWA', async () => {
+    const kc = falsoKeycloak();
+    const c = new KeycloakAdminClient({ url: 'http://kc', realm: 'sigec', clientId: 'sigec-identidad', clientSecret: 's', fetchFn: kc.fetchFn, invitacion: { clientId: 'sigec-pwa', redirectUri: 'http://pwa/', vidaSegundos: 3600 } });
+    const u = await c.crearUsuario({ username: 'inv', email: 'inv@x.com', nombre: 'I', apellido: 'V', roles: ['paciente'], pacienteId: randomUUID() });
+    await c.enviarInvitacion(u.id);
+    const llamada = kc.llamadas.find((l) => l.includes('execute-actions-email'))!;
+    expect(llamada).toContain('lifespan=3600');
+    expect(llamada).toContain('client_id=sigec-pwa');
+    expect(llamada).toContain('redirect_uri=http%3A%2F%2Fpwa%2F');
+    const sm = await c.crearUsuario({ username: 'sm2', email: 'smtp@falla.com', nombre: 'S', apellido: 'S', roles: ['caja'] });
+    await expect(c.enviarInvitacion(sm.id)).rejects.toThrow(/SMTP/);
+  });
+
+  it('busca al usuario de un paciente por su atributo y sabe si ya definio contrasena', async () => {
+    const kc = falsoKeycloak();
+    const c = cliente(kc);
+    const pid = randomUUID();
+    await c.crearUsuario({ username: 'otro', email: 'o@x.com', nombre: 'O', apellido: 'O', roles: ['paciente'], pacienteId: randomUUID() });
+    const u = await c.crearUsuario({ username: 'pac', email: 'p@x.com', nombre: 'P', apellido: 'P', roles: ['paciente'], pacienteId: pid });
+    const hallado = await c.buscarPorPaciente(pid);
+    expect(hallado).toMatchObject({ id: u.id, pacienteId: pid, roles: ['paciente'] });
+    expect(await c.buscarPorPaciente(randomUUID())).toBeNull();
+    expect(await c.tieneContrasena(u.id)).toBe(false);
+    const conClave = await c.crearUsuario({ username: 'pac2', email: 'p2@x.com', nombre: 'P', apellido: 'P', roles: ['paciente'], pacienteId: randomUUID(), passwordTemporal: '12345678' });
+    expect(await c.tieneContrasena(conClave.id)).toBe(true);
   });
 
   it('reutiliza el token y lo renueva si Keycloak lo rechaza (401)', async () => {

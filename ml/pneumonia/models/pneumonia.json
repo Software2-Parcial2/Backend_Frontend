@@ -1,0 +1,23 @@
+{
+  "nombre": "mobilenetv2-neumonia",
+  "version": "2026.11.10.0633",
+  "umbral": 0.06699763238430023,
+  "capa_grad_cam": "out_relu",
+  "dataset": "Kaggle paultimothymooney/chest-xray-pneumonia",
+  "metricas_prueba": {
+    "umbral": 0.06699763238430023,
+    "auc": 0.9726714880561035,
+    "sensibilidad": 0.9948717948717949,
+    "especificidad": 0.5213675213675214,
+    "exactitud": 0.8173076923076923,
+    "matriz_confusion": {
+      "VN": 122,
+      "FP": 112,
+      "FN": 2,
+      "VP": 388
+    },
+    "n": 624
+  },
+  "aviso": "Apoyo a la decision clinica; NO es un diagnostico. Proyecto academico, sin validacion clinica.",
+  "clinico": null
+}

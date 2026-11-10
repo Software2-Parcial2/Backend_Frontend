@@ -1,7 +1,7 @@
 # Imagenes e inferencia de radiografias (MS5)
 
 > **Aviso clinico.** El resultado es un **apoyo a la decision clinica, no un diagnostico**. Es un proyecto academico: no usar con pacientes reales.
-> La API lo repite en cada respuesta (`aviso`). Mientras no exista un modelo entrenado y validado, el servicio responde `modelo: "stub-no-clinico"`.
+> La API lo repite en cada respuesta (`aviso`). Sin modelo (y con `ALLOW_STUB=true`) el servicio responde `modelo: "stub-no-clinico"`; con el modelo entrenado responde `mobilenetv2-neumonia`.
 
 ## Flujo
 
@@ -30,7 +30,25 @@ Contratos: `contracts/events/imagenes.analisis.{solicitar,completado,fallido}.sc
 - Sin modelo y con `ALLOW_STUB=true`: modelo ficticio pequeno, `modelo: "stub-no-clinico"` (solo para probar el flujo).
 - Contrato del modelo: entrada float32 `(N,224,224,3)` en [0,255] (el reescalado va dentro del modelo), salida = probabilidad de neumonia; capa Grad-CAM `out_relu`.
 
+## Modelo entrenado (2026-11-10, Kaggle GPU)
+
+MobileNetV2 con `ml/pneumonia/train.py` sobre `paultimothymooney/chest-xray-pneumonia` (notebook `ml/colab/entrenar-kaggle.ipynb`). Archivos en `ml/pneumonia/models/`
+(`pneumonia.keras`, `pneumonia.tflite`, `pneumonia.json` con umbral y metricas) e informe en `ml/pneumonia/reports/completo/`.
+
+| Conjunto | AUC | Sensibilidad | Especificidad |
+|---|---|---|---|
+| Validacion (15 % del train) | 0.997 | 99.1 % | 96.0 % |
+| **Prueba (624 imagenes)** | **0.973** | **99.5 %** (2 FN) | **52.1 %** (112 FP) |
+
+- Umbral 0.067 (Youden sobre validacion). Casi no se escapan neumonias, pero **mas de la mitad de las radiografias normales se marcan como sospecha**: la validacion
+  (separada del train) y la prueba publica tienen distribuciones distintas. Presentarlo siempre como *sospecha que requiere revision*, nunca como diagnostico.
+- Cambiar el umbral (`umbral` en `pneumonia.json`) cambia sensibilidad por especificidad; la decision debe ser clinica y no ajustarse sobre el conjunto de prueba.
+- Dataset pediatrico de un solo centro; no generaliza a adultos ni a otros equipos. No validado clinicamente.
+- Para usarlo: `MODEL_PATH=$PWD/ml/pneumonia/models/pneumonia.keras ALLOW_STUB=false` (verificado: carga y predice). Los contenedores esperan `/models/pneumonia.keras`.
+
 ## Entrenar y reemplazar el modelo
+
+Opcion sin credenciales locales: `ml/colab/entrenar-kaggle.ipynb` (notebook de Kaggle con los datasets adjuntos) o `ml/colab/entrenar.ipynb` (Colab).
 
 Requiere credenciales de Kaggle en `~/.kaggle/kaggle.json`; sin ellas `train.py` falla con un mensaje claro y no inventa datos.
 

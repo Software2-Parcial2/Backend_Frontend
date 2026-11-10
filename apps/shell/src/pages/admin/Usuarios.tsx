@@ -17,7 +17,9 @@ function useRetraso<T>(valor: T, ms = 300): T {
 }
 
 export function Usuarios() {
-  const aviso = (useLocation().state as { creado?: string } | null)?.creado;
+  const estado = useLocation().state as { creado?: string; email?: string | null; invitacion?: { enviada: boolean; detalle: string | null } } | null;
+  const aviso = estado?.creado;
+  const inv = estado?.invitacion;
   const [grupo, setGrupo] = useState<(typeof GRUPOS)[number]>('Todos');
   const [q, setQ] = useState('');
   const busqueda = useRetraso(q.trim());
@@ -30,7 +32,9 @@ export function Usuarios() {
   return (
     <div className="page">
       <div className="ph"><div><h1 className="h1">Usuarios y roles</h1><p className="sub">Cuentas del personal y de pacientes administradas desde Keycloak</p></div><span className="sp" /><Link className="btn pri" to="/admin/usuarios/nuevo">Nuevo usuario</Link></div>
-      {aviso && <div className="banner ok" role="status"><div><b>Usuario creado</b><span>{aviso} ya puede iniciar sesión con la contraseña indicada.</span></div></div>}
+      {aviso && !inv && <div className="banner ok" role="status"><div><b>Usuario creado</b><span>{aviso} ya puede iniciar sesión con la contraseña temporal indicada (la cambiará al entrar).</span></div></div>}
+      {aviso && inv?.enviada && <div className="banner ok" role="status"><div><b>Usuario creado</b><span>Se envió a {estado?.email} un correo para que {aviso} cree su contraseña.</span></div></div>}
+      {aviso && inv && !inv.enviada && <div className="banner warn" role="status"><div><b>Usuario creado, pero el correo no salió</b><span>{inv.detalle}. Configure el correo (SMTP) de Keycloak y use «Enviar enlace» en el detalle del usuario para reenviarlo.</span></div></div>}
       <div className="fx wrap">
         <label className="search"><span className="muted">Buscar</span><input type="text" placeholder="Nombre, correo o usuario" aria-label="Buscar usuario" value={q} onChange={(e) => setQ(e.target.value)} /></label>
         <div className="seg">{GRUPOS.map((g) => <button key={g} type="button" className={g === grupo ? 'on' : undefined} onClick={() => setGrupo(g)}>{g}</button>)}</div>
@@ -71,6 +75,7 @@ function Detalle({ u }: { u: UsuarioApi }) {
 
   const habilitar = useAccion((api, activo: boolean) => api.post(`/api/identidad/usuarios/${u.id}/${activo ? 'habilitar' : 'deshabilitar'}`, undefined, { clave: false }), invalidar);
   const revocar = useAccion((api, _: void) => api.post(`/api/identidad/usuarios/${u.id}/revocar-sesiones`, undefined, { clave: false }), [`/api/identidad/usuarios/${u.id}/sesiones`, '/api/identidad/sesiones']);
+  const recuperar = useAccion((api, _: void) => api.post<{ enviadoA: string }>(`/api/identidad/usuarios/${u.id}/recuperar`, undefined, { clave: false }));
   const guardar = useAccion(async (api, _: void) => {
     const medico = rol === 'medico';
     if (JSON.stringify(u.roles) !== JSON.stringify([rol])) {
@@ -83,7 +88,7 @@ function Detalle({ u }: { u: UsuarioApi }) {
 
   const hayCambios = rol !== (u.roles[0] ?? '') || (rol === 'medico' && (esp !== (u.especialidad ?? '') || mat !== (u.matricula ?? '')));
   const varios = u.roles.length > 1;
-  const error = habilitar.error ?? revocar.error ?? guardar.error;
+  const error = habilitar.error ?? revocar.error ?? recuperar.error ?? guardar.error;
   const n = sesiones.data?.items.length;
 
   return (
@@ -103,6 +108,7 @@ function Detalle({ u }: { u: UsuarioApi }) {
       <hr className="hr" />
       <div className="fx"><div><div className="b">Cuenta habilitada</div><div className="sm muted">Puede iniciar sesión</div></div><span className="sp" /><button type="button" className={u.activo ? 'sw on' : 'sw'} role="switch" aria-checked={u.activo} aria-label="Cuenta habilitada" disabled={habilitar.isPending} onClick={() => habilitar.mutate(!u.activo, { onSuccess: () => setOk(u.activo ? 'Cuenta deshabilitada y sesiones cerradas.' : 'Cuenta habilitada.') })} /></div>
       <div className="fx"><div><div className="b">Sesiones activas</div><div className="sm muted">{sesiones.isLoading ? 'Consultando…' : sesiones.isError ? 'No se pudieron leer' : `${n}${n ? ` (${[...new Set(sesiones.data!.items.flatMap((s) => s.clientes))].join(', ') || 'sin cliente'})` : ''}`}</div></div><span className="sp" /><button type="button" className="btn s dng" disabled={!n || revocar.isPending} onClick={() => revocar.mutate(undefined, { onSuccess: () => setOk('Sesiones revocadas.') })}>Revocar</button></div>
+      <div className="fx"><div><div className="b">Contraseña</div><div className="sm muted">{u.email ? `Envía a ${u.email} un enlace para crear una nueva` : 'Sin correo: no se puede enviar el enlace'}</div></div><span className="sp" /><button type="button" className="btn s" disabled={!u.email || recuperar.isPending} onClick={() => recuperar.mutate(undefined, { onSuccess: (r) => setOk(`Enlace enviado a ${r.enviadoA}.`) })} data-testid="recuperar">{recuperar.isPending ? 'Enviando…' : 'Enviar enlace'}</button></div>
       {error && <ErrorApi error={error} />}
       {ok && !error && <div className="banner ok" role="status"><div><span>{ok}</span></div></div>}
       <button type="button" className="btn pri" disabled={!hayCambios || guardar.isPending} onClick={() => guardar.mutate(undefined, { onSuccess: () => setOk('Cambios guardados. El usuario debe volver a iniciar sesión.') })}>{guardar.isPending ? 'Guardando…' : 'Guardar cambios'}</button>

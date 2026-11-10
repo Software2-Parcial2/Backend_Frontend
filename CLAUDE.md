@@ -41,7 +41,7 @@ Los problemas y limites conocidos por bloque estan en `docs/PENDIENTES.md`. Este
 
 Bloques 0-L, el backend limpio y la conexion de los frontends terminados en el repo (commits locales, sin push). **Pendiente de verificar con credenciales o hardware que no hay aqui:**
 1. `scripts/e2e-imagenes.sh` (bloque K): ejecutarlo; si el puerto 5432 esta ocupado usa `POSTGRES_HOST_PORT=5440 POSTGRES_PORT=5440 DB_PORT=5440` (ver `docs/PENDIENTES.md` y `docs/frontends-conexion.md`).
-2. Entrenar los modelos reales: `ml/pneumonia/train.py` y `ml/no-show/train.py` (ambos piden `~/.kaggle/kaggle.json`; los modelos actuales son sinteticos / `stub-no-clinico`; las importancias del Random Forest llegan `null`).
+2. ~~Entrenar los modelos reales~~ **Hecho (2026-11-10, Kaggle, `ml/colab/entrenar-kaggle.ipynb`):** neumonia AUC 0.973, sensibilidad 99.5 %, especificidad 52.1 % (umbral por decidir); no-show AUC 0.73. Falta: ejecutar `e2e-imagenes.sh` con el modelo real, volumenes `/models` en Docker y traer la edad de MS2 al riesgo de inasistencia.
 3. Probar Gemini y Claude reales (`GEMINI_API_KEY` / `ANTHROPIC_API_KEY`, `LLM_PROVIDER`) y el microfono real en el navegador.
 4. Mailtrap y Telegram reales (bloque J).
 5. **App movil Flutter** en emulador/dispositivo: recorrer login → citas → solicitar sin red → avisos → perfil (ver `docs/tu-parte.md` §6); subir estudios (falta selector de imagen y validador TFLite). Tras confirmarlo, borrar `apps/mobile` (React Native).

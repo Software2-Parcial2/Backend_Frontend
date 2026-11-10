@@ -151,7 +151,7 @@ class Barra extends StatelessWidget {
           if (atras != null)
             Semantics(
               button: true, label: 'Volver', excludeSemantics: true,
-              child: InkWell(onTap: atras, child: Container(width: 44, height: 44, margin: const EdgeInsets.only(left: -10, right: 12), alignment: Alignment.center, child: const Text('‹', style: TextStyle(fontSize: 28, color: Col.ink, height: 1)))),
+              child: InkWell(onTap: atras, child: Container(width: 44, height: 44, margin: const EdgeInsets.only(right: 2), alignment: Alignment.center, child: const Text('‹', style: TextStyle(fontSize: 28, color: Col.ink, height: 1)))),
             ),
           Expanded(child: Semantics(header: true, child: Text(titulo, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Col.ink)))),
           ?derecha,

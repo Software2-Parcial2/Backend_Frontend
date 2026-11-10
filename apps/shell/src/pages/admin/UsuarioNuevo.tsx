@@ -5,14 +5,14 @@ import { useAccion } from '../../api/ApiProvider';
 import { ErrorApi } from '../../components/Estado';
 import { PERMISOS, ROLES, nombreCompleto, type UsuarioApi } from './identidad';
 
-interface CampoProps { id: string; label: string; valor: string; onChange: (e: { target: { value: string } }) => void; error?: string; tipo?: string; ph?: string; req?: boolean }
+interface CampoProps { id: string; label: string; valor: string; onChange: (e: { target: { value: string } }) => void; error?: string; tipo?: string; ph?: string; req?: boolean; min?: number }
 
 /** Campo de formulario con su mensaje de error por campo (definido fuera del formulario: si no, pierde el foco al escribir). */
-function Campo({ id, label, valor, onChange, error, tipo = 'text', ph, req }: CampoProps) {
+function Campo({ id, label, valor, onChange, error, tipo = 'text', ph, req, min }: CampoProps) {
   return (
     <div className="field">
       <label htmlFor={id}>{label}</label>
-      <input className="in" id={id} type={tipo} value={valor} onChange={onChange} placeholder={ph} required={req} aria-invalid={Boolean(error)} />
+      <input className="in" id={id} type={tipo} value={valor} onChange={onChange} placeholder={ph} required={req} minLength={min} aria-invalid={Boolean(error)} />
       {error && <span className="sm" style={{ color: 'var(--err, #b42318)' }} role="alert">{error}</span>}
     </div>
   );
@@ -38,13 +38,16 @@ export function UsuarioNuevo() {
 
   const enviar = (e: FormEvent) => {
     e.preventDefault();
-    crear.mutate(undefined, { onSuccess: (u) => navigate('/admin/usuarios', { state: { creado: nombreCompleto(u) } }) });
+    crear.mutate(undefined, { onSuccess: (u) => navigate('/admin/usuarios', { state: { creado: nombreCompleto(u), email: u.email, invitacion: u.invitacion } }) });
   };
   const err = crear.error;
   const campo = (c: string) => err?.mensajeDe(c);
+  // Campos que el formulario muestra junto a su input; un error de cualquier otro campo se muestra arriba para no perderlo.
+  const VISIBLES = ['username', 'nombre', 'apellido', 'email', 'pacienteId', 'especialidad', 'matricula', 'medicoId', 'passwordTemporal'];
+  const sinCampoVisible = err && esValidacion(err) && err.errores.some((e) => !VISIBLES.includes(e.campo));
   return (
     <div className="page">
-      <div className="ph"><div><h1 className="h1">Nuevo usuario</h1><p className="sub">La cuenta se crea en Keycloak. Sin contraseña temporal, el usuario la define por correo (requiere SMTP en Keycloak)</p></div></div>
+      <div className="ph"><div><h1 className="h1">Nuevo usuario</h1><p className="sub">La cuenta se crea en Keycloak. Sin contraseña temporal, se le envía un correo para que cree la suya</p></div></div>
       <div className="g2" style={{ alignItems: 'start' }}>
         <form className="card col" style={{ gap: 14 }} onSubmit={enviar}>
           <Campo id="u" label="Usuario" ph="nombre.apellido" req valor={f.username} onChange={set('username')} error={campo('username')} />
@@ -62,9 +65,9 @@ export function UsuarioNuevo() {
               <Campo id="mi" label="Médico del catálogo (id en MS2)" ph="UUID opcional" valor={f.medicoId} onChange={set('medicoId')} error={campo('medicoId')} />
             </>
           )}
-          <Campo id="pw" label="Contraseña temporal (opcional)" tipo="password" ph="Mínimo 8 caracteres" valor={f.password} onChange={set('password')} error={campo('password')} />
+          <Campo id="pw" label="Contraseña temporal (opcional)" tipo="password" ph="Mínimo 8 caracteres" min={8} valor={f.password} onChange={set('password')} error={campo('passwordTemporal')} />
           {err && !esValidacion(err) && <ErrorApi error={err} />}
-          {err && esValidacion(err) && err.errores.length === 0 && <ErrorApi error={err} />}
+          {err && esValidacion(err) && (err.errores.length === 0 || sinCampoVisible) && <ErrorApi error={err} />}
           <div className="fx" style={{ justifyContent: 'flex-end' }}>
             <Link className="btn" to="/admin/usuarios">Cancelar</Link>
             <button type="submit" className="btn pri" disabled={crear.isPending}>{crear.isPending ? 'Creando…' : 'Crear usuario'}</button>

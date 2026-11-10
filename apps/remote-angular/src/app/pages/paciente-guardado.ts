@@ -1,13 +1,14 @@
 import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { Cargando, ErrorApi } from '../api/estado';
+import { AccesoPortal } from './acceso-portal';
 import { recurso } from '../api/recurso';
 import { parametro } from '../api/ruta';
 import type { Paciente } from '../api/tipos';
 
 @Component({
   selector: 'app-paciente-guardado',
-  imports: [Cargando, ErrorApi],
+  imports: [Cargando, ErrorApi, AccesoPortal],
   template: `
 <div class="page">
   @if (p.error(); as e) { <sigec-error [error]="e" (reintentar)="p.recargar()" /> }
@@ -20,6 +21,7 @@ import type { Paciente } from '../api/tipos';
       <a class="btn" [attr.href]="'#/pacientes/ficha?id=' + d.id">Abrir ficha del paciente</a>
       <a class="btn gh" href="#/pacientes/nuevo">Registrar otro paciente</a>
     </div>
+    <sigec-acceso-portal [pacienteId]="d.id" [email]="d.email" [autoInvitar]="invitar" />
     <div class="card">
       <div class="ch"><div class="ct">Envío sin duplicados</div><span class="chip ok">Un solo paciente</span></div>
       <div class="tl">
@@ -34,8 +36,10 @@ import type { Paciente } from '../api/tipos';
 export class PacienteGuardado {
   readonly id = parametro('id');
   readonly p = recurso<Paciente>((api, signal) => (this.id() ? api.get<Paciente>(`/api/pacientes/${this.id()}`, { signal }) : null));
-  private readonly estado = (inject(Router).getCurrentNavigation()?.extras.state ?? history.state ?? {}) as { clave?: string; repetida?: boolean };
+  private readonly estado = (inject(Router).getCurrentNavigation()?.extras.state ?? history.state ?? {}) as { clave?: string; repetida?: boolean; invitar?: boolean };
   readonly clave = this.estado.clave;
   readonly repetida = this.estado.repetida === true;
+  /** Recepcion marco "Enviar invitacion" al registrar: se envia al mostrar esta pantalla. */
+  readonly invitar = this.estado.invitar === true;
   primerNombre = (n: string) => n.split(' ')[0] ?? n;
 }

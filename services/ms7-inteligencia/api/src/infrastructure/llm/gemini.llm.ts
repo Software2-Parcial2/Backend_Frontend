@@ -15,7 +15,7 @@ export class GeminiLlm implements LlmPort {
 
   static desdeEntorno(env: NodeJS.ProcessEnv = process.env): GeminiLlm {
     if (!env.GEMINI_API_KEY) throw new Error('Falta GEMINI_API_KEY en el entorno (LLM_PROVIDER=gemini)');
-    return new GeminiLlm(env.GEMINI_MODEL ?? 'gemini-2.5-flash', new GoogleGenAI({ apiKey: env.GEMINI_API_KEY }) as unknown as ClienteGemini);
+    return new GeminiLlm(env.GEMINI_MODEL ?? 'gemini-3.5-flash', new GoogleGenAI({ apiKey: env.GEMINI_API_KEY }) as unknown as ClienteGemini);
   }
 
   async generar(e: { sistema: string; mensajes: MensajeAgente[]; herramientas: HerramientaLlm[]; senal: AbortSignal }): Promise<RespuestaLlm> {

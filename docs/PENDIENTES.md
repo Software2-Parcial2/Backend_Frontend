@@ -90,8 +90,8 @@ Hecho: API Nest (subida con firma real, S3, Mongo, URL prefirmada, comandos/resu
 
 - **`scripts/e2e-imagenes.sh` NO se ha ejecutado:** el stack estaba apagado y el puerto 5432 lo ocupaba el Postgres de otro proyecto (`emprendeu-db-1`),
   asi que `docker compose up` de SIGEC habria chocado. Ejecutarlo antes de dar el bloque por cerrado.
-- **No hay modelo real entrenado:** solo el humo sintetico en `ml/pneumonia/` (no clinico). Faltan credenciales de Kaggle (`~/.kaggle/kaggle.json`);
-  entrenamiento completo con el comando de `docs/imagenes-ia.md`. Mientras tanto la inferencia responde `modelo: "stub-no-clinico"`.
+- **Modelo real entrenado** (Kaggle, 2026-11-10; ver `docs/imagenes-ia.md`): AUC 0.973, sensibilidad 99.5 %, **especificidad 52.1 %** en prueba (umbral 0.067). Carga y predice en la inferencia, pero el E2E sigue sin ejecutarse con el modelo real (`ALLOW_STUB=false`). Pendiente: decidir/calibrar el umbral (clinico, no sobre prueba) y que la interfaz hable de *sospecha*.
+- **Docker:** `docker-compose.full.yml` no monta `/models` (los contenedores esperan `/models/pneumonia.keras`, `/models/no-show/no-show.joblib`); falta anadir los volumenes.
 - Las 4 pruebas omitidas de la API (Mongo/S3 reales) requieren el stack levantado.
 - `ml/.venv-tfjs/` y los `.keras`/`.tflite` estan en `.gitignore`.
 
@@ -101,9 +101,8 @@ Hecho: API Nest (subida con firma real, S3, Mongo, URL prefirmada, comandos/resu
 Hecho: API FastAPI (`/predict/no-show`, `/segments/demanda`, `/model/info`), `ml/no-show/train.py`, `ml/demanda/segmentar.py`,
 `scripts/seed/citas-sinteticas.mjs`, Dockerfile y 12 pruebas (`pytest`). Ver `services/ms7-inteligencia/ml/README.md`.
 
-- **El Random Forest NO esta entrenado con datos reales:** no hay credenciales de Kaggle en este entorno (`~/.kaggle/kaggle.json`). El script falla con un mensaje claro
-  sin ellas. Solo existe un modelo de humo con datos **sinteticos** (`rf-noshow-...-sintetico`, AUC ~0.6, sin valor predictivo) para probar el flujo; `sintetico: true` aparece en cada respuesta.
-  Las metricas reales (precision/recall/F1/AUC e importancias) se generaran al ejecutar `ml/no-show/train.py`.
+- **Random Forest entrenado con datos reales** (Kaggle, 2026-11-10): AUC 0.73, recall 0.71, precision 0.30, F1 0.42. `antelacion_dias` domina. Como MS7 aun envia `edad=35` fija, el riesgo real depende casi solo de la antelacion hasta traer la edad desde MS2.
+  Entrenado con scikit-learn 1.6.1 (aviso al cargar con 1.9.1); reentrenar con la version fijada si se quiere evitar el aviso.
 - **`scripts/seed/citas-sinteticas.mjs`** se ejecuto despues (bloque L5) contra el stack real: 595 citas creadas por la API. MS3 solo acepta fechas futuras, asi que las citas
   sembradas son de los proximos meses (no historicas). Arranca MS8 con `NOTIF_SENDER=simulated` al sembrar. La segmentacion `--fuente ms3` funciono y destaco el problema de los valores atipicos (ver L5).
 - K-means: con datos sinteticos la silueta es baja (~0.2); es esperable con observaciones especialidad-semana ruidosas. Con datos reales conviene revisar `evaluacion_k`.
@@ -134,7 +133,7 @@ extra que proteger; cambiar el transporte permite publicar el mismo servidor a o
 
 - **Los proveedores reales (Gemini, Claude) NO se probaron contra su API:** no hay `GEMINI_API_KEY` ni `ANTHROPIC_API_KEY` en este entorno. Los adaptadores se verificaron con clientes simulados
   del SDK (traduccion de mensajes, herramientas, llamadas, `AbortSignal`). Hay una prueba real opcional (`describe.skipIf`) que corre sola si defines `GEMINI_API_KEY`.
-  Los ids de modelo por defecto (`gemini-2.5-flash`, `claude-sonnet-5-5`) son configurables (`GEMINI_MODEL`, `CLAUDE_MODEL`); revisa que sigan vigentes.
+  Los ids de modelo por defecto (`gemini-3.5-flash`, `claude-sonnet-5-5`) son configurables (`GEMINI_MODEL`, `CLAUDE_MODEL`); revisa que sigan vigentes. `gemini-2.5-flash` ya no se ofrece a cuentas nuevas (404). Gemini real verificado 2026-11-10 con la prueba opcional de `proveedores.spec.ts`.
 - **`consultar_politicas` aun no tiene RAG:** responde "no se encontro informacion suficiente" hasta L4.
 - La auditoria y el limite de uso estan **en memoria** (se pierden al reiniciar y no se comparten entre replicas). Para produccion: tabla en PostgreSQL / Redis.
 - La defensa contra inyeccion de prompts es por capas (delimitadores + regla en el prompt + lista blanca por rol + solo lectura + zod + redaccion), pero ninguna es infalible con un LLM real;
@@ -205,6 +204,12 @@ Objetivo: dejar los servicios listos para conectar los frontends (que hoy usan d
   - **Defecto corregido de paso (importante):** los tokens de los clientes `sigec-shell/pwa/mobile` **no traian el claim `sub`** (a Keycloak 26 le falta el scope `basic`); los servicios Nest tomaban `String(undefined)` = `"undefined"` como usuario, asi que todos compartian la clave de idempotencia y el rastro de auditoria. Ahora el reino los incluye (`basic` en los clientes; `make keycloak-aplicar` lo agrega a un reino existente) y `@sigec/auth-nest` **rechaza con 401 un token sin `sub`**. **Tras actualizar hay que volver a iniciar sesion** y ejecutar `make keycloak-aplicar`, o todos los servicios Nest responderan 401. Los servicios Spring (MS2/MS4/gateway) y MS6 todavia no exigen `sub`.
   - Limites: la auditoria de ms1 es un anillo en memoria (500) mas el log (Keycloak guarda ademas sus eventos de administracion); la recuperacion de contrasena necesita SMTP configurado en Keycloak (devuelve 503 explicativo si no); `GET /api/salud` solo comprueba que cada servicio responda, no sus dependencias (RabbitMQ, bases); el servicio no tiene Dockerfile propio (usa `nest.Dockerfile`, entrada `ms1` en `docker-compose.full.yml`).
 - **Fase 9 (hecha):** `scripts/e2e-flujos.sh` (**88/88 en la pila real**, por el gateway y con tokens de Keycloak): alta de paciente -> historia en MS4; reservar -> cobro -> aviso; cancelar; reprogramar; asistencia -> consulta -> firma con `If-Match`; estudio de imagen -> validacion -> aparece en la historia -> aviso al paciente; pago en caja; agentes de MS7; identidad con ms1 y `/api/salud`. Requisitos: `make dynamodb-init rabbitmq-declare mongo-init keycloak-aplicar` (con `MS1_CLIENT_SECRET`/`MS7_CLIENT_SECRET` en `.env`) y, para el flujo 6, `docker compose up -d s3 && make s3-init` (sin S3 ese flujo se omite y lo dice). La respuesta de la IA del flujo 6 se **simula** publicando `imagenes.analisis.completado` (no corre TensorFlow). Hallazgos de la verificacion real: el evento `cita.asistencia-registrada` trae `ASISTIO` (MS4 y MS7 lo guardaban mal; corregido), el validador de Mongo debia actualizarse (`make mongo-init`) y los tokens no traian `sub` (Fase 8). **Pendiente de la pila:** `scripts/e2e-saga.sh`, `e2e-notificaciones.sh`, `e2e-ms7.sh` e `e2e-imagenes.sh` se adaptaron pero no se volvieron a ejecutar; `make up-core` con `ms1` en Docker no se probo; el alerta con datos reales de MS7 (agentes `inasistencias` y `demanda`) necesita ML y datos con historia.
+
+## Acceso de pacientes al portal (invitacion por correo)
+
+- **Hecho:** al registrar un paciente con correo, recepcion marca «Enviar invitacion a la web y la app» y MS1 (`POST /api/identidad/pacientes/{id}/acceso`) crea la cuenta `paciente` vinculada (sin copiar UUID) y Keycloak envia el correo para crear la contrasena. La ficha muestra el estado (sin cuenta / pendiente / activa / deshabilitada) y permite reenviar. El alta de admin sin contrasena temporal tambien envia la invitacion, y el detalle de usuario tiene «Enviar enlace» (antes no habia boton para `/recuperar`). SMTP de Keycloak: `KC_SMTP_*` en `.env` + `make keycloak-aplicar`.
+- **Sin verificar en la pila real:** el flujo completo (MS1 -> MS2 -> Keycloak -> correo -> PWA) solo tiene pruebas unitarias (`ms1-identidad` 64/64) y compilacion de shell y remoto Angular. Falta: correo real con Mailtrap Email Sending, el `redirect_uri` a la PWA y un paso en `scripts/e2e-flujos.sh` y en `scripts/e2e-frontends`.
+- **Limites:** con el dominio de prueba de Mailtrap (`demomailtrap.co`) solo llega al correo del duenio de la cuenta; para pacientes reales hace falta un dominio verificado. El `medico` puede registrar pacientes en MS2 pero no invitarlos (la tarjeta le dice que lo haga recepcion). El usuario se genera como `p.<documento>`; el paciente entra con su correo.
 
 ## Diseno visual en los frontends (`design.md` por app)
 

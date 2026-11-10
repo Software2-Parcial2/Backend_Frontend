@@ -2,6 +2,7 @@ import { Component, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { iniciales } from '@sigec/api-client';
 import { Cargando, ErrorApi } from '../api/estado';
+import { AccesoPortal } from './acceso-portal';
 import { FORMATOS } from '../api/formato';
 import { CatalogoService } from '../api/catalogo.service';
 import { accion, lista, recurso } from '../api/recurso';
@@ -13,7 +14,7 @@ const SEXO = { F: 'Femenino', M: 'Masculino', OTRO: 'Otro' } as const;
 
 @Component({
   selector: 'app-paciente-ficha',
-  imports: [FormsModule, Cargando, ErrorApi, ...FORMATOS],
+  imports: [FormsModule, Cargando, ErrorApi, AccesoPortal, ...FORMATOS],
   template: `
 <div class="page">
   @if (p.error(); as e) { <sigec-error [error]="e" (reintentar)="p.recargar()" /> }
@@ -71,6 +72,7 @@ const SEXO = { F: 'Femenino', M: 'Masculino', OTRO: 'Otro' } as const;
       <hr class="hr">
       <div class="sm muted">Cada creación o cambio en este módulo publica un evento de dominio hacia RabbitMQ.</div>
     </div>
+    <sigec-acceso-portal [pacienteId]="d.id" [email]="d.email" />
   </div>
   } @else { <sigec-cargando [filas]="4" etiqueta="Cargando la ficha…" /> }
 </div>`,

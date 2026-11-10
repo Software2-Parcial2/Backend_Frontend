@@ -14,6 +14,8 @@ export interface UsuarioApi {
   especialidad: string | null;
   matricula: string | null;
   creadoEn: string;
+  /** Solo al crear sin contrasena temporal: si salio el correo de activacion. */
+  invitacion?: { enviada: boolean; detalle: string | null };
 }
 
 export interface SesionApi {

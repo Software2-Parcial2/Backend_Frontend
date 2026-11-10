@@ -62,14 +62,22 @@ export class UsuariosService {
     return u;
   }
 
-  async crear(actor: Actor, n: NuevoUsuario): Promise<Usuario> {
+  /** Sin `passwordTemporal` se envia el correo de activacion; `invitacion` dice si salio (la cuenta queda creada igual). */
+  async crear(actor: Actor, n: NuevoUsuario): Promise<Usuario & { invitacion?: { enviada: boolean; detalle: string | null } }> {
     const username = n.username.trim().toLowerCase();
     if (!USERNAME.test(username)) throw new ReglaIdentidadError('USERNAME_INVALIDO', 422, 'El usuario debe tener 3 a 50 caracteres: letras minusculas, numeros, punto, guion o guion bajo');
     this.validarVinculos(n.roles, n);
     if (n.passwordTemporal !== undefined && n.passwordTemporal.length < 8) throw new ReglaIdentidadError('PASSWORD_DEBIL', 422, 'La contrasena temporal debe tener al menos 8 caracteres');
     const creado = await this.kc.crearUsuario({ ...n, username, roles: [...new Set(n.roles)] });
     this.auditoria.registrar({ actor: actor.sub, accion: 'USUARIO_CREADO', objetivo: creado.id, detalle: `${username} [${creado.roles.join(',')}]` });
-    return creado;
+    if (n.passwordTemporal) return creado;
+    try {
+      await this.kc.enviarInvitacion(creado.id);
+      this.auditoria.registrar({ actor: actor.sub, accion: 'INVITACION_ENVIADA', objetivo: creado.id, detalle: creado.email ?? undefined });
+      return { ...creado, invitacion: { enviada: true, detalle: null } };
+    } catch (e) {
+      return { ...creado, invitacion: { enviada: false, detalle: (e as Error).message } };
+    }
   }
 
   async actualizar(actor: Actor, id: string, c: CambiosUsuario): Promise<Usuario> {

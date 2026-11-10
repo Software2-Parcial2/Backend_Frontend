@@ -34,6 +34,32 @@ export interface NuevoUsuario {
   passwordTemporal?: string;
 }
 
+/** Estado del acceso al portal de un paciente de MS2. */
+export type EstadoAcceso = 'SIN_CUENTA' | 'INVITACION_PENDIENTE' | 'ACTIVA' | 'DESHABILITADA';
+
+export interface AccesoPaciente {
+  pacienteId: string;
+  estado: EstadoAcceso;
+  usuarioId: string | null;
+  username: string | null;
+  email: string | null;
+}
+
+/** Resultado de invitar a un paciente: el acceso y si el correo salio (si Keycloak no tiene SMTP, la cuenta queda creada igual). */
+export interface InvitacionPaciente extends AccesoPaciente {
+  creada: boolean;
+  enviada: boolean;
+  detalle: string | null;
+}
+
+/** Lo que MS1 necesita de la ficha de MS2. */
+export interface FichaPaciente {
+  id: string;
+  nombre: string;
+  documento: string;
+  email: string | null;
+}
+
 export interface CambiosUsuario {
   email?: string;
   nombre?: string;
@@ -112,3 +138,6 @@ export class ReglaIdentidadError extends Error {
 
 /** Keycloak no responde o rechazo a la cuenta de servicio. */
 export class KeycloakNoDisponibleError extends Error {}
+
+/** MS2 no respondio (o rechazo la consulta de la ficha). */
+export class PacientesNoDisponibleError extends Error {}

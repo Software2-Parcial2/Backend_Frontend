@@ -1,0 +1,72 @@
+{
+  "version": "rf-noshow-20261110-596e7b43",
+  "dataset": "kaggle:joniarroba/noshowappointments",
+  "filas": {
+    "train": 84067,
+    "test": 26449
+  },
+  "umbral": 0.53,
+  "metricas_test": {
+    "precision": 0.3007681021834815,
+    "recall": 0.713846784104875,
+    "f1": 0.42321938186896596,
+    "auc": 0.7293056552879513,
+    "matriz_confusion": {
+      "tn": 13465,
+      "fp": 8102,
+      "fn": 1397,
+      "tp": 3485
+    },
+    "prevalencia_inasistencia": 0.1845816476993459
+  },
+  "auc_referencia_azar": 0.5,
+  "importancias": [
+    {
+      "variable": "antelacion_dias",
+      "importancia_gini": 0.6744822554029123,
+      "importancia_permutacion_auc": 0.17775160234818854
+    },
+    {
+      "variable": "edad",
+      "importancia_gini": 0.176296653084231,
+      "importancia_permutacion_auc": 0.01861168710343235
+    },
+    {
+      "variable": "tasa_inasistencia_previa",
+      "importancia_gini": 0.022970892905049136,
+      "importancia_permutacion_auc": 0.009304474988646349
+    },
+    {
+      "variable": "inasistencias_previas",
+      "importancia_gini": 0.017975396998101766,
+      "importancia_permutacion_auc": 0.004500579446946462
+    },
+    {
+      "variable": "sms_recibido",
+      "importancia_gini": 0.041651001959047584,
+      "importancia_permutacion_auc": 0.003463288362085182
+    },
+    {
+      "variable": "beca",
+      "importancia_gini": 0.005548735962854979,
+      "importancia_permutacion_auc": 0.0016660860238885133
+    },
+    {
+      "variable": "dia_semana",
+      "importancia_gini": 0.03298986348259065,
+      "importancia_permutacion_auc": 0.0007976198163681669
+    },
+    {
+      "variable": "citas_previas",
+      "importancia_gini": 0.02808520020521263,
+      "importancia_permutacion_auc": 0.0006733861784697703
+    }
+  ],
+  "parametros": {
+    "n_estimators": 300,
+    "min_samples_leaf": 25,
+    "class_weight": "balanced_subsample",
+    "umbral": 0.53
+  },
+  "entrenado_en": "2026-11-10T06:22:40.549377+00:00"
+}

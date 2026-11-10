@@ -22,7 +22,7 @@ export function crearLlm(env: NodeJS.ProcessEnv = process.env): LlmPort {
   };
   return {
     proveedor,
-    modelo: proveedor === 'gemini' ? (env.GEMINI_MODEL ?? 'gemini-2.5-flash') : (env.CLAUDE_MODEL ?? 'claude-sonnet-5-5'),
+    modelo: proveedor === 'gemini' ? (env.GEMINI_MODEL ?? 'gemini-3.5-flash') : (env.CLAUDE_MODEL ?? 'claude-sonnet-5-5'),
     generar: async (e) => obtener().generar(e),
   };
 }

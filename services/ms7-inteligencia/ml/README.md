@@ -16,6 +16,9 @@ Si `ML_API_KEY` esta definido, todo salvo `/health` exige `X-Api-Key`. Sin model
 - Solo atributos administrativos (antelacion, dia de la semana, edad, beca, SMS, historial previo). Se excluyen hipertension, diabetes, alcoholismo, discapacidad, genero y barrio.
 - El historial previo se calcula con citas de **dias anteriores** (sin fuga de informacion).
 - Train/test por fecha (test = ultimo 20 % de dias); umbral elegido por F1 en una ventana de validacion del train; `class_weight="balanced_subsample"`.
+- **Modelo real entrenado (2026-11-10, Kaggle):** `rf-noshow-20261110-596e7b43`, 84 067 citas de train / 26 449 de test (corte 2016-06-01), umbral 0.53:
+  precision 0.30, recall 0.71, F1 0.42, **AUC 0.73** (prevalencia 18.5 %). Variable dominante: `antelacion_dias` (caida de AUC 0.18 al permutarla), luego `edad` (0.019).
+  Sirve para reforzar recordatorios, no para negar atencion (7 de cada 10 alertas son falsas). Informe en `ml/no-show/reports/kaggle/`. Entrenado con scikit-learn 1.6.1 (aviso de version al cargar con 1.9.1: conviene reentrenar con la version de `requirements.txt`).
 - Informe (precision, recall, F1, AUC, matriz de confusion, importancia por permutacion y Gini) en `ml/no-show/reports/`; modelo `.joblib` con su version.
 
 ```bash

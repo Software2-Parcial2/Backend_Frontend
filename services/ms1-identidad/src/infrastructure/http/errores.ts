@@ -1,6 +1,6 @@
 import { ProblemException } from '@sigec/http-nest';
 import { CursorInvalidoError } from '../../application/usuarios.service.js';
-import { KeycloakNoDisponibleError, ReglaIdentidadError } from '../../domain/identidad.js';
+import { KeycloakNoDisponibleError, PacientesNoDisponibleError, ReglaIdentidadError } from '../../domain/identidad.js';
 
 /** Errores de dominio -> problem+json con code estable. Lo que no reconoce se relanza (el filtro global lo vuelve 500). */
 export async function traducir<T>(p: Promise<T> | T): Promise<T> {
@@ -13,6 +13,7 @@ export async function traducir<T>(p: Promise<T> | T): Promise<T> {
     }
     if (e instanceof CursorInvalidoError) throw new ProblemException(400, 'CURSOR_INVALIDO', 'Cursor invalido', 'El cursor no es valido');
     if (e instanceof KeycloakNoDisponibleError) throw new ProblemException(503, 'KEYCLOAK_NO_DISPONIBLE', 'Servicio no disponible', e.message);
+    if (e instanceof PacientesNoDisponibleError) throw new ProblemException(503, 'PACIENTES_NO_DISPONIBLE', 'Servicio no disponible', e.message);
     throw e;
   }
 }

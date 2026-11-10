@@ -156,7 +156,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ ($env.MAILTRAP_API_URL || 'https://sandbox.api.mailtrap.io') + '/api/send/' + $env.MAILTRAP_INBOX_ID }}",
+        "url": "={{ ($env.MAILTRAP_API_URL || 'https://sandbox.api.mailtrap.io') + '/api/send' + ($env.MAILTRAP_INBOX_ID ? '/' + $env.MAILTRAP_INBOX_ID : '') }}",
         "options": {
           "timeout": 15000
         },

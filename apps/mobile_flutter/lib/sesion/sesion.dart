@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'dart:convert';
 
 import 'package:flutter_appauth/flutter_appauth.dart';
@@ -129,7 +130,8 @@ class SesionNotifier extends Notifier<Sesion> {
       final r = await _p.entrar();
       if (r.refreshToken != null) await _p.guardarRefresh(r.refreshToken!);
       _guardar(r);
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint('LOGIN_ERROR: $e\n$st');
       state = const Sesion(estado: EstadoSesion.sin, error: 'No se pudo iniciar sesión');
     }
   }

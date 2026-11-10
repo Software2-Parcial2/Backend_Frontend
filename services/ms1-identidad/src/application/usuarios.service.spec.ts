@@ -26,6 +26,9 @@ function montar(usuarios: Usuario[] = []) {
     asignarRoles: vi.fn(async (id, roles) => void (mapa.get(id)!.roles = roles)),
     contarAdministradoresActivos: async () => [...mapa.values()].filter((u) => u.roles.includes('administrador') && u.activo).length,
     enviarRecuperacion: vi.fn(async () => undefined),
+    enviarInvitacion: vi.fn(async () => undefined),
+    buscarPorPaciente: async (pid) => [...mapa.values()].find((u) => u.pacienteId === pid) ?? null,
+    tieneContrasena: async () => false,
     sesionesDeUsuario: async () => [] as Sesion[],
     sesionesDelReino: async () => [] as Sesion[],
     cerrarSesion: vi.fn(async () => undefined),
@@ -45,7 +48,28 @@ describe('UsuariosService.crear', () => {
     const u = await t.svc.crear(ADMIN, nuevo({ username: ' Ana.Perez ', roles: ['recepcion', 'recepcion'] }));
     expect(u.username).toBe('ana.perez');
     expect(t.kc.crearUsuario).toHaveBeenCalledWith(expect.objectContaining({ username: 'ana.perez', roles: ['recepcion'] }));
-    expect(t.auditoria).toEqual([expect.objectContaining({ actor: ADMIN.sub, accion: 'USUARIO_CREADO', objetivo: u.id })]);
+    expect(t.auditoria).toEqual([
+      expect.objectContaining({ actor: ADMIN.sub, accion: 'USUARIO_CREADO', objetivo: u.id }),
+      expect.objectContaining({ actor: ADMIN.sub, accion: 'INVITACION_ENVIADA', objetivo: u.id }),
+    ]);
+  });
+
+  it('sin contrasena temporal envia la invitacion; con ella no', async () => {
+    const t = montar();
+    const sin = await t.svc.crear(ADMIN, nuevo());
+    expect(t.kc.enviarInvitacion).toHaveBeenCalledWith(sin.id);
+    expect(sin.invitacion).toEqual({ enviada: true, detalle: null });
+    const con = await t.svc.crear(ADMIN, nuevo({ username: 'beto', email: 'b@x.com', passwordTemporal: '12345678' }));
+    expect(t.kc.enviarInvitacion).toHaveBeenCalledTimes(1);
+    expect(con.invitacion).toBeUndefined();
+  });
+
+  it('si el correo no sale (sin SMTP) la cuenta queda creada e informa el motivo', async () => {
+    const t = montar();
+    vi.mocked(t.kc.enviarInvitacion).mockRejectedValueOnce(new Error('Keycloak no pudo enviar el correo (revisa la configuracion SMTP del reino)'));
+    const u = await t.svc.crear(ADMIN, nuevo());
+    expect(t.mapa.has(u.id)).toBe(true);
+    expect(u.invitacion).toEqual({ enviada: false, detalle: expect.stringMatching(/SMTP/) });
   });
 
   it.each([

@@ -3,6 +3,7 @@
 //   0. el claim `sub` en los tokens de usuario (scope `basic`; sin el los servicios no distinguen usuarios);
 //   1. atributos de usuario medico_id / especialidad / matricula (perfil de usuario) y sus claims en los clientes web/PWA/movil;
 //   2. eventos de autenticacion y de administracion;
+//   2b. el servidor de correo (SMTP) si KC_SMTP_* esta en .env;
 //   3. las cuentas de servicio `sigec-identidad` (administra usuarios) y `sigec-ms7` (agentes programados) con SU secreto del .env.
 // (Un reino nuevo ya trae 1 y 2 al importar infra/keycloak/realm-sigec.json; las cuentas de servicio solo las crea este script
 // para no guardar secretos en el repositorio.)
@@ -89,6 +90,32 @@ for (const cid of ['sigec-shell', 'sigec-pwa', 'sigec-mobile']) {
 const tipos = ['LOGIN', 'LOGIN_ERROR', 'LOGOUT', 'LOGOUT_ERROR', 'UPDATE_PASSWORD', 'UPDATE_PASSWORD_ERROR', 'RESET_PASSWORD', 'RESET_PASSWORD_ERROR', 'REGISTER', 'REMOVE_TOTP', 'UPDATE_TOTP', 'USER_DISABLED_BY_PERMANENT_LOCKOUT', 'USER_DISABLED_BY_TEMPORARY_LOCKOUT'];
 await api('PUT', '/events/config', { eventsEnabled: true, eventsExpiration: 2592000, enabledEventTypes: tipos, eventsListeners: ['jboss-logging'], adminEventsEnabled: true, adminEventsDetailsEnabled: false });
 log('eventos: activados (autenticacion y administracion)');
+
+// --- 2b. correo (SMTP) -------------------------------------------------------------------------------------
+// Sin esto Keycloak no puede enviar "Olvide mi contrasena" ni los enlaces de activacion. Mailtrap sandbox:
+// Email Testing -> Inbox -> SMTP Settings (son credenciales distintas de las de la API que usa n8n).
+if (env.KC_SMTP_HOST && env.KC_SMTP_USER && env.KC_SMTP_PASSWORD) {
+  const reino = await json('');
+  const puerto = env.KC_SMTP_PORT ?? '2525';
+  await api('PUT', '', {
+    ...reino,
+    resetPasswordAllowed: true,
+    smtpServer: {
+      host: env.KC_SMTP_HOST,
+      port: puerto,
+      from: env.KC_SMTP_FROM ?? env.MAIL_FROM ?? 'no-reply@sigec.test',
+      fromDisplayName: 'SIGEC',
+      auth: 'true',
+      user: env.KC_SMTP_USER,
+      password: env.KC_SMTP_PASSWORD,
+      starttls: puerto === '465' ? 'false' : 'true',
+      ssl: puerto === '465' ? 'true' : 'false',
+    },
+  });
+  log(`correo: SMTP configurado (${env.KC_SMTP_HOST}:${puerto})`);
+} else {
+  log('correo: OMITIDO (define KC_SMTP_HOST, KC_SMTP_USER y KC_SMTP_PASSWORD en .env; sin SMTP no funciona "Olvide mi contrasena")');
+}
 
 // --- 3. cuentas de servicio ---------------------------------------------------------------------------------
 async function cuentaDeServicio({ clientId, nombre, secreto, roles, rolesCliente }) {
