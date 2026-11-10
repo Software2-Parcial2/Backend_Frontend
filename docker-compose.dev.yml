@@ -1,0 +1,78 @@
+# Modo desarrollo: `docker compose watch` vigila el codigo y, al guardar un archivo, reconstruye y reinicia SOLO el servicio afectado.
+# No hay que saber que cambio ni donde (tambien sirve cuando editan agentes). Uso: `make dev` (ver docs/docker.md).
+# Se combina con docker-compose.yml + docker-compose.full.yml; no cambia los servicios, solo agrega reglas de vigilancia.
+# Los servicios Python de ML (ms7-ml, ms7-embeddings, ms7-whisper, ms5-inference) no se vigilan: son pesados; reconstruir con `make up-all`.
+services:
+  gateway:
+    develop:
+      watch:
+        - { action: rebuild, path: services/gateway, ignore: [node_modules, dist, target, vendor, .angular, '**/*.md'] }
+  ms2:
+    develop:
+      watch:
+        - { action: rebuild, path: services/ms2-pacientes, ignore: [node_modules, dist, target, vendor, .angular, '**/*.md'] }
+  ms4:
+    develop:
+      watch:
+        - { action: rebuild, path: services/ms4-historias, ignore: [node_modules, dist, target, vendor, .angular, '**/*.md'] }
+  ms6:
+    develop:
+      watch:
+        - { action: rebuild, path: services/ms6-facturacion, ignore: [node_modules, dist, target, vendor, .angular, '**/*.md'] }
+  ms6-outbox-relay:
+    develop:
+      watch:
+        - { action: rebuild, path: services/ms6-facturacion, ignore: [node_modules, dist, target, vendor, .angular, '**/*.md'] }
+  ms6-saga-consumer:
+    develop:
+      watch:
+        - { action: rebuild, path: services/ms6-facturacion, ignore: [node_modules, dist, target, vendor, .angular, '**/*.md'] }
+  ms6-eventos-consumer:
+    develop:
+      watch:
+        - { action: rebuild, path: services/ms6-facturacion, ignore: [node_modules, dist, target, vendor, .angular, '**/*.md'] }
+  ms1:
+    develop:
+      watch:
+        - { action: rebuild, path: services/ms1-identidad, ignore: [node_modules, dist, target, vendor, .angular, '**/*.md'] }
+        - { action: rebuild, path: packages, ignore: [node_modules, dist, target, vendor, .angular, '**/*.md'] }
+  ms3:
+    develop:
+      watch:
+        - { action: rebuild, path: services/ms3-citas, ignore: [node_modules, dist, target, vendor, .angular, '**/*.md'] }
+        - { action: rebuild, path: packages, ignore: [node_modules, dist, target, vendor, .angular, '**/*.md'] }
+  ms5-api:
+    develop:
+      watch:
+        - { action: rebuild, path: services/ms5-imagenes/api, ignore: [node_modules, dist, target, vendor, .angular, '**/*.md'] }
+        - { action: rebuild, path: packages, ignore: [node_modules, dist, target, vendor, .angular, '**/*.md'] }
+  ms7-api:
+    develop:
+      watch:
+        - { action: rebuild, path: services/ms7-inteligencia/api, ignore: [node_modules, dist, target, vendor, .angular, '**/*.md'] }
+        - { action: rebuild, path: packages, ignore: [node_modules, dist, target, vendor, .angular, '**/*.md'] }
+  ms8:
+    develop:
+      watch:
+        - { action: rebuild, path: services/ms8-notificaciones, ignore: [node_modules, dist, target, vendor, .angular, '**/*.md'] }
+        - { action: rebuild, path: packages, ignore: [node_modules, dist, target, vendor, .angular, '**/*.md'] }
+  shell:
+    develop:
+      watch:
+        - { action: rebuild, path: apps/shell, ignore: [node_modules, dist, target, vendor, .angular, '**/*.md'] }
+        - { action: rebuild, path: packages, ignore: [node_modules, dist, target, vendor, .angular, '**/*.md'] }
+  pwa-paciente:
+    develop:
+      watch:
+        - { action: rebuild, path: apps/pwa-paciente, ignore: [node_modules, dist, target, vendor, .angular, '**/*.md'] }
+        - { action: rebuild, path: packages, ignore: [node_modules, dist, target, vendor, .angular, '**/*.md'] }
+  remote-vue:
+    develop:
+      watch:
+        - { action: rebuild, path: apps/remote-vue, ignore: [node_modules, dist, target, vendor, .angular, '**/*.md'] }
+        - { action: rebuild, path: packages, ignore: [node_modules, dist, target, vendor, .angular, '**/*.md'] }
+  remote-angular:
+    develop:
+      watch:
+        - { action: rebuild, path: apps/remote-angular, ignore: [node_modules, dist, target, vendor, .angular, '**/*.md'] }
+        - { action: rebuild, path: packages, ignore: [node_modules, dist, target, vendor, .angular, '**/*.md'] }

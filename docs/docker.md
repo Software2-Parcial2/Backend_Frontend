@@ -122,7 +122,10 @@ docker exec sigec-rabbitmq-1 rabbitmqctl list_queues name messages consumers | g
 
 | Quiero… | Comando |
 |---|---|
-| Levantar todo (sin ML) | `make up-core` |
+| Levantar todo (sin ML), **rápido, sin construir** | `make up-core-rapido` |
+| Levantar todo (sin ML) reconstruyendo (tras cambiar código) | `make up-core` |
+| Levantar todo con ML, rápido, sin construir | `make up-all-rapido` |
+| **Desarrollo:** levantar y reconstruir solo el servicio cuyo código se guarda | `make dev` (usa `docker-compose.dev.yml`; no vigila los servicios Python de ML) |
 | Levantar todo con ML | `make up-all` |
 | Ver el estado | `make ps-all` |
 | Parar conservando datos | `make down-all` |

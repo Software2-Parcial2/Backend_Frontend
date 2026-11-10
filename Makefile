@@ -2,7 +2,7 @@
 SHELL := /bin/bash
 ENV_FILE := .env
 
-.PHONY: up-all up-core down-all ps-all infra-up dynamodb-init rabbitmq-declare e2e-saga dlq-replay n8n-import n8n-export s3-init mongo-init seed seed-reset datos-docs datos-explain db-purge db-backup openapi-check openapi-update keycloak-aplicar
+.PHONY: dev up-all up-core up-all-rapido up-core-rapido down-all ps-all infra-up dynamodb-init rabbitmq-declare e2e-saga dlq-replay n8n-import n8n-export s3-init mongo-init seed seed-reset datos-docs datos-explain db-purge db-backup openapi-check openapi-update keycloak-aplicar
 
 infra-up:
 	docker compose up -d
@@ -82,6 +82,20 @@ up-all:
 # Sin los servicios de ML pesados (el agente de MS7 y la inferencia de radiografias quedan degradados).
 up-core:
 	$(COMPOSE_FULL) up -d --build
+
+# RAPIDO (sin --build): usa las imagenes que ya existen y no reconstruye nada. Si falta alguna imagen, compose la construye solo esa vez.
+# Usalo en el dia a dia; usa up-core/up-all cuando cambie el codigo o un Dockerfile (los contenedores seguiran con el codigo viejo).
+up-core-rapido:
+	$(COMPOSE_FULL) up -d
+
+up-all-rapido:
+	$(COMPOSE_FULL) --profile ml --profile inferencia up -d
+
+# DESARROLLO: levanta con las imagenes existentes y vigila el codigo; al guardar un archivo reconstruye solo ese servicio.
+# Dejar corriendo en una terminal (Ctrl+C detiene la vigilancia, los contenedores siguen arriba).
+dev:
+	$(COMPOSE_FULL) up -d
+	$(COMPOSE_FULL) -f docker-compose.dev.yml watch
 
 down-all:
 	$(COMPOSE_FULL) --profile ml --profile inferencia down
