@@ -2,7 +2,7 @@
 SHELL := /bin/bash
 ENV_FILE := .env
 
-.PHONY: dev up-all up-core up-all-rapido up-core-rapido down-all ps-all infra-up dynamodb-init rabbitmq-declare e2e-saga dlq-replay n8n-import n8n-export s3-init mongo-init seed seed-reset datos-docs datos-explain db-purge db-backup openapi-check openapi-update keycloak-aplicar
+.PHONY: dev dev-local dev-local-ml dev-local-down dev-local-status up-all up-core up-all-rapido up-core-rapido down-all ps-all infra-up dynamodb-init rabbitmq-declare e2e-saga dlq-replay n8n-import n8n-export s3-init mongo-init seed seed-reset datos-docs datos-explain db-purge db-backup openapi-check openapi-update keycloak-aplicar
 
 infra-up:
 	docker compose up -d
@@ -91,7 +91,22 @@ up-core-rapido:
 up-all-rapido:
 	$(COMPOSE_FULL) --profile ml --profile inferencia up -d
 
-# DESARROLLO: levanta con las imagenes existentes y vigila el codigo; al guardar un archivo reconstruye solo ese servicio.
+# DESARROLLO LOCAL SIN IMAGENES (recomendado a diario): Docker solo para la infraestructura; microservicios y frontends en el host con recarga
+# al guardar (Nest --watch, Vite/Rsbuild HMR). Ver docs/desarrollo-local.md. No mezclar con up-core/up-all (mismos puertos).
+dev-local:
+	scripts/dev-local.sh up
+
+# Igual, mas los servicios Python de ML (requieren sus .venv).
+dev-local-ml:
+	scripts/dev-local.sh up --ml
+
+dev-local-down:
+	scripts/dev-local.sh down
+
+dev-local-status:
+	scripts/dev-local.sh status
+
+# DESARROLLO EN DOCKER: levanta con las imagenes existentes y vigila el codigo; al guardar un archivo reconstruye solo ese servicio.
 # Dejar corriendo en una terminal (Ctrl+C detiene la vigilancia, los contenedores siguen arriba).
 dev:
 	$(COMPOSE_FULL) up -d

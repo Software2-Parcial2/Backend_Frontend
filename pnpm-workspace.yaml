@@ -21,3 +21,6 @@ packageExtensions:
   "@analogjs/vite-plugin-angular":
     dependencies:
       typescript: "~6.0.3"
+
+# Los scripts de build de esbuild, lmdb, @parcel/watcher y msgpackr-extract no se aprueban uno a uno: sin esto `pnpm install` (y los prestart:dev de los Nest) falla con ERR_PNPM_IGNORED_BUILDS. El Dockerfile ya pasaba este mismo ajuste.
+strictDepBuilds: false
